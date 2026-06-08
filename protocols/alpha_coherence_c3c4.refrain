@@ -1,0 +1,42 @@
+// alpha_coherence_c3c4.refrain  —  DRAFT (status=draft, untested)
+// Interhemispheric alpha coherence training (C3<->C4). Up-trains synchrony in
+// the alpha band between hemispheres. Needs two channels.
+protocol "alpha_coherence_c3c4" {
+  meta {
+    version         = "0.1.0"
+    description     = "Interhemispheric alpha coherence (C3<->C4)"
+    status          = "draft"
+    evidence        = "exploratory"
+    citation        = "Gruzelier 2014"
+    goals           = ["flow_connectivity"]
+    bands           = ["alpha"]
+    site            = "C3/C4"
+    direction       = "up"
+    threshold_style = "adaptive"
+    hardware        = "generic"
+  }
+
+  requires {
+    sample_rate = ">= 256 Hz"
+    channels    = ["C3", "C4"]
+  }
+
+  input "left"  { montage = referential(active: "C3", reference: "linked_ears") }
+  input "right" { montage = referential(active: "C4", reference: "linked_ears") }
+
+  derive "alpha_coh" {
+    formula = coherence(input_a: "left", input_b: "right", band: (8 Hz, 12 Hz), window: 2 s)
+  }
+
+  threshold "coh_t" { signal = "alpha_coh"; type = percentile(target_pct: 70, window: 2 min) }
+
+  reward {
+    event      = dwell(condition: above("alpha_coh", "coh_t"), duration: 500 ms)
+    continuous = sigmoid("alpha_coh" / "coh_t", midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_gain  = reward.continuous
+    audio_chime = reward.event
+  }
+}

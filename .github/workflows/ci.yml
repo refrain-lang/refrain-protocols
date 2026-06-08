@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install refrain + dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.8.0"
+          pip install pytest jsonschema
+      - name: Rebuild catalog (must match committed)
+        run: |
+          python tools/build_catalog.py
+          git diff --exit-code catalog.json || (echo "::error::catalog.json is stale — run tools/build_catalog.py and commit" && exit 1)
+      - name: Validate (parse + meta schema + catalog)
+        run: pytest -q

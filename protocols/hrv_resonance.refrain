@@ -1,0 +1,52 @@
+// hrv_resonance.refrain  —  DRAFT (status=draft, untested)
+// HRV resonance / coherence breathing on a 4 Hz cardiac tachogram (cross-
+// modality — cardiac, not EEG). Uses the v0.8.0 passthrough() montage and the
+// sanctioned low-Fs envelope (rectify + smooth) on the LF (0.04-0.15 Hz) band.
+protocol "hrv_resonance" {
+  meta {
+    version         = "0.1.0"
+    description     = "HRV resonance breathing (LF rhythm strength, 4 Hz tachogram)"
+    status          = "draft"
+    evidence        = "established"
+    citation        = "Lehrer & Gevirtz 2014 (resonance-frequency HRV biofeedback)"
+    goals           = ["calm_anxiety", "flow_connectivity"]
+    bands           = ["hrv-lf"]
+    site            = "tachogram"
+    direction       = "up"
+    threshold_style = "adaptive"
+    modality        = "hrv"
+    hardware        = "generic"
+  }
+
+  requires {
+    sample_rate = ">= 4 Hz"
+    channels    = ["tachogram"]
+  }
+
+  input "tach" { montage = passthrough() }
+
+  derive "lf_env" {
+    from = "tach"
+    pipeline = [
+      bandpass(band: (0.04 Hz, 0.15 Hz), order: 4),
+      rectify(),
+      smooth(tau: 4 s),
+    ]
+  }
+  derive "rhythm_strength" {
+    from = "lf_env"
+    pipeline = [ auto_range(window: 5 min, percentile: (1, 99)) ]
+  }
+
+  threshold "rs_t" { signal = "rhythm_strength"; type = percentile(target_pct: 70, window: 5 min) }
+
+  reward {
+    event      = dwell(condition: above("rhythm_strength", "rs_t"), duration: 5 s)
+    continuous = "rhythm_strength"
+  }
+
+  output {
+    audio_gain  = reward.continuous
+    audio_chime = reward.event
+  }
+}

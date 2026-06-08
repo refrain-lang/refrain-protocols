@@ -1,0 +1,881 @@
+{
+  "schema": "protocol-meta/1",
+  "count": 38,
+  "protocols": [
+    {
+      "file": "protocols/alpha_coherence_c3c4.refrain",
+      "name": "alpha_coherence_c3c4",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "Interhemispheric alpha coherence (C3<->C4)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Gruzelier 2014",
+        "goals": [
+          "flow_connectivity"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "C3/C4",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/alpha_down_pz.refrain",
+      "name": "alpha_down_pz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "ALPHA down-train at Pz (adaptive)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Kluetsch/Ros/Lanius 2014; Nicholson 2016",
+        "goals": [
+          "trauma_recovery",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "down",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/alpha_down_pz_baseline.refrain",
+      "name": "alpha_down_pz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "ALPHA down-train at Pz (baseline)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Kluetsch/Ros/Lanius 2014; Nicholson 2016",
+        "goals": [
+          "trauma_recovery",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "down",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/alpha_theta_pz.refrain",
+      "name": "alpha_theta_pz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "Alpha/theta crossover at Pz (eyes-closed, deep state)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Peniston & Kulkosky 1989, 1991",
+        "goals": [
+          "deep_meditative",
+          "trauma_recovery"
+        ],
+        "bands": [
+          "alpha",
+          "theta"
+        ],
+        "site": "Pz",
+        "direction": "crossover",
+        "threshold_style": "crossover",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/alpha_up_pz.refrain",
+      "name": "alpha_up_pz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "ALPHA up-train at Pz (adaptive)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Hardt & Kamiya 1978",
+        "goals": [
+          "calm_anxiety",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/alpha_up_pz_baseline.refrain",
+      "name": "alpha_up_pz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "ALPHA up-train at Pz (baseline)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Hardt & Kamiya 1978",
+        "goals": [
+          "calm_anxiety",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/beta_up_c3.refrain",
+      "name": "beta_up_c3",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA up-train at C3 (adaptive)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Othmer & Othmer (arousal model)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "beta"
+        ],
+        "site": "C3",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/beta_up_c3_baseline.refrain",
+      "name": "beta_up_c3_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA up-train at C3 (baseline)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Othmer & Othmer (arousal model)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "beta"
+        ],
+        "site": "C3",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/beta_up_fz.refrain",
+      "name": "beta_up_fz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA up-train at Fz (adaptive)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "frontal beta activation",
+        "goals": [
+          "alertness_performance"
+        ],
+        "bands": [
+          "beta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/beta_up_fz_baseline.refrain",
+      "name": "beta_up_fz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA up-train at Fz (baseline)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "frontal beta activation",
+        "goals": [
+          "alertness_performance"
+        ],
+        "bands": [
+          "beta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/composite_smr_theta_cz.refrain",
+      "name": "composite_smr_theta_cz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "SMR-up / theta-down weighted composite at Cz",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Sterman; Lubar; Arns 2009",
+        "goals": [
+          "adhd_attention",
+          "sensorimotor_sleep"
+        ],
+        "bands": [
+          "smr",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "composite",
+        "threshold_style": "adaptive",
+        "reward_style": "weighted",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/faa_f3f4.refrain",
+      "name": "faa_f3f4",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "Frontal alpha asymmetry F3/F4 (mood / approach-motivation)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Rosenfeld; Baehr & Rosenfeld",
+        "goals": [
+          "mood_regulation",
+          "trauma_recovery"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "F3/F4",
+        "direction": "asymmetry",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/fm_theta_up_fz.refrain",
+      "name": "fm_theta_up_fz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA up-train at Fz (adaptive)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Ishihara & Yoshii; Gruzelier",
+        "goals": [
+          "deep_meditative",
+          "alertness_performance"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/fm_theta_up_fz_baseline.refrain",
+      "name": "fm_theta_up_fz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA up-train at Fz (baseline)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Ishihara & Yoshii; Gruzelier",
+        "goals": [
+          "deep_meditative",
+          "alertness_performance"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/hibeta_down_cz.refrain",
+      "name": "hibeta_down_cz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "HIGH-BETA down-train at Cz (adaptive)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "clinical convention (anxiety/rumination)",
+        "goals": [
+          "calm_anxiety"
+        ],
+        "bands": [
+          "high-beta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/hibeta_down_cz_baseline.refrain",
+      "name": "hibeta_down_cz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "HIGH-BETA down-train at Cz (baseline)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "clinical convention (anxiety/rumination)",
+        "goals": [
+          "calm_anxiety"
+        ],
+        "bands": [
+          "high-beta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/hrv_resonance.refrain",
+      "name": "hrv_resonance",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "HRV resonance breathing (LF rhythm strength, 4 Hz tachogram)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Lehrer & Gevirtz 2014 (resonance-frequency HRV biofeedback)",
+        "goals": [
+          "calm_anxiety",
+          "flow_connectivity"
+        ],
+        "bands": [
+          "hrv-lf"
+        ],
+        "site": "tachogram",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "modality": "hrv",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/peak_alpha_up_pz.refrain",
+      "name": "peak_alpha_up_pz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "ALPHA up-train at Pz (adaptive)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Hanslmayr; Gruzelier 2014",
+        "goals": [
+          "alertness_performance",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/peak_alpha_up_pz_baseline.refrain",
+      "name": "peak_alpha_up_pz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "ALPHA up-train at Pz (baseline)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Hanslmayr; Gruzelier 2014",
+        "goals": [
+          "alertness_performance",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/slow_down_cz.refrain",
+      "name": "slow_down_cz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "DELTA/THETA down-train at Cz (adaptive)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Thatcher; Walker (qEEG-guided slowing)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "delta",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/slow_down_cz_baseline.refrain",
+      "name": "slow_down_cz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "DELTA/THETA down-train at Cz (baseline)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Thatcher; Walker (qEEG-guided slowing)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "delta",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/slow_down_fz.refrain",
+      "name": "slow_down_fz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "DELTA/THETA down-train at Fz (adaptive)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Thatcher; Walker (frontal slowing)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "delta",
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "down",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/slow_down_fz_baseline.refrain",
+      "name": "slow_down_fz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "DELTA/THETA down-train at Fz (baseline)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Thatcher; Walker (frontal slowing)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "delta",
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "down",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/smr_theta_cz.refrain",
+      "name": "smr_theta_cz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "SMR/THETA up-train at Cz (adaptive)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Sterman; Lubar; Arns 2009",
+        "goals": [
+          "adhd_attention",
+          "sensorimotor_sleep"
+        ],
+        "bands": [
+          "smr",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/smr_theta_cz_baseline.refrain",
+      "name": "smr_theta_cz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "SMR/THETA up-train at Cz (baseline)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Sterman; Lubar; Arns 2009",
+        "goals": [
+          "adhd_attention",
+          "sensorimotor_sleep"
+        ],
+        "bands": [
+          "smr",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/smr_up_c4.refrain",
+      "name": "smr_up_c4",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "SMR up-train at C4 (adaptive)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Sterman; Hoedlmoser 2008",
+        "goals": [
+          "sensorimotor_sleep",
+          "calm_anxiety"
+        ],
+        "bands": [
+          "smr"
+        ],
+        "site": "C4",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/smr_up_c4_baseline.refrain",
+      "name": "smr_up_c4_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "SMR up-train at C4 (baseline)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Sterman; Hoedlmoser 2008",
+        "goals": [
+          "sensorimotor_sleep",
+          "calm_anxiety"
+        ],
+        "bands": [
+          "smr"
+        ],
+        "site": "C4",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_beta_cz.refrain",
+      "name": "theta_beta_cz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA/THETA up-train at Cz (adaptive)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Lubar (theta/beta)",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "beta",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_beta_cz_baseline.refrain",
+      "name": "theta_beta_cz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA/THETA up-train at Cz (baseline)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Lubar (theta/beta)",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "beta",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_beta_fz.refrain",
+      "name": "theta_beta_fz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA/THETA up-train at Fz (adaptive)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Lubar (theta/beta); frontal-theta excess",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "beta",
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_beta_fz_baseline.refrain",
+      "name": "theta_beta_fz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "BETA/THETA up-train at Fz (baseline)",
+        "status": "draft",
+        "evidence": "established",
+        "citation": "Lubar (theta/beta); frontal-theta excess",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "beta",
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_down_cz.refrain",
+      "name": "theta_down_cz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA down-train at Cz (adaptive)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Lubar (theta downtraining)",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_down_cz_baseline.refrain",
+      "name": "theta_down_cz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA down-train at Cz (baseline)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Lubar (theta downtraining)",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_down_fz.refrain",
+      "name": "theta_down_fz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA down-train at Fz (adaptive)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Lubar; frontal-theta excess",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "down",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_down_fz_baseline.refrain",
+      "name": "theta_down_fz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA down-train at Fz (baseline)",
+        "status": "draft",
+        "evidence": "probable",
+        "citation": "Lubar; frontal-theta excess",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "down",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_up_pz.refrain",
+      "name": "theta_up_pz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA up-train at Pz (adaptive)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Gruzelier (creativity/deep states)",
+        "goals": [
+          "deep_meditative"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/theta_up_pz_baseline.refrain",
+      "name": "theta_up_pz_baseline",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "THETA up-train at Pz (baseline)",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Gruzelier (creativity/deep states)",
+        "goals": [
+          "deep_meditative"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "baseline",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "drafts/scp_cz.refrain",
+      "name": "scp_cz",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "Slow cortical potential self-regulation at Cz (clinical DC amp; trial sequencing required)",
+        "status": "roadmap",
+        "evidence": "established",
+        "citation": "Strehl et al. 2006; Kotchoubey & Birbaumer 2001",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "scp"
+        ],
+        "site": "Cz",
+        "threshold_style": "baseline",
+        "hardware": "clinical_amp",
+        "requires_features": [
+          "dc_coupling",
+          "trials"
+        ]
+      }
+    }
+  ]
+}

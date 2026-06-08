@@ -1,0 +1,68 @@
+// composite_smr_theta_cz.refrain  —  DRAFT (status=draft, untested)
+// SMR-up / theta-down as a WEIGHTED COMPOSITE reward. The two weights are the
+// live clinician knobs (unitless relative weights — `number`, not `percent`:
+// the composite is Sum(w*success)/Sum(w), so only the RATIO matters).
+// NOTE: requires refrain >= the release that adds the `number` control kind;
+// it parses today but won't resolve until then.
+protocol "composite_smr_theta_cz" {
+  meta {
+    version         = "0.1.0"
+    description     = "SMR-up / theta-down weighted composite at Cz"
+    status          = "draft"
+    evidence        = "established"
+    citation        = "Sterman; Lubar; Arns 2009"
+    goals           = ["adhd_attention", "sensorimotor_sleep"]
+    bands           = ["smr", "theta"]
+    site            = "Cz"
+    direction       = "composite"
+    threshold_style = "adaptive"
+    reward_style    = "weighted"
+    hardware        = "generic"
+  }
+
+  requires {
+    sample_rate = ">= 256 Hz"
+    channels    = ["Cz"]
+  }
+
+  input "raw" { montage = referential(active: "Cz", reference: "linked_ears") }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [ bandpass(band: (12 Hz, 15 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 250 ms) ]
+  }
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [ bandpass(band: (4 Hz, 8 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 250 ms) ]
+  }
+
+  // Named components: one reward (SMR up), one suppress band (theta down).
+  reward  "smr"   { signal = sigmoid("smr_envelope",   midpoint: 6 uV, steepness: 1); weight = w_smr }
+  inhibit "theta" { signal = sigmoid("theta_envelope", midpoint: 8 uV, steepness: 1); weight = w_theta }
+
+  reward {
+    combine    = "weighted"
+    continuous = reward.composite
+    event      = dwell(condition: above(reward.composite, 0.5), duration: 250 ms)
+  }
+
+  output {
+    audio_gain  = reward.composite
+    audio_chime = reward.event
+  }
+
+  controls {
+    w_smr = number {
+      default      = 1.0
+      range        = (0, 4)
+      label        = "SMR reward weight"
+      live_tunable = true
+    }
+    w_theta = number {
+      default      = 0.6
+      range        = (0, 4)
+      label        = "Theta suppress weight"
+      live_tunable = true
+    }
+  }
+}

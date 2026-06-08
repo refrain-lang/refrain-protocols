@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://refrain-lang.org/schema/protocol-meta.schema.json",
+  "title": "Refrain reference-protocol meta tags",
+  "description": "The shared, versioned contract for the `meta` tags that organize the protocol library. Refrain itself is meta-agnostic; host apps read these tags (via refrain.read_meta) to group/filter/search. Unknown fields are permitted and ignored; unknown enum values fall into an 'Other' bucket rather than being dropped.",
+  "type": "object",
+  "required": ["description", "status", "goals"],
+  "properties": {
+    "description": { "type": "string", "description": "One-line human label shown in the picker." },
+
+    "status": {
+      "description": "OUR file maturity / test status (distinct from clinical `evidence`).",
+      "enum": ["draft", "roadmap", "reviewed", "stable"]
+    },
+    "evidence": {
+      "description": "Clinical-literature support tier (distinct from `status`).",
+      "enum": ["established", "probable", "exploratory"]
+    },
+    "citation": { "type": "string", "description": "Author-anchored reference; required once status > draft." },
+
+    "goals": {
+      "description": "Clinical-goal categories (MULTI-membership). Drives the picker's groups. Controlled vocab; unknown values land in 'Other'.",
+      "type": "array",
+      "items": {
+        "enum": [
+          "adhd_attention", "sensorimotor_sleep", "alertness_performance",
+          "calm_anxiety", "flow_connectivity", "deep_meditative",
+          "mood_regulation", "trauma_recovery"
+        ]
+      },
+      "minItems": 1
+    },
+    "bands": {
+      "description": "Band chips shown on the row.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "site": { "type": "string", "description": "Scalp site(s), e.g. 'Cz', 'F3/F4', 'tachogram'." },
+    "direction": {
+      "description": "Training direction.",
+      "enum": ["up", "down", "composite", "crossover", "asymmetry"]
+    },
+    "threshold_style": {
+      "description": "Drives the Adaptive / Baseline filter chip.",
+      "enum": ["adaptive", "baseline", "crossover"]
+    },
+    "reward_style": { "enum": ["operant", "graded", "weighted"] },
+    "modality": { "enum": ["eeg", "hrv"], "default": "eeg" },
+    "hardware": {
+      "description": "Amp class the protocol targets. 'clinical_amp' = greyed out on a consumer amp.",
+      "enum": ["generic", "brainbit_flex", "clinical_amp"]
+    },
+    "requires_features": {
+      "description": "Engine/hardware features the protocol needs (e.g. dc_coupling, trials). Used to grey-out unrunnable protocols.",
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

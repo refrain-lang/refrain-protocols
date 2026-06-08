@@ -1,0 +1,58 @@
+// alpha_theta_pz.refrain  —  DRAFT (status=draft, untested)
+// Alpha/theta crossover training at Pz (Peniston-Kulkosky). Eyes-closed, deep
+// state: reward when theta envelope rises above alpha envelope ("crossover").
+// Distinct from the operant up/down protocols — uses the deep session template.
+protocol "alpha_theta_pz" {
+  meta {
+    version         = "0.1.0"
+    description     = "Alpha/theta crossover at Pz (eyes-closed, deep state)"
+    status          = "draft"
+    evidence        = "established"
+    citation        = "Peniston & Kulkosky 1989, 1991"
+    goals           = ["deep_meditative", "trauma_recovery"]
+    bands           = ["alpha", "theta"]
+    site            = "Pz"
+    direction       = "crossover"
+    threshold_style = "crossover"
+    hardware        = "generic"
+  }
+
+  requires {
+    sample_rate = ">= 256 Hz"
+    channels    = ["Pz"]
+  }
+
+  input "raw" { montage = referential(active: "Pz", reference: "linked_ears") }
+
+  derive "alpha_envelope" {
+    from = "raw"
+    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+  }
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [ bandpass(band: (4 Hz, 8 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+  }
+
+  reward {
+    // Crossover: theta envelope above alpha envelope = the rewarded deep state.
+    event      = dwell(condition: above("theta_envelope", "alpha_envelope"), duration: 1000 ms)
+    continuous = sigmoid("theta_envelope" / "alpha_envelope", midpoint: 1.0, steepness: 2)
+  }
+
+  output {
+    audio_gain  = reward.continuous
+    audio_chime = reward.event
+  }
+
+  // Deep-state session: long eyes-closed blocks (the legitimate exception to
+  // the <=5-min rule). Host overrides block length/count as usual.
+  session {
+    phases = [
+      phase { name = "settle";   duration = 2 min;  output_muted = true },
+      phase { name = "deep1";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min;  output_muted = true },
+      phase { name = "deep2";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 2 min;  output_muted = true },
+    ]
+  }
+}

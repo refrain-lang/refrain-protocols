@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "refrain-protocols"
+version = "0.1.0"
+description = "Reference neurofeedback & HRV protocol library for Refrain (draft set)"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Healthcare Industry",
+  "License :: OSI Approved :: Apache Software License",
+]
+# Reading protocol metadata needs refrain (parse-only). Pin to the release that
+# carries the `number` control kind once it ships (see ROADMAP).
+dependencies = [
+  "refrain >= 0.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest >= 7.0",
+  "jsonschema >= 4.0",
+]
+
+# Ship the protocol files + the catalog so a host can `pip install refrain-protocols`
+# and read them from the installed package.
+[tool.hatch.build.targets.wheel]
+only-include = ["protocols", "drafts", "lib", "schema", "catalog.json"]
+
+[tool.hatch.build.targets.wheel.sources]
+"" = "refrain_protocols"

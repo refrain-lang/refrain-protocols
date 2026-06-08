@@ -1,0 +1,52 @@
+// faa_f3f4.refrain  —  DRAFT (status=draft, untested)
+// Frontal alpha asymmetry (F3/F4) for mood / approach-motivation. Trains
+// RELATIVE right-frontal alpha up vs left (left-frontal activation = less left
+// alpha), the depression FAA protocol. Reward the F3/F4 alpha ratio.
+protocol "faa_f3f4" {
+  meta {
+    version         = "0.1.0"
+    description     = "Frontal alpha asymmetry F3/F4 (mood / approach-motivation)"
+    status          = "draft"
+    evidence        = "probable"
+    citation        = "Rosenfeld; Baehr & Rosenfeld"
+    goals           = ["mood_regulation", "trauma_recovery"]
+    bands           = ["alpha"]
+    site            = "F3/F4"
+    direction       = "asymmetry"
+    threshold_style = "adaptive"
+    hardware        = "generic"
+  }
+
+  requires {
+    sample_rate = ">= 256 Hz"
+    channels    = ["F3", "F4"]
+  }
+
+  input "left"  { montage = referential(active: "F3", reference: "linked_ears") }
+  input "right" { montage = referential(active: "F4", reference: "linked_ears") }
+
+  derive "alpha_l" {
+    from = "left"
+    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+  }
+  derive "alpha_r" {
+    from = "right"
+    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+  }
+
+  // Asymmetry index: left-alpha relative to right. Higher = more left alpha
+  // (less left activation). Down-train it for approach-motivation/mood.
+  derive "faa" { formula = "alpha_l" / "alpha_r" }
+
+  threshold "faa_t" { signal = "faa"; type = percentile(target_pct: 50, window: 2 min) }
+
+  reward {
+    event      = dwell(condition: below("faa", "faa_t"), duration: 500 ms)
+    continuous = sigmoid("faa_t" / "faa", midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_gain  = reward.continuous
+    audio_chime = reward.event
+  }
+}

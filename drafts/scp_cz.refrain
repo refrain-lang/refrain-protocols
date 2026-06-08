@@ -1,0 +1,53 @@
+// scp_cz.refrain  —  ROADMAP DRAFT (status=roadmap; does NOT fully resolve yet)
+//
+// Slow Cortical Potential self-regulation at Cz (Strehl/Birbaumer). Kept in
+// drafts/ — it intentionally does NOT pass the resolve gate. It maps what
+// Refrain needs to grow for TRIAL-BASED paradigms:
+//
+//   1. Unary minus / signed literals      — SCP thresholds are negative
+//      (`default = -5.0 uV` currently fails to parse: DESIGN-NOTES §6).
+//   2. A `trials` construct               — SCP is discrete cued trials
+//      (produce-negativity / produce-positivity / transfer), not clinician-
+//      paced blocks. The phase machine can't express it.
+//   3. Per-trial baseline correction      — feedback is relative to a pre-trial
+//      baseline; no primitive for "subtract the last N ms".
+//   4. Robust near-DC / DC extraction     — a 0.05 Hz bandpass is numerically
+//      fragile (same near-DC issue as the HRV envelope); SCP wants the true DC
+//      signal. Gated to a DC-coupled clinical amp via `coupling = "dc"`.
+//
+// The signal/feedback half below parses (so the picker can list it); the trial
+// sequencing + signed thresholds are the missing engine work.
+protocol "scp_cz" {
+  meta {
+    version         = "0.1.0"
+    description     = "Slow cortical potential self-regulation at Cz (clinical DC amp; trial sequencing required)"
+    status          = "roadmap"
+    evidence        = "established"
+    citation        = "Strehl et al. 2006; Kotchoubey & Birbaumer 2001"
+    goals           = ["adhd_attention"]
+    bands           = ["scp"]
+    site            = "Cz"
+    threshold_style = "baseline"
+    hardware        = "clinical_amp"
+    requires_features = ["dc_coupling", "trials"]
+  }
+
+  requires {
+    coupling    = "dc"
+    sample_rate = ">= 256 Hz"
+    channels    = ["Cz"]
+  }
+
+  input "raw" { montage = referential(active: "Cz", reference: "linked_ears") }
+
+  // The slow cortical potential (near-DC). See gap #4.
+  derive "scp" {
+    from = "raw"
+    pipeline = [ bandpass(band: (0.05 Hz, 2 Hz), order: 2), smooth(tau: 200 ms) ]
+  }
+
+  // Negativity training would reward the SCP going below a NEGATIVE threshold
+  // relative to the trial baseline — needs gaps #1 (signed) + #3 (baseline) +
+  // #2 (trial cueing). Left as documentation, not runnable feedback.
+  output { audio_gain = 0 }
+}
