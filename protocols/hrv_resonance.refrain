@@ -38,7 +38,7 @@ protocol "hrv_resonance" {
     pipeline = [ auto_range(window: 5 min, percentile: (1, 99)) ]
   }
 
-  threshold "rs_t" { signal = "rhythm_strength"; type = percentile(target_pct: 70, window: 5 min) }
+  threshold "rs_t" { signal = "rhythm_strength"; type = percentile(target_pct: reward_pct, window: 5 min) }
 
   reward {
     event      = dwell(condition: above("rhythm_strength", "rs_t"), duration: 5 s)
@@ -48,5 +48,17 @@ protocol "hrv_resonance" {
   output {
     audio_gain  = reward.continuous
     audio_chime = reward.event
+  }
+
+  // The LF band (0.04-0.15 Hz) is the standard physiological definition, not a
+  // knob; the real HRV knob is the breathing pacer rate, which is host-side.
+  // Only the reward target is exposed here.
+  controls {
+    reward_pct = percent {
+      default      = 70
+      range        = (50, 90)
+      label        = "Target reward %"
+      live_tunable = true
+    }
   }
 }

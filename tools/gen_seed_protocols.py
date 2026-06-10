@@ -15,6 +15,7 @@ alpha-theta crossover, HRV, SCP) are hand-authored, not generated here.
 """
 from __future__ import annotations
 
+import math
 import textwrap
 from pathlib import Path
 
@@ -99,21 +100,55 @@ def emit(name, band, direction, site, goals, bands, ev, cite, *, baseline):
     fname = f"{name}_baseline" if baseline else name
     desc = f"{'/'.join(bands).upper()} {direction}-train at {site} ({tstyle})"
 
+    # The trained band is exposed as a clinician knob: a single `env_center`
+    # frequency control (set at session setup, frozen during the run — the
+    # live knob is the threshold/reward-%, not the band). bandpass's
+    # center/bandwidth form takes a geometric center and a width *ratio*
+    # (low = center/sqrt(R), high = center*sqrt(R)), so a literal (lo, hi)
+    # maps to center = sqrt(lo*hi), ratio = hi/lo — behaviour-preserving at
+    # the default. The center range is a uniform +-20% starting heuristic;
+    # it tightens per-band as protocols graduate from draft.
+    center = math.sqrt(lo * hi)
+    ratio = hi / lo
+    c_lo, c_hi = round(center * 0.8, 2), round(center * 1.2, 2)
+    bandpass_call = f"bandpass(center: env_center, bandwidth: ratio({ratio:.6g}), order: 4)"
+    center_control = (
+        f'    env_center = frequency {{\n'
+        f'      default = {center:.6g} Hz\n'
+        f'      range   = ({c_lo} Hz, {c_hi} Hz)\n'
+        f'      label   = "{"/".join(bands).upper()} band center"\n'
+        f'    }}'
+    )
+
     if baseline:
         thr = '    type         = absolute(value: thr_uv)\n    live_tunable = true'
-        controls = """
-  controls {
-    thr_uv = voltage {
+        controls = f"""
+  controls {{
+{center_control}
+    thr_uv = voltage {{
       default      = 2.0 uV
       range        = (0.5 uV, 30.0 uV)
       label        = "Threshold (baseline-seeded)"
       live_tunable = true
-    }
-  }"""
+    }}
+  }}"""
     else:
+        # Target reward % — the single most-adjusted clinician knob — is a
+        # live control rather than a baked literal. Up-trains reward time
+        # above threshold (default 70%); down-trains, below (default 30%).
         pct = 70 if direction == "up" else 30
-        thr = f"    type = percentile(target_pct: {pct}, window: 2 min)"
-        controls = ""
+        p_lo, p_hi = (50, 90) if direction == "up" else (10, 50)
+        thr = "    type = percentile(target_pct: reward_pct, window: 2 min)"
+        controls = f"""
+  controls {{
+{center_control}
+    reward_pct = percent {{
+      default      = {pct}
+      range        = ({p_lo}, {p_hi})
+      label        = "Target reward %"
+      live_tunable = true
+    }}
+  }}"""
 
     body = f"""\
 // {fname}.refrain  —  DRAFT (status=draft, untested)
@@ -131,7 +166,7 @@ protocol "{fname}" {{
   derive "env" {{
     from = "raw"
     pipeline = [
-      bandpass(band: ({lo} Hz, {hi} Hz), order: 4),
+      {bandpass_call},
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),

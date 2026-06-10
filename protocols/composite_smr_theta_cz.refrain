@@ -29,11 +29,11 @@ protocol "composite_smr_theta_cz" {
 
   derive "smr_envelope" {
     from = "raw"
-    pipeline = [ bandpass(band: (12 Hz, 15 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 250 ms) ]
+    pipeline = [ bandpass(center: smr_center, bandwidth: ratio(1.25), order: 4), hilbert(), magnitude(), smooth(tau: 250 ms) ]
   }
   derive "theta_envelope" {
     from = "raw"
-    pipeline = [ bandpass(band: (4 Hz, 8 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 250 ms) ]
+    pipeline = [ bandpass(center: theta_center, bandwidth: ratio(2), order: 4), hilbert(), magnitude(), smooth(tau: 250 ms) ]
   }
 
   // Named components: one reward (SMR up), one suppress band (theta down).
@@ -52,6 +52,16 @@ protocol "composite_smr_theta_cz" {
   }
 
   controls {
+    smr_center = frequency {
+      default = 13.4164 Hz
+      range   = (10.73 Hz, 16.1 Hz)
+      label   = "SMR band center"
+    }
+    theta_center = frequency {
+      default = 5.65685 Hz
+      range   = (4.53 Hz, 6.79 Hz)
+      label   = "Theta band center"
+    }
     w_smr = number {
       default      = 1.0
       range        = (0, 4)

@@ -28,7 +28,7 @@ protocol "alpha_coherence_c3c4" {
     formula = coherence(input_a: "left", input_b: "right", band: (8 Hz, 12 Hz), window: 2 s)
   }
 
-  threshold "coh_t" { signal = "alpha_coh"; type = percentile(target_pct: 70, window: 2 min) }
+  threshold "coh_t" { signal = "alpha_coh"; type = percentile(target_pct: reward_pct, window: 2 min) }
 
   reward {
     event      = dwell(condition: above("alpha_coh", "coh_t"), duration: 500 ms)
@@ -38,5 +38,17 @@ protocol "alpha_coherence_c3c4" {
   output {
     audio_gain  = reward.continuous
     audio_chime = reward.event
+  }
+
+  // The alpha coherence band (8-12 Hz) is a fixed physiological definition,
+  // not a per-client knob, so it stays a literal. Only the reward target is
+  // exposed.
+  controls {
+    reward_pct = percent {
+      default      = 70
+      range        = (50, 90)
+      label        = "Target reward %"
+      live_tunable = true
+    }
   }
 }

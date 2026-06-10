@@ -27,18 +27,18 @@ protocol "faa_f3f4" {
 
   derive "alpha_l" {
     from = "left"
-    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+    pipeline = [ bandpass(center: alpha_center, bandwidth: ratio(1.5), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
   }
   derive "alpha_r" {
     from = "right"
-    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+    pipeline = [ bandpass(center: alpha_center, bandwidth: ratio(1.5), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
   }
 
   // Asymmetry index: left-alpha relative to right. Higher = more left alpha
   // (less left activation). Down-train it for approach-motivation/mood.
   derive "faa" { formula = "alpha_l" / "alpha_r" }
 
-  threshold "faa_t" { signal = "faa"; type = percentile(target_pct: 50, window: 2 min) }
+  threshold "faa_t" { signal = "faa"; type = percentile(target_pct: reward_pct, window: 2 min) }
 
   reward {
     event      = dwell(condition: below("faa", "faa_t"), duration: 500 ms)
@@ -48,5 +48,21 @@ protocol "faa_f3f4" {
   output {
     audio_gain  = reward.continuous
     audio_chime = reward.event
+  }
+
+  // One shared alpha center drives both hemispheres (asymmetry compares the
+  // *same* band across F3/F4). reward_pct is the asymmetry-index target.
+  controls {
+    alpha_center = frequency {
+      default = 9.79796 Hz
+      range   = (7.84 Hz, 11.76 Hz)
+      label   = "Alpha band center"
+    }
+    reward_pct = percent {
+      default      = 50
+      range        = (30, 70)
+      label        = "Target reward %"
+      live_tunable = true
+    }
   }
 }
