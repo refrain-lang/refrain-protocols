@@ -25,7 +25,7 @@ protocol "hibeta_down_cz_baseline" {
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(band: (22 Hz, 30 Hz), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.36364), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -49,6 +49,11 @@ protocol "hibeta_down_cz_baseline" {
   }
 
   controls {
+    env_center = frequency {
+      default = 25.6905 Hz
+      range   = (20.55 Hz, 30.83 Hz)
+      label   = "HIGH-BETA band center"
+    }
     thr_uv = voltage {
       default      = 2.0 uV
       range        = (0.5 uV, 30.0 uV)

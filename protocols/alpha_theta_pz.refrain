@@ -26,11 +26,11 @@ protocol "alpha_theta_pz" {
 
   derive "alpha_envelope" {
     from = "raw"
-    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+    pipeline = [ bandpass(center: alpha_center, bandwidth: ratio(1.5), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
   }
   derive "theta_envelope" {
     from = "raw"
-    pipeline = [ bandpass(band: (4 Hz, 8 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+    pipeline = [ bandpass(center: theta_center, bandwidth: ratio(2), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
   }
 
   reward {
@@ -42,6 +42,22 @@ protocol "alpha_theta_pz" {
   output {
     audio_gain  = reward.continuous
     audio_chime = reward.event
+  }
+
+  // Band centers are set at session setup (frozen during the run). The
+  // crossover reward (theta envelope above alpha) has no percentile target,
+  // so there is no reward-% knob here.
+  controls {
+    alpha_center = frequency {
+      default = 9.79796 Hz
+      range   = (7.84 Hz, 11.76 Hz)
+      label   = "Alpha band center"
+    }
+    theta_center = frequency {
+      default = 5.65685 Hz
+      range   = (4.53 Hz, 6.79 Hz)
+      label   = "Theta band center"
+    }
   }
 
   // Deep-state session: long eyes-closed blocks (the legitimate exception to

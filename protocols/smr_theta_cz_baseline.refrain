@@ -25,7 +25,7 @@ protocol "smr_theta_cz_baseline" {
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.25), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -49,6 +49,11 @@ protocol "smr_theta_cz_baseline" {
   }
 
   controls {
+    env_center = frequency {
+      default = 13.4164 Hz
+      range   = (10.73 Hz, 16.1 Hz)
+      label   = "SMR/THETA band center"
+    }
     thr_uv = voltage {
       default      = 2.0 uV
       range        = (0.5 uV, 30.0 uV)

@@ -25,7 +25,7 @@ protocol "theta_down_cz" {
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -34,7 +34,7 @@ protocol "theta_down_cz" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: 30, window: 2 min)
+    type = percentile(target_pct: reward_pct, window: 2 min)
   }
 
   reward {
@@ -47,6 +47,19 @@ protocol "theta_down_cz" {
     audio_gain  = reward.event.holds ? reward.continuous : 0
   }
 
+  controls {
+    env_center = frequency {
+      default = 5.65685 Hz
+      range   = (4.53 Hz, 6.79 Hz)
+      label   = "THETA band center"
+    }
+    reward_pct = percent {
+      default      = 30
+      range        = (10, 50)
+      label        = "Target reward %"
+      live_tunable = true
+    }
+  }
   // Default: 4x5-min blocks with 2-min rests on one baseline (host overrides
   // block_minutes / block_count by sending a different phase list).
   session {
