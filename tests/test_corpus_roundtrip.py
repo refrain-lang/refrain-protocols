@@ -29,10 +29,11 @@ ALL = sorted((ROOT / "protocols").glob("*.refrain")) + sorted((ROOT / "drafts").
 # When the catalog grows to cover one, `test_known_gaps_stay_flagged` fails and
 # reminds us to move it out of this set (it will then be gated as in-subset).
 KNOWN_GAPS = {
-    "composite_smr_theta_cz.refrain",  # weighted-composite reward (named reward/inhibit + weights)
-    "hrv_resonance.refrain",           # rectify()/auto_range() derive pipeline (not the envelope pattern)
-    "scp_cz.refrain",                  # draft: not resolvable yet (needs engine features)
+    "scp_cz.refrain",  # draft: not resolvable yet (needs engine SCP primitives)
 }
+# Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
+# hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
+# in-subset and gated by the round-trip test below. Coverage: 37/38.
 
 _IN_SUBSET = [p for p in ALL if p.name not in KNOWN_GAPS]
 _GAPS = [p for p in ALL if p.name in KNOWN_GAPS]
