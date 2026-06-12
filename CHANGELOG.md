@@ -12,6 +12,12 @@ Initial seed of the reference protocol library. **All protocols `status = "draft
 - Docs: host-app chooser guide, tagging, conventions, evidence policy, contributing.
 - `tools/gen_seed_protocols.py` (regenerates the operant set), `tools/build_catalog.py` (derived cache).
 - CI: parse gate + meta-schema validation + catalog-drift check.
+- `critical_fluctuation.refrain` — a new **non-operant** paradigm: dynamical
+  neurofeedback that cues on "critical fluctuations" (early-warning signals —
+  rising variance + critical slowing down) of an impending critical transition in
+  the alpha envelope, at **any** site. `status=draft`; forward-looking (parses
+  today, resolves once the engine ships the `autocorr` primitive). Refs: Scheffer
+  2009; Dakos 2012; Maturana 2020; Yang 2012.
 
 ### Changed
 - Trained bands are now a **clinician knob**: each EEG-training band is a single

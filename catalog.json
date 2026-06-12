@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 38,
+  "count": 39,
   "protocols": [
     {
       "file": "protocols/alpha_coherence_c3c4.refrain",
@@ -253,6 +253,31 @@
         "threshold_style": "adaptive",
         "reward_style": "weighted",
         "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/critical_fluctuation.refrain",
+      "name": "critical_fluctuation",
+      "draft": true,
+      "meta": {
+        "version": "0.1.0",
+        "description": "Dynamical neurofeedback: cue on critical fluctuations (early-warning signals) in the alpha envelope, at any site",
+        "status": "draft",
+        "evidence": "exploratory",
+        "citation": "Scheffer et al. 2009 Nature 461:53-59; Maturana et al. 2020 Nat Commun 11:2172",
+        "goals": [
+          "flow_connectivity"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "any",
+        "threshold_style": "adaptive",
+        "modality": "eeg",
+        "hardware": "generic",
+        "requires_features": [
+          "autocorr"
+        ]
       }
     },
     {
