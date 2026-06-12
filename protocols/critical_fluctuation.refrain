@@ -1,0 +1,100 @@
+// critical_fluctuation.refrain  —  DRAFT (status=draft, untested)
+//
+// Dynamical neurofeedback (vendor-neutral): detect a "critical fluctuation" — an
+// early-warning signal that the alpha envelope's dynamics are approaching a
+// critical transition — and deliver a brief audio cue (a momentary interruption)
+// at that window. There is NO operant target: the cue is information, not reward.
+// A different paradigm from the up/down/composite protocols here.
+//
+// General: the `site` control trains at ANY single electrode (default Cz) — not
+// montage-locked. The detector fuses two early-warning indicators of the alpha
+// envelope:
+//   * rolling VARIANCE (fast), via E[e^2] - E[e]^2; and
+//   * lag-1 AUTOCORRELATION = CRITICAL SLOWING DOWN (principled), via autocorr;
+// each self-calibrated by a rolling percentile of itself, fused (probabilistic-OR)
+// into one score that an inhibit thresholds to gate the audio cue.
+//
+// NOTE: requires refrain >= the release that adds the `autocorr` primitive; it
+// parses today but won't resolve until then.
+//
+// Evidence (early-warning-signals / critical-slowing-down literature):
+//   Scheffer et al. 2009 (Nature 461:53-59); Dakos et al. 2012 (PLoS ONE 7:e41010);
+//   Maturana et al. 2020 (Nat. Commun. 11:2172); Yang et al. 2012 (J. Neurosci. 32:1061).
+
+protocol "critical_fluctuation" {
+  meta {
+    version           = "0.1.0"
+    description       = "Dynamical neurofeedback: cue on critical fluctuations (early-warning signals) in the alpha envelope, at any site"
+    status            = "draft"
+    evidence          = "exploratory"
+    citation          = "Scheffer et al. 2009 Nature 461:53-59; Maturana et al. 2020 Nat Commun 11:2172"
+    goals             = ["flow_connectivity"]
+    bands             = ["alpha"]
+    site              = "any"
+    threshold_style   = "adaptive"
+    modality          = "eeg"
+    hardware          = "generic"
+    requires_features = ["autocorr"]
+  }
+
+  requires {
+    sample_rate = ">= 256 Hz"
+    channels    = ["Cz"]   // default; the `site` control re-targets any electrode
+  }
+
+  input "raw" {
+    montage = referential(active: site, reference: "linked_ears")
+  }
+
+  // Alpha envelope.
+  derive "env" {
+    from = "raw"
+    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude() ]
+  }
+
+  // Indicator 1 (fast): rolling variance  Var = E[e^2] - E[e]^2. `smooth` runs in
+  // pipeline form so its identity-typing tracks the squared unit (uV^2).
+  derive "esq"       { formula = "env" * "env" }
+  derive "mean_esq"  { from = "esq"; pipeline = [ smooth(tau: 1 s) ] }
+  derive "mean_e"    { from = "env"; pipeline = [ smooth(tau: 1 s) ] }
+  derive "mean_e_sq" { formula = "mean_e" * "mean_e" }
+  derive "var"       { formula = "mean_esq" - "mean_e_sq" }
+  derive "varN"      { from = "var"; pipeline = [ auto_range(window: 30 s) ] }   // -> [0,1]
+
+  // Indicator 2 (principled): critical slowing down — lag-1 autocorrelation of the
+  // envelope. lag 125 ms (not 1 sample!) so it spans a meaningful interval.
+  derive "ac1"  { from = "env"; pipeline = [ autocorr(lag: 125 ms, window: 4 s) ] }  // -> [-1,1]
+  derive "acN"  { from = "ac1"; pipeline = [ auto_range(window: 30 s) ] }            // -> [0,1]
+
+  // Fuse the two normalized indicators into one early-warning score via the
+  // probabilistic-OR identity  a + b - a*b  (OR-like; arithmetic-only).
+  derive "score" { formula = "varN" + "acN" - "varN" * "acN" }
+
+  // The cue: when the early-warning score surges above its own recent baseline,
+  // briefly interrupt the audio. `rectify` is an identity on the [0,1] score
+  // (an inhibit metric must be a primitive call).
+  inhibit "critical_fluctuation" {
+    metric    = rectify("score")
+    threshold = percentile(target_pct: sensitivity, window: 2 min)
+    action    = mute(release: 400 ms)
+  }
+
+  // Tonic audio, no operant target. The inhibit interrupts it at critical windows.
+  reward { continuous = 1.0 }
+  output { audio_gain = reward.continuous }
+
+  controls {
+    site = placement {
+      kind    = "active"
+      default = "Cz"
+      allowed = "any"
+      label   = "Training site"
+    }
+    sensitivity = percent {
+      default      = 90
+      range        = (70, 99)
+      label        = "Critical-fluctuation sensitivity (EWS score percentile)"
+      live_tunable = true
+    }
+  }
+}
