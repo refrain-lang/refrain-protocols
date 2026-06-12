@@ -29,8 +29,7 @@ ALL = sorted((ROOT / "protocols").glob("*.refrain")) + sorted((ROOT / "drafts").
 # When the catalog grows to cover one, `test_known_gaps_stay_flagged` fails and
 # reminds us to move it out of this set (it will then be gated as in-subset).
 KNOWN_GAPS = {
-    "composite_smr_theta_cz.refrain",  # weighted-composite reward (named reward/inhibit + weights)
-    "hrv_resonance.refrain",           # rectify()/auto_range() derive pipeline (not the envelope pattern)
+    "critical_fluctuation.refrain",    # bands{} fan-out + autocorr — a non-operant early-warning cue, outside catalog v1
     "scp_cz.refrain",                  # draft: not resolvable yet (needs engine features)
 }
 
