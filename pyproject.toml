@@ -14,10 +14,11 @@ classifiers = [
   "Intended Audience :: Healthcare Industry",
   "License :: OSI Approved :: Apache Software License",
 ]
-# Reading protocol metadata needs refrain (parse-only). Pin to the release that
-# carries the `number` control kind once it ships (see ROADMAP).
+# Reading protocol metadata needs refrain (parse-only). Pinned to v0.10.0, which
+# carries the `number` control kind, the `autocorr` primitive, and the `bands { }`
+# fan-out (so the critical_fluctuation protocol resolves, not just parses).
 dependencies = [
-  "refrain >= 0.8.0",
+  "refrain >= 0.10.0",
 ]
 
 [project.optional-dependencies]
