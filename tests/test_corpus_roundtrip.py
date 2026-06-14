@@ -30,8 +30,12 @@ ALL = sorted((ROOT / "protocols").glob("*.refrain")) + sorted((ROOT / "drafts").
 # reminds us to move it out of this set (it will then be gated as in-subset).
 KNOWN_GAPS = {
     "critical_fluctuation.refrain",    # bands{} fan-out + autocorr — a non-operant early-warning cue, outside catalog v1
-    "scp_cz.refrain",                  # draft: not resolvable yet (needs engine features)
+    "scp_cz.refrain",                  # draft: not resolvable yet (needs engine SCP primitives)
 }
+# Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
+# hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
+# in-subset and gated by the round-trip test below. critical_fluctuation
+# (multi-band bands{} fan-out + autocorr) is a new non-operant gap added here.
 
 _IN_SUBSET = [p for p in ALL if p.name not in KNOWN_GAPS]
 _GAPS = [p for p in ALL if p.name in KNOWN_GAPS]
