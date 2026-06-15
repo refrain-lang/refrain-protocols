@@ -14,12 +14,15 @@ Initial seed of the reference protocol library. **All protocols `status = "draft
 - CI: parse gate + meta-schema validation + catalog-drift check.
 - `critical_fluctuation.refrain` — a new **non-operant** paradigm: dynamical
   neurofeedback that cues on "critical fluctuations" (early-warning signals —
-  rising variance + critical slowing down) of an impending critical transition in
-  the alpha envelope, at **any** site. `status=draft`; forward-looking (parses
-  today, resolves once the engine ships the `autocorr` primitive). Refs: Scheffer
-  2009; Dakos 2012; Maturana 2020; Yang 2012.
+  rising variance + critical slowing down) of an impending critical transition,
+  **across a broad band set** (declared once in `bands { }`, fanned out per band)
+  at **any** site. `status=draft`; resolves on refrain >= 0.10.0 (`autocorr` +
+  the `bands` fan-out). Refs: Scheffer 2009; Dakos 2012; Maturana 2020; Yang 2012.
 
 ### Changed
+- Bumped the `refrain` pin to **v0.10.0** (CI install + `pyproject`), which ships
+  the `autocorr` primitive and the `bands { }` fan-out — so `critical_fluctuation`
+  now resolves, not just parses.
 - Trained bands are now a **clinician knob**: each EEG-training band is a single
   `*_center` frequency control (set at session setup, frozen during the run)
   instead of a baked `(lo, hi)` literal. Uses bandpass's center/bandwidth

@@ -1,21 +1,22 @@
 // critical_fluctuation.refrain  —  DRAFT (status=draft, untested)
 //
 // Dynamical neurofeedback (vendor-neutral): detect a "critical fluctuation" — an
-// early-warning signal that the alpha envelope's dynamics are approaching a
-// critical transition — and deliver a brief audio cue (a momentary interruption)
-// at that window. There is NO operant target: the cue is information, not reward.
-// A different paradigm from the up/down/composite protocols here.
+// early-warning signal that a band's envelope dynamics are approaching a critical
+// transition — and deliver a brief audio cue (a momentary interruption) at that
+// window. There is NO operant target: the cue is information, not reward. A
+// different paradigm from the up/down/composite protocols here.
 //
 // General: the `site` control trains at ANY single electrode (default Cz) — not
-// montage-locked. The detector fuses two early-warning indicators of the alpha
-// envelope:
+// montage-locked. The detector runs across a broad band set (declared once in
+// `bands { }` and fanned out per band), fusing two early-warning indicators of
+// each band envelope:
 //   * rolling VARIANCE (fast), via E[e^2] - E[e]^2; and
 //   * lag-1 AUTOCORRELATION = CRITICAL SLOWING DOWN (principled), via autocorr;
 // each self-calibrated by a rolling percentile of itself, fused (probabilistic-OR)
 // into one score that an inhibit thresholds to gate the audio cue.
 //
-// NOTE: requires refrain >= the release that adds the `autocorr` primitive; it
-// parses today but won't resolve until then.
+// NOTE: requires refrain >= 0.10.0 (the `autocorr` primitive + the `bands { }`
+// fan-out). Resolves and runs on that release.
 //
 // Evidence (early-warning-signals / critical-slowing-down literature):
 //   Scheffer et al. 2009 (Nature 461:53-59); Dakos et al. 2012 (PLoS ONE 7:e41010);
@@ -24,17 +25,17 @@
 protocol "critical_fluctuation" {
   meta {
     version           = "0.1.0"
-    description       = "Dynamical neurofeedback: cue on critical fluctuations (early-warning signals) in the alpha envelope, at any site"
+    description       = "Dynamical neurofeedback: cue on critical fluctuations (early-warning signals) across bands, at any site"
     status            = "draft"
     evidence          = "exploratory"
     citation          = "Scheffer et al. 2009 Nature 461:53-59; Maturana et al. 2020 Nat Commun 11:2172"
     goals             = ["flow_connectivity"]
-    bands             = ["alpha"]
+    bands             = ["delta", "theta", "alpha", "smr", "beta", "gamma"]
     site              = "any"
     threshold_style   = "adaptive"
     modality          = "eeg"
     hardware          = "generic"
-    requires_features = ["autocorr"]
+    requires_features = ["autocorr", "band_fanout"]
   }
 
   requires {
@@ -42,14 +43,30 @@ protocol "critical_fluctuation" {
     channels    = ["Cz"]   // default; the `site` control re-targets any electrode
   }
 
+  // Band axis: a broad log-spaced set, declared once and replicated per band.
+  // Sub-Hz is impractical for a live early-warning cue (needs minutes-long windows).
+  bands {
+    delta  = (1 Hz, 4 Hz)
+    theta1 = (4 Hz, 6 Hz)
+    theta2 = (6 Hz, 8 Hz)
+    alpha1 = (8 Hz, 10 Hz)
+    alpha2 = (10 Hz, 12 Hz)
+    smr    = (12 Hz, 15 Hz)
+    beta1  = (15 Hz, 18 Hz)
+    beta2  = (18 Hz, 22 Hz)
+    beta3  = (22 Hz, 30 Hz)
+    gamma  = (30 Hz, 45 Hz)
+  }
+
   input "raw" {
     montage = referential(active: site, reference: "linked_ears")
   }
 
-  // Alpha envelope.
+  // Band envelope. `bands` is the band-axis placeholder — the resolver replicates
+  // this whole detector subgraph once per declared band (`<name>@<band>`).
   derive "env" {
     from = "raw"
-    pipeline = [ bandpass(band: (8 Hz, 12 Hz), order: 4), hilbert(), magnitude() ]
+    pipeline = [ bandpass(band: bands, order: 4), hilbert(), magnitude() ]
   }
 
   // Indicator 1 (fast): rolling variance  Var = E[e^2] - E[e]^2. `smooth` runs in
@@ -71,15 +88,16 @@ protocol "critical_fluctuation" {
   derive "score" { formula = "varN" + "acN" - "varN" * "acN" }
 
   // The cue: when the early-warning score surges above its own recent baseline,
-  // briefly interrupt the audio. `rectify` is an identity on the [0,1] score
-  // (an inhibit metric must be a primitive call).
+  // briefly interrupt the audio. Per-band inhibits OR-compose, so a critical
+  // fluctuation in ANY band delivers the cue. `rectify` is an identity on the
+  // [0,1] score (an inhibit metric must be a primitive call).
   inhibit "critical_fluctuation" {
     metric    = rectify("score")
     threshold = percentile(target_pct: sensitivity, window: 2 min)
     action    = mute(release: 400 ms)
   }
 
-  // Tonic audio, no operant target. The inhibit interrupts it at critical windows.
+  // Tonic audio, no operant target. The inhibits interrupt it at critical windows.
   reward { continuous = 1.0 }
   output { audio_gain = reward.continuous }
 
