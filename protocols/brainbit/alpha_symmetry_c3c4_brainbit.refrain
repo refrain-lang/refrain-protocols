@@ -1,0 +1,129 @@
+// Bilateral alpha amplitude symmetry at C3-C4 — BrainBit Flex variant.
+//
+// Reward when left and right central alpha envelopes are amplitude-
+// matched — i.e., `|alpha_c3 - alpha_c4|` is small. The intuitive
+// framing is "flow / integration": the two hemispheres operating in
+// balance.
+//
+// Honest framing: this is *amplitude symmetry*, not phase coherence.
+// True coherence training rewards phase-locked oscillation between
+// the two channels regardless of amplitude; that requires a
+// `coherence()` primitive which is planned for Refrain v0.1. This
+// protocol is the v0.0-authorable stand-in. When Refrain v0.1 ships,
+// this file gets replaced with a `c3_c4_alpha_coherence_brainbit.refrain`
+// that uses the real coherence primitive.
+//
+// Electrode placement: scalp channels at C3 (left central) and C4
+// (right central). Two of the four BrainBit channels used.
+
+protocol "alpha_symmetry_c3c4_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Bilateral alpha (C3-C4) amplitude symmetry, BrainBit Flex — coherence stand-in"
+    status            = "reviewed"
+    goals             = ["flow_connectivity"]
+    author            = "Peak Mind"
+    citation          = "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36."
+    population        = "adults_18_plus"
+    indication        = "flow_integration_balance"
+    control_ref       = "library/alpha_symmetry/sham@1.0"
+    safety_monitoring = ["pre_session_check"]
+    outcome_measures  = ["subjective_state_report"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["C3", "C4"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw_c3" {
+    montage = referential(active: "C3", reference: "device")
+  }
+
+  input "raw_c4" {
+    montage = referential(active: "C4", reference: "device")
+  }
+
+  derive "alpha_c3_envelope" {
+    from = "raw_c3"
+    pipeline = [
+      bandpass(band: (8 Hz, 12 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "alpha_c4_envelope" {
+    from = "raw_c4"
+    pipeline = [
+      bandpass(band: (8 Hz, 12 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // Asymmetry signal: |alpha_c3 - alpha_c4|. Smaller value = more
+  // symmetric. Reward fires when this dips into the lowest percentile
+  // of its own recent distribution.
+  derive "alpha_diff" {
+    formula = "alpha_c3_envelope" - "alpha_c4_envelope"
+  }
+
+  derive "alpha_asymmetry" {
+    from = "alpha_diff"
+    pipeline = [rectify()]
+  }
+
+  // Adaptive threshold driven by the reward-rate control: reward fires
+  // while asymmetry stays in the lowest `symmetry_reward_rate` % of its
+  // distribution, so a higher rate = more time counted as balanced.
+  threshold "asym_t" {
+    signal       = "alpha_asymmetry"
+    type         = percentile(target_pct: symmetry_reward_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: below("alpha_asymmetry", "asym_t"),
+      duration: 500 ms
+    )
+    // Continuous reward grows as asymmetry sinks below threshold.
+    // Invert the ratio so smaller asymmetry yields larger reward.
+    continuous = sigmoid("asym_t" / "alpha_asymmetry",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    symmetry_reward_rate = percent {
+      default      = 60
+      range        = (30, 85)
+      label        = "Symmetry reward rate"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 20 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

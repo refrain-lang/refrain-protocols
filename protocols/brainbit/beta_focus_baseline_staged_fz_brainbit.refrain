@@ -1,0 +1,167 @@
+// Focused-attention training at Fz — BASELINE-FIXED staged variant.
+//
+// Companion to beta_focus_staged_fz_brainbit.refrain (adaptive). Same bands,
+// reward, and 4×5-min staged session — the ONLY difference is the thresholds:
+//
+//   - Adaptive variant: thresholds are a percentile of a 2-min moving window;
+//     reward rate stays ~constant, the threshold tracks the trainee's state.
+//   - Baseline variant (this file): thresholds are absolute values seeded from
+//     the warmup-period percentile of each band, then FROZEN for the whole
+//     session. The threshold stays flat; reward rate goes up as the trainee
+//     improves (more beta / less theta+high-beta) and down as they drift. One
+//     baseline up front anchors all four blocks. The recorder's baseline_seed
+//     handler computes the seeds at warmup→run and pushes them via set_control.
+//
+// Seed percentiles (recorder/backend/nf/manifest.py _BASELINE_SEED_PERCENTILES):
+//   beta_threshold_uv  → 40th pct of warmup beta  (reward when above → ~easy)
+//   theta_threshold_uv → 80th pct of warmup theta (inhibit only on excursions)
+//   hbeta_threshold_uv → 80th pct of warmup high-beta (loose artifact/over-
+//                        arousal guard; high-beta-down doubles as the EMG guard)
+//
+// Bands: reward = beta1-2 13-19 Hz (beta1 13-15 + beta2 15-19); theta 4-8 Hz;
+// high-beta 22-30 Hz. Electrode placement: scalp channel #1 at Fz.
+
+protocol "beta_focus_baseline_staged_fz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4×5-min blocks), baseline-fixed thresholds, BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["alertness_performance"]
+    author            = "Peak Mind"
+    citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components. Clinical Neurophysiology, 115(1), 131-139."
+    population        = "adults_18_plus"
+    indication        = "attention_alertness_performance"
+    control_ref       = "library/beta_up/sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["subjective_state_report"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Fz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw" {
+    montage = referential(active: "Fz", reference: "device")
+  }
+
+  // beta1-2 reward band = beta1 (13-15 Hz) + beta2 (15-19 Hz) = 13-19 Hz.
+  derive "beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (13 Hz, 19 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (22 Hz, 30 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // BASELINE-FIXED thresholds — each control is seeded once at warmup→run.
+  threshold "beta_t" {
+    signal       = "beta_envelope"
+    type         = absolute(value: beta_threshold_uv)
+    live_tunable = true
+  }
+
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = absolute(value: theta_threshold_uv)
+    live_tunable = true
+  }
+
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = absolute(value: hbeta_threshold_uv)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("beta_envelope",       "beta_t"),
+        below("theta_envelope",      "theta_t"),
+        below("high_beta_envelope",  "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("beta_envelope" / "beta_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  // Voltage controls (uV, matching the smoothed envelope output). Defaults are
+  // sensible placeholders; the recorder overwrites them at warmup→run via
+  // set_control. Ranges are wide enough for electrode-quality / amplitude
+  // variation across trainees.
+  controls {
+    beta_threshold_uv = voltage {
+      default      = 1.5 uV
+      range        = (0.3 uV, 8.0 uV)
+      label        = "Beta threshold"
+      live_tunable = true
+    }
+    theta_threshold_uv = voltage {
+      default      = 6.0 uV
+      range        = (1.0 uV, 25.0 uV)
+      label        = "Theta threshold"
+      live_tunable = true
+    }
+    hbeta_threshold_uv = voltage {
+      default      = 1.0 uV
+      range        = (0.2 uV, 6.0 uV)
+      label        = "High-beta threshold"
+      live_tunable = true
+    }
+  }
+
+  block "beta_focus" {
+    threshold = ["beta_t", "theta_t", "hbeta_t"]
+  }
+
+  session {
+    phases = [
+      // One baseline up front: 90 s = ~30 s settling + 60 s clean samples for
+      // the seed handler's trim window (recorder/backend/nf/baseline_seed.py).
+      phase { name = "warmup";   duration = 90 s;  output_muted = true },
+
+      phase { name = "block1";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min; output_muted = true },
+      phase { name = "block2";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+      phase { name = "rest2";    duration = 2 min; output_muted = true },
+      phase { name = "block3";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+      phase { name = "rest3";    duration = 2 min; output_muted = true },
+      phase { name = "block4";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

@@ -1,0 +1,116 @@
+// Alpha-theta training (Peniston-Kulkosky) — BrainBit Flex variant.
+//
+// Eyes-closed deep-state protocol training the alpha-theta crossover.
+// Continuous audio modulation tracks how strongly theta dominates over
+// alpha; a soft chime fires when theta has exceeded alpha for at least
+// one second (sustained crossover, the target state).
+//
+// Adapted from `docs/refrain/examples/alpha_theta.refrain` for the
+// BrainBit Flex:
+//   - `reference: "device"` instead of "linked_ears" — the Flex has a
+//     dedicated hardware reference, not user-placed software reference.
+//   - 250 Hz sample rate (the Flex's only rate).
+//   - AC-coupled (no DC).
+//
+// Electrode placement: scalp channel #1 at Pz. The other three may be
+// placed wherever the clinician wishes or left as artifact references.
+// Only the Pz channel is used by this protocol.
+
+protocol "alpha_theta_pz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "clinical"
+    description       = "Alpha-theta training (Peniston-Kulkosky) at Pz, BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["deep_meditative"]
+    author            = "Peak Mind"
+    citation          = "Peniston E.G. & Kulkosky P.J. (1989). Alpha-Theta Brainwave Training and Beta-Endorphin Levels in Alcoholics. Alcoholism: Clinical & Experimental Research, 13(2), 271-279."
+    population        = "adults_18_plus"
+    indication        = "deep_meditative_state_creative_recovery"
+    control_ref       = "library/alpha_theta/sham@1.0"
+    safety_monitoring = ["pre_session_check", "post_session_debrief"]
+    outcome_measures  = ["subjective_state_report"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Pz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  // Monopolar Pz — uses the BrainBit's dedicated hardware reference.
+  input "raw" {
+    montage = referential(active: "Pz", reference: "device")
+  }
+
+  derive "alpha_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (8 Hz, 12 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  // Crossover signal: positive when theta dominates (the target state),
+  // negative when alpha dominates. The sigmoid below maps this to a
+  // smoothly-rising audio gain that begins to climb even before full
+  // crossover, so the patient hears the approach.
+  derive "theta_minus_alpha" {
+    formula = "theta_envelope" - "alpha_envelope"
+  }
+
+  // EMG inhibit — muscle artifact in the eyes-closed, reclined posture
+  // is the dominant noise source. 50-100 Hz band catches jaw clench,
+  // neck tension. Mute audio briefly while artifact is present so the
+  // patient isn't rewarded for tensing up.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(target_pct: 95, window: 2 min)
+    action    = mute(release: 200 ms)
+  }
+
+  reward {
+    // Continuous: audio gain rises as theta begins to dominate. Sigmoid
+    // centered at 0 uV (the crossover point); steepness 0.5 makes the
+    // transition gradual enough to feel like a slow swell rather than
+    // an on/off switch.
+    continuous = sigmoid("theta_minus_alpha", midpoint: 0 uV, steepness: 0.5)
+
+    // Discrete: chime when theta has been above alpha for ≥ 1 second
+    // (sustained crossover, not a momentary spike).
+    event = dwell(
+      condition: above("theta_envelope", "alpha_envelope"),
+      duration: 1000 ms
+    )
+  }
+
+  output {
+    audio_gain  = reward.continuous
+    audio_chime = reward.event
+  }
+
+  session {
+    phases = [
+      // Eyes-closed protocol — patient needs longer to settle than the
+      // standard 90 s warmup. 3 min lets baseline alpha stabilise.
+      phase { name = "settle";   duration = 3 min;  output_muted = true },
+      phase { name = "training"; duration = 30 min },
+      phase { name = "return";   duration = 2 min;  output_muted = true },
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+// Alpha inter-site coherence up-training over a CLINICIAN-CHOSEN pair
+// (parameterized placement, kind = "pair").
+//
+// Demonstrates the `pair` placement kind with its canonical use: phase
+// coherence between two sites. The `coh` placement binds to a 2-tuple at
+// resolve time (bindings={"coh": ("F3","F4")}); its legs feed two
+// referential inputs via `coh.a` / `coh.b`, and the `coherence()` derive
+// rewards phase-locked alpha between them. `allowed` is an inline list of
+// permitted pairs.
+//
+// Requires refrain >= 0.6.1 — live/push-mode coherence() runs on both the
+// Python and Rust backends as of that release (positional coherence inputs
+// canonicalize to named; fixed in v0.6.1).
+
+protocol "placement_alpha_coherence_pair_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Alpha inter-hemispheric coherence up-training, clinician-selected pair (pair placement)"
+    status            = "reviewed"
+    goals             = ["flow_connectivity"]
+    author            = "Peak Mind"
+    citation          = "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36."
+    indication        = "connectivity_regulation"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  controls {
+    coh = placement {
+      kind    = "pair"
+      default = ("F3", "F4")
+      allowed = [("F3", "F4"), ("C3", "C4"), ("P3", "P4")]
+      label   = "Coherence pair"
+    }
+    coh_target_pct = percent {
+      default      = 60
+      range        = (40, 90)
+      label        = "Coherence target percentile"
+      live_tunable = true
+    }
+  }
+
+  input "a" {
+    montage = referential(active: coh.a, reference: "device")
+  }
+
+  input "b" {
+    montage = referential(active: coh.b, reference: "device")
+  }
+
+  derive "alpha_coh" {
+    formula = coherence("a", "b", band: (8 Hz, 12 Hz))
+  }
+
+  threshold "coh_t" {
+    signal       = "alpha_coh"
+    type         = percentile(target_pct: coh_target_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([above("alpha_coh", "coh_t")]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("alpha_coh", midpoint: 0.5, steepness: 4)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 20 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

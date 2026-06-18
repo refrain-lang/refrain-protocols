@@ -1,0 +1,151 @@
+// SMR operant training at Cz — CLASSIC Sterman/Lubar design (BrainBit Flex).
+//
+// The faithful operant model: ONE reward target (SMR up) with theta as a
+// LOOSE inhibit and muscle (EMG) handled as artifact rejection — NOT three
+// co-equal strict thresholds AND-ed together (which makes reward nearly
+// unreachable, as the retired 3-condition demo did with its fixed 8 uV
+// high-beta gate). Its modern counterpart is smr_graded_cz_brainbit.refrain
+// (the graded continuous proposal).
+//
+// Design choices:
+//   - SMR threshold is an ADAPTIVE percentile of the trainee's own signal,
+//     defaulting LOW (40th pct) so reward fires often at first; the clinician
+//     tightens it over the session (operant shaping).
+//   - Theta is a LOOSE veto: theta-below-its-80th-percentile is true ~80% of
+//     the time, so it only blocks reward during genuine drowsiness, not as a
+//     constant co-target.
+//   - EMG is a dedicated `inhibit` (50-100 Hz, mute on muscle bursts) instead
+//     of a fixed absolute high-beta gate in the reward condition.
+//
+// Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
+
+protocol "smr_classic_cz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["adhd_attention"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    population        = "children_adults"
+    indication        = "ADHD_attention_regulation"
+    control_ref       = "library/operant/smr_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Cz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  input "raw" {
+    montage = referential(active: "Cz", reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // SMR reward threshold — an AUTO percentile threshold of the trainee's own
+  // signal. Reward fires when SMR is above its smr_reward_pct-th percentile;
+  // a LOWER percentile => easier => more reward. The window provides the
+  // auto-recalibration.
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = percentile(target_pct: smr_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  // Theta INHIBIT threshold — same idea, no inversion: "theta in its calm
+  // range N% of the time" is exactly `below(theta, percentile(N))`. Default
+  // 80% keeps it a loose guard that only vetoes the drowsy tail.
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  // EMG artifact inhibit — muscle (jaw/neck) shows up 50-100 Hz. Mute feedback
+  // briefly during bursts so the trainee is never rewarded for tensing up.
+  // Adaptive 95th pct => only the worst ~5% (genuine bursts) trips it.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(target_pct: 95, window: 2 min)
+    action    = mute(release: 200 ms)
+  }
+
+  reward {
+    // Operant target: SMR up while theta stays down. EMG is handled by the
+    // inhibit above, NOT a hard gate in this condition.
+    event = dwell(
+      condition: all_of([
+        above("smr_envelope",   "smr_t"),
+        below("theta_envelope", "theta_t"),
+      ]),
+      duration: 250 ms
+    )
+    // Graded approach signal feeds the gated audio gain below.
+    continuous = sigmoid("smr_envelope" / "smr_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    // Discrete operant reinforcement: a chime on each dwell, and audio only
+    // while the reward event holds (classic on/off contingency).
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  // The SMR reward knob is a percentile threshold (lower = easier = more
+  // reward); the theta knob reads as a target rate — the % of time theta
+  // should stay in its calm range.
+  controls {
+    smr_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "SMR reward rate"
+      live_tunable = true
+    }
+    theta_inhibit_rate = percent {
+      default      = 80
+      range        = (50, 95)
+      label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 30 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

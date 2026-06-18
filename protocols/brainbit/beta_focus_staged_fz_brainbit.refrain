@@ -1,0 +1,165 @@
+// Focused-attention training at Fz — ADAPTIVE ("auto") staged variant.
+//
+// Reward beta1-2 (13-19 Hz) UP while theta (4-8 Hz) and high-beta (22-30 Hz)
+// stay DOWN — the classic "engaged focus" recipe (Egner & Gruzelier 2004),
+// here at Fz and run as a staged session: 4 × 5-min training blocks with
+// 2-min rests, one shared baseline window up front.
+//
+// Thresholds are ADAPTIVE percentiles of the trainee's own recent signal
+// (2-min window), so they self-calibrate; the percentile windows freeze
+// during muted rests (Refrain v0.7.0) so a fidgety rest can't pollute the
+// next block. Companion baseline-fixed variant:
+// beta_focus_baseline_staged_fz_brainbit.refrain.
+//
+// The high-beta-DOWN component doubles as the artifact guard — muscle/EMG
+// shows up in 22-30 Hz, so earning reward already requires quiet
+// high-frequency activity. No separate EMG inhibit is needed (and on a
+// consumer amp a relative high-beta gate behaves better than an absolute
+// EMG mute).
+//
+// Band choices: reward = beta1-2 13-19 Hz (beta1 13-15 + beta2 15-19);
+// theta 4-8 Hz; high-beta 22-30 Hz. Electrode placement: channel #1 at Fz.
+
+protocol "beta_focus_staged_fz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4×5-min blocks), adaptive percentile thresholds, BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["alertness_performance"]
+    author            = "Peak Mind"
+    citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components. Clinical Neurophysiology, 115(1), 131-139."
+    population        = "adults_18_plus"
+    indication        = "attention_alertness_performance"
+    control_ref       = "library/beta_up/sham@1.0"
+    safety_monitoring = ["pre_session_check"]
+    outcome_measures  = ["subjective_state_report"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Fz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw" {
+    montage = referential(active: "Fz", reference: "device")
+  }
+
+  // beta1-2 reward band = beta1 (13-15 Hz) + beta2 (15-19 Hz) = 13-19 Hz.
+  derive "beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (13 Hz, 19 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (22 Hz, 30 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // Adaptive percentile thresholds (self-calibrating). Reward beta above its
+  // beta_reward_pct-th percentile (lower pct = easier); inhibit theta /
+  // high-beta when above their inhibit-rate percentiles.
+  threshold "beta_t" {
+    signal       = "beta_envelope"
+    type         = percentile(target_pct: beta_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("beta_envelope",       "beta_t"),
+        below("theta_envelope",      "theta_t"),
+        below("high_beta_envelope",  "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("beta_envelope" / "beta_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    beta_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "Beta reward rate"
+      live_tunable = true
+    }
+    theta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+  }
+
+  // One block, activated by all four training phases (homogeneous 4×5).
+  block "beta_focus" {
+    threshold = ["beta_t", "theta_t", "hbeta_t"]
+  }
+
+  session {
+    phases = [
+      // 120 s warmup matches the 2-min percentile window so the adaptive
+      // thresholds are fully baseline-trained at the first block.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+
+      phase { name = "block1";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min; output_muted = true },
+      phase { name = "block2";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+      phase { name = "rest2";    duration = 2 min; output_muted = true },
+      phase { name = "block3";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+      phase { name = "rest3";    duration = 2 min; output_muted = true },
+      phase { name = "block4";   duration = 5 min; block = "beta_focus"; mode = timed_with_floor },
+
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

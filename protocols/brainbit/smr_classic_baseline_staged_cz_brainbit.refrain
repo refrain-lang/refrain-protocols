@@ -1,0 +1,168 @@
+// SMR operant training at Cz — STAGED baseline-fixed variant (BrainBit Flex).
+//
+// Identical signal chain to smr_classic_baseline_cz_brainbit.refrain (same
+// channel, derives, inhibit, reward, output, controls, and baseline-fixed
+// thresholds) — the ONLY difference is the session: instead of one 30-min
+// training block, this runs FOUR 5-minute training blocks with 2-minute rests
+// between, on ONE baseline taken up front.
+//
+// Rationale: nobody trains SMR up / theta down for 30 minutes straight —
+// it's tiring even for a healthy brain. Short blocks with rests keep the
+// patient fresh. One baseline (seeded at warmup→run) anchors all four blocks;
+// the rests are muted (no feedback) so the patient can settle / sip water
+// without artifact mattering.
+//
+// Phase modes (Refrain v0.7.0 staged protocols):
+//   - blocks are `timed_with_floor`: auto-advance at 5 min, but the clinician
+//     can end a block early (patient's clearly done) or hold past it ("Extend").
+//   - rests are `timed` (2 min). Swap any rest to `mode = open` (drop its
+//     duration) to make it clinician-paced — advance when the patient's ready.
+//
+// All four blocks reference the single `block "smr_up"`, so this is the
+// homogeneous "4×5 min" case. (A heterogeneous protocol would define multiple
+// blocks and point different phases at them.)
+
+protocol "smr_classic_baseline_staged_cz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Staged SMR operant training at Cz (4×5-min blocks with 2-min rests, one baseline), baseline-fixed thresholds, BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["adhd_attention"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    population        = "children_adults"
+    indication        = "ADHD_attention_regulation"
+    control_ref       = "library/operant/smr_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Cz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  input "raw" {
+    montage = referential(active: "Cz", reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // SMR reward threshold — BASELINE-FIXED. The control's value is seeded
+  // from the 40th percentile of the warmup-period SMR envelope (see the
+  // recorder's baseline_seed handler). Seeded ONCE at warmup→run and reused
+  // across all four blocks.
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = absolute(value: smr_threshold_uv)
+    live_tunable = true
+  }
+
+  // Theta INHIBIT threshold — BASELINE-FIXED, seeded at the 80th percentile
+  // of warmup-period theta.
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = absolute(value: theta_threshold_uv)
+    live_tunable = true
+  }
+
+  // NO high-frequency EMG inhibit on the BrainBit Flex.
+  //
+  // A 50-100 Hz EMG guard assumes that band is dominated by muscle. On the
+  // BrainBit Flex (consumer dry-ish amp, few channels) it is dominated by the
+  // AMPLIFIER'S OWN noise floor plus un-notched 60 Hz mains (the recorder's
+  // notch is display-only; Refrain sees the raw stream). A relative percentile
+  // guard then trips on that noise's variability — muting reward constantly
+  // even on a still, clean signal — while telling you nothing about real
+  // muscle artifact. So it's omitted here rather than fighting the hardware.
+  //
+  // On a clinical-grade amp with a clean HF floor, re-add the adaptive guard:
+  //   inhibit "emg" {
+  //     metric    = bandpower(input: "raw", band: (65 Hz, 100 Hz), window: 100 ms)
+  //     threshold = percentile(target_pct: 99, window: 2 min)
+  //     action    = mute(release: 200 ms)
+  //   }
+  // For the BrainBit, gross-movement/electrode-pop artifacts are better caught
+  // by amplitude/impedance vigilance than by a high-frequency band.
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("smr_envelope",   "smr_t"),
+        below("theta_envelope", "theta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("smr_envelope" / "smr_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    smr_threshold_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 10.0 uV)
+      label        = "SMR threshold"
+      live_tunable = true
+    }
+    theta_threshold_uv = voltage {
+      default      = 8.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "Theta threshold"
+      live_tunable = true
+    }
+  }
+
+  // The single training block all four phases activate. Lists the thresholds
+  // it trains against (declarative — drives validation + per-block telemetry);
+  // reward defaults to the top-level bundle and outputs default to all channels.
+  block "smr_up" {
+    threshold = ["smr_t", "theta_t"]
+  }
+
+  session {
+    phases = [
+      // One baseline up front (seeded at warmup→run): 90s = ~30s settling +
+      // 60s clean samples for the seed handler's trim window.
+      phase { name = "warmup";   duration = 90 s;  output_muted = true },
+
+      phase { name = "block1";   duration = 5 min; block = "smr_up"; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min; output_muted = true },
+      phase { name = "block2";   duration = 5 min; block = "smr_up"; mode = timed_with_floor },
+      phase { name = "rest2";    duration = 2 min; output_muted = true },
+      phase { name = "block3";   duration = 5 min; block = "smr_up"; mode = timed_with_floor },
+      phase { name = "rest3";    duration = 2 min; output_muted = true },
+      phase { name = "block4";   duration = 5 min; block = "smr_up"; mode = timed_with_floor },
+
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

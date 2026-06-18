@@ -1,0 +1,145 @@
+// Beta uptraining at Cz — BrainBit Flex variant.
+//
+// Focus-goal alternative to SMR/theta-beta (smr_cz_brainbit). Same
+// shape, more activating band: reward beta1 (15-20 Hz) above percentile
+// AND theta (4-8 Hz) below — without the SMR component. Suited to
+// "engaged work" sessions where the user wants alertness, not just
+// calm focus.
+//
+// Electrode placement: scalp channel #1 at Cz. Other channels unused.
+
+protocol "beta_up_cz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Beta1 (15-20 Hz) uptraining at Cz with theta inhibit, BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["alertness_performance"]
+    author            = "Peak Mind"
+    citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."
+    population        = "adults_18_plus"
+    indication        = "attention_alertness_performance"
+    control_ref       = "library/beta_up/sham@1.0"
+    safety_monitoring = ["pre_session_check"]
+    outcome_measures  = ["subjective_state_report"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Cz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw" {
+    montage = referential(active: "Cz", reference: "device")
+  }
+
+  derive "beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (15 Hz, 20 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // High-beta artifact guard — beta uptrain is vulnerable to EMG
+  // contamination because muscle activity shows up in 20-30 Hz too.
+  // An absolute hbeta ceiling prevents the user from being rewarded
+  // for jaw clench.
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (22 Hz, 30 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // Adaptive percentile threshold of the trainee's own signal — reward fires
+  // when beta is above its beta_reward_pct-th percentile (lower percentile =
+  // easier = more reward). The window provides the auto-recalibration.
+  threshold "beta_t" {
+    signal       = "beta_envelope"
+    type         = percentile(target_pct: beta_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("beta_envelope",       "beta_t"),
+        below("theta_envelope",      "theta_t"),
+        below("high_beta_envelope",  "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("beta_envelope" / "beta_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    beta_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "Beta reward rate"
+      live_tunable = true
+    }
+    theta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 25 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

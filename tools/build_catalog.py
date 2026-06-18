@@ -41,10 +41,11 @@ def read_meta(path: Path) -> dict:
 def main() -> None:
     entries = []
     for d in ("protocols", "drafts"):
-        for path in sorted((ROOT / d).glob("*.refrain")):
+        # rglob: device-specific sets live in subfolders (e.g. protocols/brainbit/)
+        for path in sorted((ROOT / d).rglob("*.refrain")):
             meta = read_meta(path)
             entries.append({
-                "file": f"{d}/{path.name}",
+                "file": path.relative_to(ROOT).as_posix(),
                 "name": path.stem,
                 "draft": d == "drafts" or meta.get("status") in ("draft", "roadmap"),
                 "meta": meta,

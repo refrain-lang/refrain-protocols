@@ -1,0 +1,95 @@
+// SMR up-training with a CLINICIAN-CHOSEN single site (parameterized
+// placement, kind = "active").
+//
+// One artifact, deployed at whichever sensorimotor site the clinician
+// picks at session start. The `site` placement control is bound at
+// resolve time (`bindings={"site": "C4"}`); the chosen channel
+// substitutes into the montage and `requires.channels`. The `allowed`
+// list references a named group (v0.5.0), which expands to the concrete
+// channel tuple at resolve time — transparent to the site picker.
+
+protocol "placement_smr_active_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "SMR up-training, clinician-selected single site (active placement)"
+    status            = "draft"
+    goals             = ["adhd_attention"]
+    author            = "Peak Mind"
+    indication        = "ADHD_attention_regulation"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  groups {
+    sensorimotor = ["C3", "Cz", "C4"]
+  }
+
+  controls {
+    site = placement {
+      kind    = "active"
+      default = "Cz"
+      allowed = sensorimotor
+      label   = "Training site"
+    }
+    smr_target_pct = percent {
+      default      = 70
+      range        = (50, 90)
+      label        = "SMR target percentile"
+      live_tunable = true
+    }
+  }
+
+  // The chosen site substitutes here at resolve time.
+  input "raw" {
+    montage = referential(active: site, reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = percentile(target_pct: smr_target_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([above("smr_envelope", "smr_t")]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("smr_envelope" / "smr_t", midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 20 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

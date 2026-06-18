@@ -1,0 +1,140 @@
+// SMR training at Cz — GRADED ADAPTIVE proposal (BrainBit Flex).
+//
+// The modern counterpart to smr_classic_cz_brainbit.refrain. Instead of an
+// all-or-nothing dwell over hard thresholds, feedback is a CONTINUOUS weighted
+// score (SMR up + theta down), so the trainee always sees "how close" they are
+// — no demoralizing 0% cliff — and the score is BASELINE-ADAPTIVE: each band is
+// scored against a percentile of the trainee's OWN recent signal, not an
+// absolute µV midpoint (which the composite_smr_theta demo got wrong).
+//
+// Design choices:
+//   - Per-band success = sigmoid(signal / adaptive_threshold, midpoint 1.0):
+//     0.5 when the band sits at its own percentile anchor, rising/falling
+//     smoothly around it. Calibrates to the person automatically.
+//   - reward.composite is a weighted average of SMR-up and theta-down success;
+//     audio_gain tracks it directly (always-on graded feedback). A chime marks
+//     sustained good performance (composite above 0.5 for 250 ms).
+//   - EMG handled as artifact rejection, same as the classic protocol.
+//
+// Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
+
+protocol "smr_graded_cz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback), BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["adhd_attention"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    population        = "children_adults"
+    indication        = "ADHD_attention_regulation"
+    control_ref       = "library/operant/smr_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Cz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  input "raw" {
+    montage = referential(active: "Cz", reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // Baseline anchors: the trainee's own median (50th percentile over a rolling
+  // window). The composite scores each band relative to its anchor, so the
+  // feedback is calibrated per-person rather than to absolute microvolts.
+  // Fixed at the median — the live knobs here are the two WEIGHTS below
+  // (how much each band counts), which is the intuitive control for a graded
+  // composite, not a per-band rate.
+  threshold "smr_t" {
+    signal = "smr_envelope"
+    type   = percentile(target_pct: 50, window: 2 min)
+  }
+
+  threshold "theta_t" {
+    signal = "theta_envelope"
+    type   = percentile(target_pct: 50, window: 2 min)
+  }
+
+  // EMG artifact inhibit — mute feedback during muscle bursts (same as classic).
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(target_pct: 95, window: 2 min)
+    action    = mute(release: 200 ms)
+  }
+
+  // Named composite components, each scored against its adaptive anchor.
+  // SMR success rises as SMR climbs above its anchor; theta is a suppress
+  // band (the engine inverts it, so success rises as theta drops below its
+  // anchor). The weights are the live knobs.
+  reward  "smr"   { signal = sigmoid("smr_envelope"   / "smr_t",   midpoint: 1.0, steepness: 2); weight = w_smr }
+  inhibit "theta" { signal = sigmoid("theta_envelope" / "theta_t", midpoint: 1.0, steepness: 2); weight = w_theta }
+
+  reward {
+    combine    = "weighted"
+    continuous = reward.composite
+    event      = dwell(condition: above(reward.composite, 0.5), duration: 250 ms)
+  }
+
+  output {
+    // Always-on graded feedback — the patient hears how close they are even
+    // when not yet "in zone"; the chime marks sustained good performance.
+    audio_gain  = reward.composite
+    audio_chime = reward.event
+  }
+
+  controls {
+    w_smr = percent {
+      default      = 1.0
+      range        = (0, 4)
+      label        = "SMR reward weight"
+      live_tunable = true
+    }
+    w_theta = percent {
+      default      = 0.6
+      range        = (0, 4)
+      label        = "Theta suppress weight"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 30 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}
