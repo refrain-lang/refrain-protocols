@@ -1,0 +1,146 @@
+// SMR uptraining at C4 — BASELINE-FIXED variant (BrainBit Flex).
+//
+// Companion to smr_up_c4_brainbit.refrain. Same channel, derives, reward,
+// and output — only the SMR THRESHOLD differs:
+//
+//   - Adaptive variant (smr_up_c4_brainbit): smr_t is a percentile of a
+//     2-min moving window. Reward rate stays ~constant; threshold tracks
+//     the patient's recent state.
+//   - Baseline variant (this file): smr_t is an absolute value seeded from
+//     the warmup-period 40th-percentile of the SMR envelope, then frozen
+//     for the run. Threshold stays flat; reward rate goes up when the
+//     patient improves and down when they drift. The recorder's
+//     baseline_seed handler (recorder/backend/nf/baseline_seed.py)
+//     computes the seed at warmup→run and pushes it via set_control.
+//
+// The high-beta artifact guard (hbeta_t) stays ADAPTIVE — same rationale
+// as the EMG inhibit in smr_classic_baseline_cz_brainbit. Muscle-artifact
+// distributions are too session-specific (jaw clench, neck tension) to
+// fix-from-baseline; adaptive percentile is the right call.
+//
+// The source C4 protocol has no theta inhibit, so this variant has no
+// theta_threshold_uv control — only smr_threshold_uv.
+//
+// Electrode placement: scalp channel #1 at C4. Other channels unused.
+
+protocol "smr_up_c4_baseline_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "SMR (12-15 Hz) uptraining at C4 with baseline-fixed threshold, BrainBit Flex monopolar — Sleep-goal protocol"
+    status            = "reviewed"
+    goals             = ["sensorimotor_sleep"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416."
+    population        = "adults_18_plus"
+    indication        = "sleep_onset_sensorimotor_stability"
+    control_ref       = "library/smr_up/sham@1.0"
+    safety_monitoring = ["pre_session_check"]
+    outcome_measures  = ["sleep_diary", "PSQI", "subjective_state_report"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["C4"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw" {
+    montage = referential(active: "C4", reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // High-beta artifact guard — same logic as adaptive C4: prevent reward
+  // from muscle activity bleeding into adjacent bands.
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (22 Hz, 30 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // SMR reward threshold — BASELINE-FIXED. The control's value is seeded
+  // from the 40th percentile of the warmup-period SMR envelope (see the
+  // recorder's baseline_seed handler).
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = absolute(value: smr_threshold_uv)
+    live_tunable = true
+  }
+
+  // High-beta artifact threshold — kept ADAPTIVE (percentile of a 2-min
+  // window). Muscle artifact distributions are too session-specific to
+  // fix-from-baseline; adaptive percentile is the right call here, same
+  // pattern as the EMG inhibit in smr_classic_baseline_cz_brainbit.
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("smr_envelope",       "smr_t"),
+        below("high_beta_envelope", "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("smr_envelope" / "smr_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  // Voltage control (units: uV, matching the smoothed envelope output).
+  // Default is a sensible "what would adaptive give you" placeholder; the
+  // recorder overwrites it at warmup→run via set_control. Range bounds are
+  // wide enough to accommodate clinical variation (electrode-quality
+  // differences, individual amplitude variation).
+  controls {
+    smr_threshold_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 10.0 uV)
+      label        = "SMR threshold"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      // Warmup sized for the baseline-seed handler: it trims to the last
+      // 60s of warmup samples (recorder/backend/nf/baseline_seed.py
+      // _SETTLED_WINDOW_S = 60.0) to drop sit-down tension, so 90s gives
+      // ~30s settling + 60s of clean samples for the seed. The hbeta
+      // artifact percentile's 2-min window is ~75% full at run start —
+      // acceptable for an artifact guard.
+      phase { name = "warmup";   duration = 90 s; output_muted = true },
+      phase { name = "training"; duration = 20 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

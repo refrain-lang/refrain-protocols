@@ -1,0 +1,91 @@
+// SMR up-training replicated across a CLINICIAN-CHOSEN SET of sites
+// (parameterized placement, kind = "set" — "Mode 2a" per-site replication).
+//
+// The `sites` placement binds to a list of channels at resolve time
+// (`bindings={"sites": ["C3","Cz","C4"]}`). Refrain fans the dependent
+// pipeline out per site (input/derive/threshold become raw@C3, smr@C3,
+// smr_t@C3, …) and combines the per-site dwell conditions with `all`
+// (every site must hold) or `any`. Both `allowed` and `default`
+// reference a named group, which expands to the concrete channel tuple
+// at resolve time.
+//
+// Note: a `set` placement is event-only — `reward.continuous` over a
+// replicated stream needs aggregation Refrain doesn't yet ship
+// ("Mode 2b"), so this protocol gates an audio chime on the combined
+// dwell and leaves the analog gain to single-site protocols.
+
+protocol "placement_smr_set_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "SMR up-training replicated across a clinician-selected site set (set placement, Mode 2a)"
+    status            = "draft"
+    goals             = ["sensorimotor_sleep"]
+    author            = "Peak Mind"
+    indication        = "sensorimotor_regulation"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  groups {
+    sensorimotor = ["C3", "Cz", "C4"]
+  }
+
+  controls {
+    sites = placement {
+      kind    = "set"
+      default = sensorimotor
+      allowed = sensorimotor
+      min     = 1
+      max     = 3
+      label   = "Training sites"
+    }
+  }
+
+  // The chosen set substitutes here; the pipeline below replicates per site.
+  input "raw" {
+    montage = referential(active: sites, reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  threshold "smr_t" {
+    signal = "smr_envelope"
+    type   = absolute(8 uV)
+  }
+
+  reward {
+    combine = "all"
+    event   = dwell(
+      condition: above("smr_envelope", "smr_t"),
+      duration: 250 ms
+    )
+  }
+
+  output {
+    audio_chime = reward.event
+  }
+
+  session {
+    phases = [
+      phase { name = "warmup";   duration = 90 s;  output_muted = true },
+      phase { name = "training"; duration = 20 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

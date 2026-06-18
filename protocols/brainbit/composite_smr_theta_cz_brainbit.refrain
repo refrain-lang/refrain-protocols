@@ -1,0 +1,103 @@
+// SMR-up / theta-down WEIGHTED COMPOSITE at Cz — BrainBit Flex variant.
+//
+// Demonstrates Refrain v0.6.0's weighted multi-component reward engine:
+// one reward component (SMR up) and one suppress band (theta down), each
+// with its own clinician-tunable weight control, combined into
+// `reward.composite` (a weighted average of per-component success in
+// [0,1]). The patient feedback is bound directly to the composite. This
+// is the classic z-score / summary-score model.
+//
+// Same bands/montage as smr_cz_brainbit.refrain, but the reward is a
+// graded composite instead of an all-or-nothing dwell over hard
+// thresholds — so the two weights are the live knobs, not percentiles.
+
+protocol "composite_smr_theta_cz_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "SMR-up / theta-down weighted composite at Cz, BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["adhd_attention"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    population        = "children_adults"
+    indication        = "ADHD_attention_regulation"
+    control_ref       = "library/operant/smr_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Cz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  input "raw" {
+    montage = referential(active: "Cz", reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // Named components: one reward (SMR up), one suppress band (theta down).
+  // Each `weight` is an ordinary numeric control — author default,
+  // resolve-time binding, and live set_control retuning all apply.
+  reward  "smr"   { signal = sigmoid("smr_envelope",   midpoint: 6 uV, steepness: 1); weight = w_smr }
+  inhibit "theta" { signal = sigmoid("theta_envelope", midpoint: 8 uV, steepness: 1); weight = w_theta }
+
+  reward {
+    combine    = "weighted"
+    continuous = reward.composite
+    event      = dwell(condition: above(reward.composite, 0.5), duration: 250 ms)
+  }
+
+  output {
+    audio_gain  = reward.composite
+    audio_chime = reward.event
+  }
+
+  controls {
+    w_smr = percent {
+      default      = 1.0
+      range        = (0, 4)
+      label        = "SMR reward weight"
+      live_tunable = true
+    }
+    w_theta = percent {
+      default      = 0.6
+      range        = (0, 4)
+      label        = "Theta suppress weight"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      phase { name = "warmup";   duration = 90 s;  output_muted = true },
+      phase { name = "training"; duration = 30 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

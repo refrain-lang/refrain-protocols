@@ -1,0 +1,124 @@
+// SMR uptraining at C4 — BrainBit Flex variant.
+//
+// Sterman's original sensorimotor-rhythm protocol: reward SMR (12-15 Hz)
+// amplitude over the somatosensory strip. Single-band uptrain, no
+// theta-beta business. Different placement from `smr_cz_brainbit`
+// (which is at Cz with theta-beta math); this is the "C4 only"
+// classic.
+//
+// Sleep-goal protocol. Historically used for sleep-onset training and
+// sensorimotor-rhythm stability. Right-hemisphere placement is
+// conventional; C3 substitutes cleanly for left-hand-dominant users.
+//
+// Electrode placement: scalp channel #1 at C4. Other channels unused.
+
+protocol "smr_up_c4_brainbit_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "clinical"
+    description       = "SMR (12-15 Hz) uptraining at C4, BrainBit Flex monopolar — Sleep-goal protocol"
+    status            = "reviewed"
+    goals             = ["sensorimotor_sleep"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416."
+    population        = "adults_18_plus"
+    indication        = "sleep_onset_sensorimotor_stability"
+    control_ref       = "library/smr_up/sham@1.0"
+    safety_monitoring = ["pre_session_check"]
+    outcome_measures  = ["sleep_diary", "PSQI", "subjective_state_report"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["C4"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw" {
+    montage = referential(active: "C4", reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // High-beta artifact guard — same logic as beta-up: prevent reward
+  // from muscle activity bleeding into adjacent bands.
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (22 Hz, 30 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // Adaptive percentile threshold of the trainee's own signal — reward fires
+  // when SMR is above its smr_reward_pct-th percentile (lower percentile =
+  // easier = more reward). The window provides the auto-recalibration.
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = percentile(target_pct: smr_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("smr_envelope",       "smr_t"),
+        below("high_beta_envelope", "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("smr_envelope" / "smr_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    smr_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "SMR reward rate"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 20 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

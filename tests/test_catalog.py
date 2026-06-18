@@ -17,7 +17,8 @@ import pytest
 from refrain.parser import parse
 
 ROOT = Path(__file__).resolve().parents[1]
-ALL = sorted((ROOT / "protocols").glob("*.refrain")) + sorted((ROOT / "drafts").glob("*.refrain"))
+# rglob: device-specific sets live in subfolders (e.g. protocols/brainbit/)
+ALL = sorted((ROOT / "protocols").rglob("*.refrain")) + sorted((ROOT / "drafts").rglob("*.refrain"))
 SCHEMA = json.loads((ROOT / "schema" / "protocol-meta.schema.json").read_text())
 
 

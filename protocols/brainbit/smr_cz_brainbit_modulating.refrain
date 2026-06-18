@@ -1,0 +1,146 @@
+// SMR / theta-beta operant training at Cz — BrainBit Flex,
+// continuously-modulating output variant.
+//
+// Same math + thresholds as `smr_cz_brainbit.refrain` — the only
+// difference is the audio_gain output binding: ungated by event.holds
+// so the analog reward signal is a smooth function of SMR/threshold
+// ratio at all times, not just during dwell-active windows.
+//
+// Intended for hosts that map audio_gain onto an ambient feedback
+// channel (system-volume modulation of patient-chosen media, screen-
+// dimming overlay, etc.) where continuous modulation IS the operant
+// signal and the discrete dwell event is informational-only.
+
+protocol "smr_cz_brainbit_modulating_v1" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "SMR/theta-beta operant training at Cz, BrainBit Flex monopolar"
+    status            = "reviewed"
+    goals             = ["adhd_attention"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    population        = "children_adults"
+    indication        = "ADHD_attention_regulation"
+    control_ref       = "library/operant/smr_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    channels    = ["Cz"]
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  input "raw" {
+    montage = referential(active: "Cz", reference: "device")
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (12 Hz, 15 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (4 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (22 Hz, 30 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // Adaptive thresholds. The SMR reward threshold is a direct percentile of
+  // the trainee's own signal — reward fires when SMR is above its
+  // smr_reward_pct-th percentile (lower percentile = easier = more reward).
+  // The inhibit thresholds are wired to their rate controls below.
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = percentile(target_pct: smr_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("smr_envelope",       "smr_t"),
+        below("theta_envelope",     "theta_t"),
+        below("high_beta_envelope", "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("smr_envelope" / "smr_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.continuous
+  }
+
+  controls {
+    smr_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "SMR reward rate"
+      live_tunable = true
+    }
+    theta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      // Warmup matches the percentile window (2 min) so the adaptive
+      // threshold buffer is fully baseline-trained at run start. Shorter
+      // warmups leave the percentile still settling into the run, which
+      // shows up as "garbage threshold" in the first ~30 s.
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "training"; duration = 30 min },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}
