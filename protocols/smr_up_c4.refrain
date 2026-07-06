@@ -1,9 +1,12 @@
 // smr_up_c4.refrain  —  DRAFT (status=draft, untested)
-// SMR up-train at C4 (adaptive).  Sterman; Hoedlmoser 2008
+// SMR up-train at C4.  Sterman; Hoedlmoser 2008
 protocol "smr_up_c4" {
   meta {
     version         = "0.1.0"
-    description     = "SMR up-train at C4 (adaptive)"
+    title           = "Wind down for sleep — boost SMR (right side)"
+    summary         = "Rewards the calm sensorimotor rhythm over the right sensorimotor cortex, associated with sleep spindles and settling."
+    family          = "smr_up_c4"
+    description     = "SMR up-train at C4"
     status          = "draft"
     evidence        = "established"
     citation        = "Sterman; Hoedlmoser 2008"
@@ -11,7 +14,9 @@ protocol "smr_up_c4" {
     bands           = ["smr"]
     site            = "C4"
     direction       = "up"
-    threshold_style = "adaptive"
+    threshold_style = "selectable"
+    feedback_style  = "discrete"
+    session_shape   = "staged"
     hardware        = "generic"
   }
 
@@ -34,7 +39,10 @@ protocol "smr_up_c4" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: reward_pct, window: 2 min)
+    type = threshold_style == "baseline"
+             ? absolute(value: thr_uv)
+             : percentile(target_pct: reward_pct, window: 2 min)
+    live_tunable = true
   }
 
   reward {
@@ -48,6 +56,11 @@ protocol "smr_up_c4" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     env_center = frequency {
       default = 13.4164 Hz
       range   = (10.73 Hz, 16.1 Hz)
@@ -57,6 +70,12 @@ protocol "smr_up_c4" {
       default      = 70
       range        = (50, 90)
       label        = "Target reward %"
+      live_tunable = true
+    }
+    thr_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Threshold (baseline-seeded)"
       live_tunable = true
     }
   }

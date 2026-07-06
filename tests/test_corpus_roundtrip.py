@@ -31,6 +31,30 @@ ALL = sorted((ROOT / "protocols").glob("*.refrain")) + sorted((ROOT / "drafts").
 KNOWN_GAPS = {
     "critical_fluctuation.refrain",    # bands{} fan-out + autocorr — a non-operant early-warning cue, outside catalog v1
     "scp_cz.refrain",                  # draft: not resolvable yet (needs engine SCP primitives)
+    # The 16 generated seed cores (tools/gen_seed_protocols.py) collapsed their
+    # adaptive/baseline variants into one mode-based core per refrain 0.12.0:
+    # `threshold "env_t" { type = threshold_style == "baseline" ? absolute(...) : percentile(...) }`.
+    # The engine resolves this ternary (folds on the `mode` control) fine, but the
+    # installed 0.12.0 `refrain.editor` catalog-v1 matcher (`_match_threshold`)
+    # only recognizes a bare `percentile(...)`/`absolute(...)` call as a `type`,
+    # not a mode-folded conditional — so these fall out of subset until the
+    # editor's catalog grows mode-threshold support (engine-side, not this repo).
+    "smr_theta_cz.refrain",
+    "theta_beta_cz.refrain",
+    "theta_beta_fz.refrain",
+    "theta_down_cz.refrain",
+    "theta_down_fz.refrain",
+    "slow_down_cz.refrain",
+    "slow_down_fz.refrain",
+    "smr_up_c4.refrain",
+    "beta_up_c3.refrain",
+    "beta_up_fz.refrain",
+    "alpha_up_pz.refrain",
+    "hibeta_down_cz.refrain",
+    "peak_alpha_up_pz.refrain",
+    "fm_theta_up_fz.refrain",
+    "alpha_down_pz.refrain",
+    "theta_up_pz.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now

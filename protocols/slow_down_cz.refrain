@@ -1,9 +1,12 @@
 // slow_down_cz.refrain  —  DRAFT (status=draft, untested)
-// DELTA/THETA down-train at Cz (adaptive).  Thatcher; Walker (qEEG-guided slowing)
+// DELTA/THETA down-train at Cz.  Thatcher; Walker (qEEG-guided slowing)
 protocol "slow_down_cz" {
   meta {
     version         = "0.1.0"
-    description     = "DELTA/THETA down-train at Cz (adaptive)"
+    title           = "Clear mental fog — lower slow waves (top of head)"
+    summary         = "Rewards reducing sluggish delta/theta slow-wave activity at the top of the head."
+    family          = "slow_down_cz"
+    description     = "DELTA/THETA down-train at Cz"
     status          = "draft"
     evidence        = "exploratory"
     citation        = "Thatcher; Walker (qEEG-guided slowing)"
@@ -11,7 +14,9 @@ protocol "slow_down_cz" {
     bands           = ["delta", "theta"]
     site            = "Cz"
     direction       = "down"
-    threshold_style = "adaptive"
+    threshold_style = "selectable"
+    feedback_style  = "discrete"
+    session_shape   = "staged"
     hardware        = "generic"
   }
 
@@ -34,7 +39,10 @@ protocol "slow_down_cz" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: reward_pct, window: 2 min)
+    type = threshold_style == "baseline"
+             ? absolute(value: thr_uv)
+             : percentile(target_pct: reward_pct, window: 2 min)
+    live_tunable = true
   }
 
   reward {
@@ -48,6 +56,11 @@ protocol "slow_down_cz" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     env_center = frequency {
       default = 3.74166 Hz
       range   = (2.99 Hz, 4.49 Hz)
@@ -57,6 +70,12 @@ protocol "slow_down_cz" {
       default      = 30
       range        = (10, 50)
       label        = "Target reward %"
+      live_tunable = true
+    }
+    thr_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Threshold (baseline-seeded)"
       live_tunable = true
     }
   }

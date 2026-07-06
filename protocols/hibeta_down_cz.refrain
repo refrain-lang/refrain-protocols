@@ -1,9 +1,12 @@
 // hibeta_down_cz.refrain  —  DRAFT (status=draft, untested)
-// HIGH-BETA down-train at Cz (adaptive).  clinical convention (anxiety/rumination)
+// HIGH-BETA down-train at Cz.  clinical convention (anxiety/rumination)
 protocol "hibeta_down_cz" {
   meta {
     version         = "0.1.0"
-    description     = "HIGH-BETA down-train at Cz (adaptive)"
+    title           = "Ease over-arousal — quiet high-beta (top of head)"
+    summary         = "Rewards lowering fast high-beta activity associated with anxiety and rumination."
+    family          = "hibeta_down_cz"
+    description     = "HIGH-BETA down-train at Cz"
     status          = "draft"
     evidence        = "probable"
     citation        = "clinical convention (anxiety/rumination)"
@@ -11,7 +14,9 @@ protocol "hibeta_down_cz" {
     bands           = ["high-beta"]
     site            = "Cz"
     direction       = "down"
-    threshold_style = "adaptive"
+    threshold_style = "selectable"
+    feedback_style  = "discrete"
+    session_shape   = "staged"
     hardware        = "generic"
   }
 
@@ -34,7 +39,10 @@ protocol "hibeta_down_cz" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: reward_pct, window: 2 min)
+    type = threshold_style == "baseline"
+             ? absolute(value: thr_uv)
+             : percentile(target_pct: reward_pct, window: 2 min)
+    live_tunable = true
   }
 
   reward {
@@ -48,6 +56,11 @@ protocol "hibeta_down_cz" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     env_center = frequency {
       default = 25.6905 Hz
       range   = (20.55 Hz, 30.83 Hz)
@@ -57,6 +70,12 @@ protocol "hibeta_down_cz" {
       default      = 30
       range        = (10, 50)
       label        = "Target reward %"
+      live_tunable = true
+    }
+    thr_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Threshold (baseline-seeded)"
       live_tunable = true
     }
   }

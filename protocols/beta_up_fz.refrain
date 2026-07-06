@@ -1,9 +1,12 @@
 // beta_up_fz.refrain  —  DRAFT (status=draft, untested)
-// BETA up-train at Fz (adaptive).  frontal beta activation
+// BETA up-train at Fz.  frontal beta activation
 protocol "beta_up_fz" {
   meta {
     version         = "0.1.0"
-    description     = "BETA up-train at Fz (adaptive)"
+    title           = "Alert and engaged — boost beta (forehead)"
+    summary         = "Rewards raising engaged frontal beta activity."
+    family          = "beta_up_fz"
+    description     = "BETA up-train at Fz"
     status          = "draft"
     evidence        = "probable"
     citation        = "frontal beta activation"
@@ -11,7 +14,9 @@ protocol "beta_up_fz" {
     bands           = ["beta"]
     site            = "Fz"
     direction       = "up"
-    threshold_style = "adaptive"
+    threshold_style = "selectable"
+    feedback_style  = "discrete"
+    session_shape   = "staged"
     hardware        = "generic"
   }
 
@@ -34,7 +39,10 @@ protocol "beta_up_fz" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: reward_pct, window: 2 min)
+    type = threshold_style == "baseline"
+             ? absolute(value: thr_uv)
+             : percentile(target_pct: reward_pct, window: 2 min)
+    live_tunable = true
   }
 
   reward {
@@ -48,6 +56,11 @@ protocol "beta_up_fz" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     env_center = frequency {
       default = 16.4317 Hz
       range   = (13.15 Hz, 19.72 Hz)
@@ -57,6 +70,12 @@ protocol "beta_up_fz" {
       default      = 70
       range        = (50, 90)
       label        = "Target reward %"
+      live_tunable = true
+    }
+    thr_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Threshold (baseline-seeded)"
       live_tunable = true
     }
   }

@@ -1,9 +1,12 @@
 // alpha_down_pz.refrain  —  DRAFT (status=draft, untested)
-// ALPHA down-train at Pz (adaptive).  Kluetsch/Ros/Lanius 2014; Nicholson 2016
+// ALPHA down-train at Pz.  Kluetsch/Ros/Lanius 2014; Nicholson 2016
 protocol "alpha_down_pz" {
   meta {
     version         = "0.1.0"
-    description     = "ALPHA down-train at Pz (adaptive)"
+    title           = "Down-regulate alpha (back of head)"
+    summary         = "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work."
+    family          = "alpha_down_pz"
+    description     = "ALPHA down-train at Pz"
     status          = "draft"
     evidence        = "probable"
     citation        = "Kluetsch/Ros/Lanius 2014; Nicholson 2016"
@@ -11,7 +14,9 @@ protocol "alpha_down_pz" {
     bands           = ["alpha"]
     site            = "Pz"
     direction       = "down"
-    threshold_style = "adaptive"
+    threshold_style = "selectable"
+    feedback_style  = "discrete"
+    session_shape   = "staged"
     hardware        = "generic"
   }
 
@@ -34,7 +39,10 @@ protocol "alpha_down_pz" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: reward_pct, window: 2 min)
+    type = threshold_style == "baseline"
+             ? absolute(value: thr_uv)
+             : percentile(target_pct: reward_pct, window: 2 min)
+    live_tunable = true
   }
 
   reward {
@@ -48,6 +56,11 @@ protocol "alpha_down_pz" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     env_center = frequency {
       default = 9.79796 Hz
       range   = (7.84 Hz, 11.76 Hz)
@@ -57,6 +70,12 @@ protocol "alpha_down_pz" {
       default      = 30
       range        = (10, 50)
       label        = "Target reward %"
+      live_tunable = true
+    }
+    thr_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Threshold (baseline-seeded)"
       live_tunable = true
     }
   }
