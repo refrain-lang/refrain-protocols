@@ -1,9 +1,12 @@
 // peak_alpha_up_pz.refrain  —  DRAFT (status=draft, untested)
-// ALPHA up-train at Pz (adaptive).  Hanslmayr; Gruzelier 2014
+// ALPHA up-train at Pz.  Hanslmayr; Gruzelier 2014
 protocol "peak_alpha_up_pz" {
   meta {
     version         = "0.1.0"
-    description     = "ALPHA up-train at Pz (adaptive)"
+    title           = "Sharpen peak alpha (back of head)"
+    summary         = "Rewards raising the individual peak-alpha frequency band at the back of the head."
+    family          = "peak_alpha_up_pz"
+    description     = "ALPHA up-train at Pz"
     status          = "draft"
     evidence        = "exploratory"
     citation        = "Hanslmayr; Gruzelier 2014"
@@ -11,7 +14,9 @@ protocol "peak_alpha_up_pz" {
     bands           = ["alpha"]
     site            = "Pz"
     direction       = "up"
-    threshold_style = "adaptive"
+    threshold_style = "selectable"
+    feedback_style  = "discrete"
+    session_shape   = "staged"
     hardware        = "generic"
   }
 
@@ -34,7 +39,10 @@ protocol "peak_alpha_up_pz" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: reward_pct, window: 2 min)
+    type = threshold_style == "baseline"
+             ? absolute(value: thr_uv)
+             : percentile(target_pct: reward_pct, window: 2 min)
+    live_tunable = true
   }
 
   reward {
@@ -48,6 +56,11 @@ protocol "peak_alpha_up_pz" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     env_center = frequency {
       default = 9.94987 Hz
       range   = (7.96 Hz, 11.94 Hz)
@@ -57,6 +70,12 @@ protocol "peak_alpha_up_pz" {
       default      = 70
       range        = (50, 90)
       label        = "Target reward %"
+      live_tunable = true
+    }
+    thr_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Threshold (baseline-seeded)"
       live_tunable = true
     }
   }

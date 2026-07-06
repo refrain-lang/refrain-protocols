@@ -1,9 +1,12 @@
 // smr_theta_cz.refrain  —  DRAFT (status=draft, untested)
-// SMR/THETA up-train at Cz (adaptive).  Sterman; Lubar; Arns 2009
+// SMR/THETA up-train at Cz.  Sterman; Lubar; Arns 2009
 protocol "smr_theta_cz" {
   meta {
     version         = "0.1.0"
-    description     = "SMR/THETA up-train at Cz (adaptive)"
+    title           = "Steady focus — boost SMR, calm theta (top of head)"
+    summary         = "Rewards a calm-but-alert sensorimotor rhythm at the top of the head while keeping drowsy theta down."
+    family          = "smr_theta_cz"
+    description     = "SMR/THETA up-train at Cz"
     status          = "draft"
     evidence        = "established"
     citation        = "Sterman; Lubar; Arns 2009"
@@ -11,7 +14,9 @@ protocol "smr_theta_cz" {
     bands           = ["smr", "theta"]
     site            = "Cz"
     direction       = "up"
-    threshold_style = "adaptive"
+    threshold_style = "selectable"
+    feedback_style  = "discrete"
+    session_shape   = "staged"
     hardware        = "generic"
   }
 
@@ -34,7 +39,10 @@ protocol "smr_theta_cz" {
 
   threshold "env_t" {
     signal = "env"
-    type = percentile(target_pct: reward_pct, window: 2 min)
+    type = threshold_style == "baseline"
+             ? absolute(value: thr_uv)
+             : percentile(target_pct: reward_pct, window: 2 min)
+    live_tunable = true
   }
 
   reward {
@@ -48,6 +56,11 @@ protocol "smr_theta_cz" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     env_center = frequency {
       default = 13.4164 Hz
       range   = (10.73 Hz, 16.1 Hz)
@@ -57,6 +70,12 @@ protocol "smr_theta_cz" {
       default      = 70
       range        = (50, 90)
       label        = "Target reward %"
+      live_tunable = true
+    }
+    thr_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Threshold (baseline-seeded)"
       live_tunable = true
     }
   }

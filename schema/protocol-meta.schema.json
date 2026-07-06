@@ -7,6 +7,17 @@
   "required": ["description", "status", "goals"],
   "properties": {
     "description": { "type": "string", "description": "One-line human label shown in the picker." },
+    "title": { "type": "string", "description": "Plain-language, goal-first name shown as the primary label (e.g. 'Calm the mind — boost alpha')." },
+    "summary": { "type": "string", "description": "One non-specialist sentence describing what the protocol trains." },
+    "family": { "type": "string", "description": "Shared id across a concept's variant files; the picker groups by it." },
+    "feedback_style": {
+      "description": "How feedback is delivered.",
+      "enum": ["discrete", "graded", "modulating"]
+    },
+    "session_shape": {
+      "description": "Run structure.",
+      "enum": ["single", "staged", "deep"]
+    },
 
     "status": {
       "description": "OUR file maturity / test status (distinct from clinical `evidence`).",
@@ -41,8 +52,8 @@
       "enum": ["up", "down", "composite", "crossover", "asymmetry"]
     },
     "threshold_style": {
-      "description": "Drives the Adaptive / Baseline filter chip.",
-      "enum": ["adaptive", "baseline", "crossover"]
+      "description": "Drives the Adaptive / Baseline filter chip. 'selectable' = the protocol exposes a `mode` control offering both.",
+      "enum": ["adaptive", "baseline", "crossover", "selectable"]
     },
     "reward_style": { "enum": ["operant", "graded", "weighted"] },
     "modality": { "enum": ["eeg", "hrv"], "default": "eeg" },
