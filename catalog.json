@@ -9,6 +9,9 @@
       "meta": {
         "version": "0.1.0",
         "description": "Interhemispheric alpha coherence (C3<->C4)",
+        "title": "Sync the hemispheres \u2014 alpha coherence (left & right)",
+        "summary": "Rewards stronger alpha-band coherence between the left and right sensorimotor areas, a connectivity and flow target.",
+        "family": "alpha_coherence_c3c4",
         "status": "draft",
         "evidence": "exploratory",
         "citation": "Gruzelier 2014",
@@ -59,6 +62,9 @@
       "meta": {
         "version": "0.1.0",
         "description": "Alpha/theta crossover at Pz (eyes-closed, deep state)",
+        "title": "Deep meditative state \u2014 alpha/theta crossover (back of head)",
+        "summary": "Eyes-closed deep-state training that rewards theta rising above alpha at the back of the head (the Peniston-Kulkosky protocol).",
+        "family": "alpha_theta_pz",
         "status": "draft",
         "evidence": "established",
         "citation": "Peniston & Kulkosky 1989, 1991",
@@ -167,6 +173,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Bilateral alpha (C3-C4) amplitude symmetry, BrainBit Flex \u2014 coherence stand-in",
+        "title": "Balance the hemispheres \u2014 alpha symmetry (left & right)",
+        "summary": "BrainBit: rewards balanced alpha amplitude between the left and right sensorimotor areas, a coherence stand-in.",
+        "family": "alpha_coherence_c3c4",
         "status": "reviewed",
         "goals": [
           "flow_connectivity"
@@ -192,6 +201,9 @@
         "version": "1.0.0",
         "evidence": "clinical",
         "description": "Alpha-theta training (Peniston-Kulkosky) at Pz, BrainBit Flex monopolar",
+        "title": "Deep meditative state \u2014 alpha/theta (back of head)",
+        "summary": "BrainBit: eyes-closed alpha-theta training at the back of the head for deep, restorative states.",
+        "family": "alpha_theta_pz",
         "status": "reviewed",
         "goals": [
           "deep_meditative"
@@ -218,6 +230,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Alpha uptraining at Pz, BrainBit Flex monopolar \u2014 Calm-goal lead protocol",
+        "title": "Calm the mind \u2014 boost alpha (back of head)",
+        "summary": "BrainBit: rewards raising relaxed alpha at the back of the head, for calm and lowered anxiety.",
+        "family": "alpha_up_pz",
         "status": "reviewed",
         "goals": [
           "calm_anxiety"
@@ -244,6 +259,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4\u00d75-min blocks), baseline-fixed thresholds, BrainBit Flex monopolar",
+        "title": "Sustained focus \u2014 staged beta training (forehead)",
+        "summary": "BrainBit: staged beta uptraining with theta and high-beta inhibits at the forehead, using fixed baseline thresholds.",
+        "family": "beta_focus_fz",
         "status": "reviewed",
         "goals": [
           "alertness_performance"
@@ -270,6 +288,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4\u00d75-min blocks), adaptive percentile thresholds, BrainBit Flex monopolar",
+        "title": "Sustained focus \u2014 staged beta training (forehead)",
+        "summary": "BrainBit: staged beta uptraining with theta and high-beta inhibits at the forehead, using adaptive thresholds.",
+        "family": "beta_focus_fz",
         "status": "reviewed",
         "goals": [
           "alertness_performance"
@@ -295,6 +316,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Beta1 (15-20 Hz) uptraining at Cz with theta inhibit, BrainBit Flex monopolar",
+        "title": "Alert focus \u2014 boost beta (top of head)",
+        "summary": "BrainBit: rewards raising engaged beta with a theta inhibit at the top of the head.",
+        "family": "beta_up_cz",
         "status": "reviewed",
         "goals": [
           "alertness_performance"
@@ -320,6 +344,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "SMR-up / theta-down weighted composite at Cz, BrainBit Flex monopolar",
+        "title": "Steady focus \u2014 SMR up / theta down blend (top of head)",
+        "summary": "BrainBit: a weighted blend rewarding more SMR and less theta together at the top of the head.",
+        "family": "composite_smr_theta_cz",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -347,6 +374,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "High-beta (22-30 Hz) downtraining at Cz, BrainBit Flex monopolar",
+        "title": "Ease over-arousal \u2014 quiet high-beta (top of head)",
+        "summary": "BrainBit: rewards lowering fast high-beta activity linked to anxiety and rumination.",
+        "family": "hibeta_down_cz",
         "status": "reviewed",
         "goals": [
           "calm_anxiety"
@@ -373,6 +403,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Alpha inter-hemispheric coherence up-training, clinician-selected pair (pair placement)",
+        "title": "Alpha coherence \u2014 clinician-chosen pair",
+        "summary": "BrainBit: alpha inter-hemispheric coherence up-training over an electrode pair the clinician selects.",
+        "family": "placement_alpha_coherence",
         "status": "reviewed",
         "goals": [
           "flow_connectivity"
@@ -394,6 +427,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "SMR up-training, clinician-selected single site (active placement)",
+        "title": "SMR training \u2014 clinician-chosen site",
+        "summary": "BrainBit: SMR up-training at a single sensorimotor site the clinician selects at session start.",
+        "family": "placement_smr",
         "status": "draft",
         "goals": [
           "adhd_attention"
@@ -414,6 +450,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "SMR up-training over a clinician-selected bipolar pair (bipolar placement)",
+        "title": "SMR training \u2014 clinician-chosen bipolar pair",
+        "summary": "BrainBit: SMR up-training across a bipolar electrode pair the clinician selects.",
+        "family": "placement_smr",
         "status": "draft",
         "goals": [
           "sensorimotor_sleep"
@@ -434,6 +473,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "SMR up-training replicated across a clinician-selected site set (set placement, Mode 2a)",
+        "title": "SMR training \u2014 clinician-chosen site set",
+        "summary": "BrainBit: SMR up-training replicated across a set of sites the clinician selects.",
+        "family": "placement_smr",
         "status": "draft",
         "goals": [
           "sensorimotor_sleep"
@@ -454,6 +496,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Classic SMR operant training at Cz with baseline-fixed thresholds (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar",
+        "title": "Classic SMR training (top of head)",
+        "summary": "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with fixed baseline thresholds.",
+        "family": "smr_cz",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -481,6 +526,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Staged SMR operant training at Cz (4\u00d75-min blocks with 2-min rests, one baseline), baseline-fixed thresholds, BrainBit Flex monopolar",
+        "title": "Classic SMR training \u2014 staged blocks (top of head)",
+        "summary": "BrainBit: classic SMR operant in four short blocks with rests, using fixed baseline thresholds.",
+        "family": "smr_cz",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -508,6 +556,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar",
+        "title": "Classic SMR training (top of head)",
+        "summary": "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with adaptive thresholds.",
+        "family": "smr_cz",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -535,6 +586,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "SMR/theta-beta operant training at Cz, BrainBit Flex monopolar",
+        "title": "Classic SMR training \u2014 ambient feedback (top of head)",
+        "summary": "BrainBit: SMR operant at the top of the head with continuous ambient (modulating) audio feedback.",
+        "family": "smr_cz",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -562,6 +616,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Graded SMR/theta composite at Cz with baseline-fixed anchors (continuous feedback, no drift), BrainBit Flex monopolar",
+        "title": "Graded SMR training (top of head)",
+        "summary": "BrainBit: always-on graded SMR/theta feedback at the top of the head, with fixed baseline anchors.",
+        "family": "smr_cz",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -589,6 +646,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback), BrainBit Flex monopolar",
+        "title": "Graded SMR training (top of head)",
+        "summary": "BrainBit: always-on graded SMR/theta feedback showing how close you are, with adaptive anchors.",
+        "family": "smr_cz",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -616,6 +676,9 @@
         "version": "1.0.0",
         "evidence": "demo",
         "description": "SMR (12-15 Hz) uptraining at C4 with baseline-fixed threshold, BrainBit Flex monopolar \u2014 Sleep-goal protocol",
+        "title": "Wind down for sleep \u2014 boost SMR (right side)",
+        "summary": "BrainBit: SMR uptraining over the right sensorimotor cortex for sleep onset, with a fixed baseline threshold.",
+        "family": "smr_up_c4",
         "status": "reviewed",
         "goals": [
           "sensorimotor_sleep"
@@ -643,6 +706,9 @@
         "version": "1.0.0",
         "evidence": "clinical",
         "description": "SMR (12-15 Hz) uptraining at C4, BrainBit Flex monopolar \u2014 Sleep-goal protocol",
+        "title": "Wind down for sleep \u2014 boost SMR (right side)",
+        "summary": "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling.",
+        "family": "smr_up_c4",
         "status": "reviewed",
         "goals": [
           "sensorimotor_sleep"
@@ -669,6 +735,9 @@
       "meta": {
         "version": "0.1.0",
         "description": "SMR-up / theta-down weighted composite at Cz",
+        "title": "Steady focus \u2014 SMR up / theta down blend (top of head)",
+        "summary": "A weighted blend rewarding more SMR and less theta together at the top of the head.",
+        "family": "composite_smr_theta_cz",
         "status": "draft",
         "evidence": "established",
         "citation": "Sterman; Lubar; Arns 2009",
@@ -694,6 +763,9 @@
       "meta": {
         "version": "0.1.0",
         "description": "Dynamical neurofeedback: cue on critical fluctuations (early-warning signals) across bands, at any site",
+        "title": "Catch the tipping point \u2014 critical-fluctuation cue (any site)",
+        "summary": "Experimental dynamical neurofeedback that cues on early-warning fluctuations across bands, at any site.",
+        "family": "critical_fluctuation",
         "status": "draft",
         "evidence": "exploratory",
         "citation": "Scheffer et al. 2009 Nature 461:53-59; Maturana et al. 2020 Nat Commun 11:2172",
@@ -725,6 +797,9 @@
       "meta": {
         "version": "0.1.0",
         "description": "Frontal alpha asymmetry F3/F4 (mood / approach-motivation)",
+        "title": "Lift mood \u2014 frontal alpha balance (forehead)",
+        "summary": "Trains left-versus-right frontal alpha asymmetry, linked to approach motivation and mood.",
+        "family": "faa_f3f4",
         "status": "draft",
         "evidence": "probable",
         "citation": "Rosenfeld; Baehr & Rosenfeld",
@@ -803,6 +878,9 @@
       "meta": {
         "version": "0.1.0",
         "description": "HRV resonance breathing (LF rhythm strength, 4 Hz tachogram)",
+        "title": "Calm through breathing \u2014 HRV resonance",
+        "summary": "Heart-rate-variability biofeedback that rewards a strong low-frequency breathing rhythm for calm and self-regulation.",
+        "family": "hrv_resonance",
         "status": "draft",
         "evidence": "established",
         "citation": "Lehrer & Gevirtz 2014 (resonance-frequency HRV biofeedback)",
@@ -1107,6 +1185,9 @@
       "meta": {
         "version": "0.1.0",
         "description": "Slow cortical potential self-regulation at Cz (clinical DC amp; trial sequencing required)",
+        "title": "Slow cortical potential self-regulation (top of head)",
+        "summary": "Trains voluntary shifts of slow cortical potentials at the top of the head; needs a DC-coupled clinical amp.",
+        "family": "scp_cz",
         "status": "roadmap",
         "evidence": "established",
         "citation": "Strehl et al. 2006; Kotchoubey & Birbaumer 2001",

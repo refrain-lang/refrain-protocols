@@ -22,6 +22,9 @@ protocol "alpha_symmetry_c3c4_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "Bilateral alpha (C3-C4) amplitude symmetry, BrainBit Flex — coherence stand-in"
+    title             = "Balance the hemispheres — alpha symmetry (left & right)"
+    summary           = "BrainBit: rewards balanced alpha amplitude between the left and right sensorimotor areas, a coherence stand-in."
+    family            = "alpha_coherence_c3c4"
     status            = "reviewed"
     goals             = ["flow_connectivity"]
     author            = "Peak Mind"

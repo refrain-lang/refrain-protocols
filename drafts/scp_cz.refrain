@@ -21,6 +21,9 @@ protocol "scp_cz" {
   meta {
     version         = "0.1.0"
     description     = "Slow cortical potential self-regulation at Cz (clinical DC amp; trial sequencing required)"
+    title           = "Slow cortical potential self-regulation (top of head)"
+    summary         = "Trains voluntary shifts of slow cortical potentials at the top of the head; needs a DC-coupled clinical amp."
+    family          = "scp_cz"
     status          = "roadmap"
     evidence        = "established"
     citation        = "Strehl et al. 2006; Kotchoubey & Birbaumer 2001"

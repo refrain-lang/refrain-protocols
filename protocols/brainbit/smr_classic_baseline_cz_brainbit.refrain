@@ -26,6 +26,9 @@ protocol "smr_classic_baseline_cz_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "Classic SMR operant training at Cz with baseline-fixed thresholds (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar"
+    title             = "Classic SMR training (top of head)"
+    summary           = "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with fixed baseline thresholds."
+    family            = "smr_cz"
     status            = "reviewed"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"

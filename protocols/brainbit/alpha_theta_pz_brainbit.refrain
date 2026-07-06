@@ -22,6 +22,9 @@ protocol "alpha_theta_pz_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "clinical"
     description       = "Alpha-theta training (Peniston-Kulkosky) at Pz, BrainBit Flex monopolar"
+    title             = "Deep meditative state — alpha/theta (back of head)"
+    summary           = "BrainBit: eyes-closed alpha-theta training at the back of the head for deep, restorative states."
+    family            = "alpha_theta_pz"
     status            = "reviewed"
     goals             = ["deep_meditative"]
     author            = "Peak Mind"

@@ -26,6 +26,9 @@ protocol "critical_fluctuation" {
   meta {
     version           = "0.1.0"
     description       = "Dynamical neurofeedback: cue on critical fluctuations (early-warning signals) across bands, at any site"
+    title             = "Catch the tipping point — critical-fluctuation cue (any site)"
+    summary           = "Experimental dynamical neurofeedback that cues on early-warning fluctuations across bands, at any site."
+    family            = "critical_fluctuation"
     status            = "draft"
     evidence          = "exploratory"
     citation          = "Scheffer et al. 2009 Nature 461:53-59; Maturana et al. 2020 Nat Commun 11:2172"

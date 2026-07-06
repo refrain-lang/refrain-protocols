@@ -6,6 +6,9 @@ protocol "hrv_resonance" {
   meta {
     version         = "0.1.0"
     description     = "HRV resonance breathing (LF rhythm strength, 4 Hz tachogram)"
+    title           = "Calm through breathing — HRV resonance"
+    summary         = "Heart-rate-variability biofeedback that rewards a strong low-frequency breathing rhythm for calm and self-regulation."
+    family          = "hrv_resonance"
     status          = "draft"
     evidence        = "established"
     citation        = "Lehrer & Gevirtz 2014 (resonance-frequency HRV biofeedback)"

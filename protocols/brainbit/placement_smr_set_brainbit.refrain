@@ -20,6 +20,9 @@ protocol "placement_smr_set_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "SMR up-training replicated across a clinician-selected site set (set placement, Mode 2a)"
+    title             = "SMR training — clinician-chosen site set"
+    summary           = "BrainBit: SMR up-training replicated across a set of sites the clinician selects."
+    family            = "placement_smr"
     status            = "draft"
     goals             = ["sensorimotor_sleep"]
     author            = "Peak Mind"

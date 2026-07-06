@@ -8,6 +8,9 @@ protocol "composite_smr_theta_cz" {
   meta {
     version         = "0.1.0"
     description     = "SMR-up / theta-down weighted composite at Cz"
+    title           = "Steady focus — SMR up / theta down blend (top of head)"
+    summary         = "A weighted blend rewarding more SMR and less theta together at the top of the head."
+    family          = "composite_smr_theta_cz"
     status          = "draft"
     evidence        = "established"
     citation        = "Sterman; Lubar; Arns 2009"

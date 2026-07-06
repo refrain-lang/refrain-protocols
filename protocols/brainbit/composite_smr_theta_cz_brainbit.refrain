@@ -17,6 +17,9 @@ protocol "composite_smr_theta_cz_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "SMR-up / theta-down weighted composite at Cz, BrainBit Flex monopolar"
+    title             = "Steady focus — SMR up / theta down blend (top of head)"
+    summary           = "BrainBit: a weighted blend rewarding more SMR and less theta together at the top of the head."
+    family            = "composite_smr_theta_cz"
     status            = "reviewed"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
