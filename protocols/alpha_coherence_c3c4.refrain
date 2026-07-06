@@ -5,6 +5,9 @@ protocol "alpha_coherence_c3c4" {
   meta {
     version         = "0.1.0"
     description     = "Interhemispheric alpha coherence (C3<->C4)"
+    title           = "Sync the hemispheres — alpha coherence (left & right)"
+    summary         = "Rewards stronger alpha-band coherence between the left and right sensorimotor areas, a connectivity and flow target."
+    family          = "alpha_coherence_c3c4"
     status          = "draft"
     evidence        = "exploratory"
     citation        = "Gruzelier 2014"

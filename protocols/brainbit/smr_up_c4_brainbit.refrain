@@ -18,6 +18,9 @@ protocol "smr_up_c4_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "clinical"
     description       = "SMR (12-15 Hz) uptraining at C4, BrainBit Flex monopolar — Sleep-goal protocol"
+    title             = "Wind down for sleep — boost SMR (right side)"
+    summary           = "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling."
+    family            = "smr_up_c4"
     status            = "reviewed"
     goals             = ["sensorimotor_sleep"]
     author            = "Peak Mind"

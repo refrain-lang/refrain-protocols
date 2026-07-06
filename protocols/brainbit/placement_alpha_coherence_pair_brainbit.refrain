@@ -18,6 +18,9 @@ protocol "placement_alpha_coherence_pair_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "Alpha inter-hemispheric coherence up-training, clinician-selected pair (pair placement)"
+    title             = "Alpha coherence — clinician-chosen pair"
+    summary           = "BrainBit: alpha inter-hemispheric coherence up-training over an electrode pair the clinician selects."
+    family            = "placement_alpha_coherence"
     status            = "reviewed"
     goals             = ["flow_connectivity"]
     author            = "Peak Mind"

@@ -12,6 +12,9 @@ protocol "placement_smr_bipolar_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "SMR up-training over a clinician-selected bipolar pair (bipolar placement)"
+    title             = "SMR training — clinician-chosen bipolar pair"
+    summary           = "BrainBit: SMR up-training across a bipolar electrode pair the clinician selects."
+    family            = "placement_smr"
     status            = "draft"
     goals             = ["sensorimotor_sleep"]
     author            = "Peak Mind"

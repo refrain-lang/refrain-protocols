@@ -28,6 +28,9 @@ protocol "smr_classic_baseline_staged_cz_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "Staged SMR operant training at Cz (4×5-min blocks with 2-min rests, one baseline), baseline-fixed thresholds, BrainBit Flex monopolar"
+    title             = "Classic SMR training — staged blocks (top of head)"
+    summary           = "BrainBit: classic SMR operant in four short blocks with rests, using fixed baseline thresholds."
+    family            = "smr_cz"
     status            = "reviewed"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"

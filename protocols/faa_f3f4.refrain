@@ -6,6 +6,9 @@ protocol "faa_f3f4" {
   meta {
     version         = "0.1.0"
     description     = "Frontal alpha asymmetry F3/F4 (mood / approach-motivation)"
+    title           = "Lift mood — frontal alpha balance (forehead)"
+    summary         = "Trains left-versus-right frontal alpha asymmetry, linked to approach motivation and mood."
+    family          = "faa_f3f4"
     status          = "draft"
     evidence        = "probable"
     citation        = "Rosenfeld; Baehr & Rosenfeld"

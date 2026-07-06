@@ -14,6 +14,9 @@ protocol "placement_smr_active_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "SMR up-training, clinician-selected single site (active placement)"
+    title             = "SMR training — clinician-chosen site"
+    summary           = "BrainBit: SMR up-training at a single sensorimotor site the clinician selects at session start."
+    family            = "placement_smr"
     status            = "draft"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"

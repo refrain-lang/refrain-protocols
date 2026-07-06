@@ -14,6 +14,9 @@ protocol "beta_up_cz_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "Beta1 (15-20 Hz) uptraining at Cz with theta inhibit, BrainBit Flex monopolar"
+    title             = "Alert focus — boost beta (top of head)"
+    summary           = "BrainBit: rewards raising engaged beta with a theta inhibit at the top of the head."
+    family            = "beta_up_cz"
     status            = "reviewed"
     goals             = ["alertness_performance"]
     author            = "Peak Mind"

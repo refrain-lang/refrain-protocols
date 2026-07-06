@@ -27,6 +27,9 @@ protocol "beta_focus_baseline_staged_fz_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4×5-min blocks), baseline-fixed thresholds, BrainBit Flex monopolar"
+    title             = "Sustained focus — staged beta training (forehead)"
+    summary           = "BrainBit: staged beta uptraining with theta and high-beta inhibits at the forehead, using fixed baseline thresholds."
+    family            = "beta_focus_fz"
     status            = "reviewed"
     goals             = ["alertness_performance"]
     author            = "Peak Mind"

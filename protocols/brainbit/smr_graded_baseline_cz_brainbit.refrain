@@ -38,6 +38,9 @@ protocol "smr_graded_baseline_cz_brainbit_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "Graded SMR/theta composite at Cz with baseline-fixed anchors (continuous feedback, no drift), BrainBit Flex monopolar"
+    title             = "Graded SMR training (top of head)"
+    summary           = "BrainBit: always-on graded SMR/theta feedback at the top of the head, with fixed baseline anchors."
+    family            = "smr_cz"
     status            = "reviewed"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"

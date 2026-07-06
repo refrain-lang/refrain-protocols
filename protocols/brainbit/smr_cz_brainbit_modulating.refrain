@@ -17,6 +17,9 @@ protocol "smr_cz_brainbit_modulating_v1" {
     version           = "1.0.0"
     evidence          = "demo"
     description       = "SMR/theta-beta operant training at Cz, BrainBit Flex monopolar"
+    title             = "Classic SMR training — ambient feedback (top of head)"
+    summary           = "BrainBit: SMR operant at the top of the head with continuous ambient (modulating) audio feedback."
+    family            = "smr_cz"
     status            = "reviewed"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
