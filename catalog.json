@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 43,
+  "count": 39,
   "protocols": [
     {
       "file": "protocols/alpha_coherence_c3c4.refrain",
@@ -252,16 +252,17 @@
       }
     },
     {
-      "file": "protocols/brainbit/beta_focus_baseline_staged_fz_brainbit.refrain",
-      "name": "beta_focus_baseline_staged_fz_brainbit",
+      "file": "protocols/brainbit/beta_focus_staged_fz_brainbit.refrain",
+      "name": "beta_focus_staged_fz_brainbit",
       "draft": false,
       "meta": {
         "version": "1.0.0",
         "evidence": "demo",
-        "description": "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4\u00d75-min blocks), baseline-fixed thresholds, BrainBit Flex monopolar",
+        "description": "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4\u00d75-min blocks), adaptive percentile thresholds, BrainBit Flex monopolar",
         "title": "Sustained focus \u2014 staged beta training (forehead)",
-        "summary": "BrainBit: staged beta uptraining with theta and high-beta inhibits at the forehead, using fixed baseline thresholds.",
+        "summary": "BrainBit: staged beta uptraining with theta and high-beta inhibits at the forehead, using adaptive or baseline-fixed thresholds.",
         "family": "beta_focus_fz",
+        "threshold_style": "selectable",
         "status": "reviewed",
         "goals": [
           "alertness_performance"
@@ -274,34 +275,6 @@
         "safety_monitoring": [
           "pre_session_check",
           "intra_session_clinician_observation"
-        ],
-        "outcome_measures": [
-          "subjective_state_report"
-        ]
-      }
-    },
-    {
-      "file": "protocols/brainbit/beta_focus_staged_fz_brainbit.refrain",
-      "name": "beta_focus_staged_fz_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "demo",
-        "description": "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4\u00d75-min blocks), adaptive percentile thresholds, BrainBit Flex monopolar",
-        "title": "Sustained focus \u2014 staged beta training (forehead)",
-        "summary": "BrainBit: staged beta uptraining with theta and high-beta inhibits at the forehead, using adaptive thresholds.",
-        "family": "beta_focus_fz",
-        "status": "reviewed",
-        "goals": [
-          "alertness_performance"
-        ],
-        "author": "Peak Mind",
-        "citation": "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components. Clinical Neurophysiology, 115(1), 131-139.",
-        "population": "adults_18_plus",
-        "indication": "attention_alertness_performance",
-        "control_ref": "library/beta_up/sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check"
         ],
         "outcome_measures": [
           "subjective_state_report"
@@ -489,36 +462,6 @@
       }
     },
     {
-      "file": "protocols/brainbit/smr_classic_baseline_cz_brainbit.refrain",
-      "name": "smr_classic_baseline_cz_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "demo",
-        "description": "Classic SMR operant training at Cz with baseline-fixed thresholds (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar",
-        "title": "Classic SMR training (top of head)",
-        "summary": "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with fixed baseline thresholds.",
-        "family": "smr_cz",
-        "status": "reviewed",
-        "goals": [
-          "adhd_attention"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
-        "population": "children_adults",
-        "indication": "ADHD_attention_regulation",
-        "control_ref": "library/operant/smr_sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
-        ],
-        "outcome_measures": [
-          "IVA-2_continuous_performance",
-          "Conners-3"
-        ]
-      }
-    },
-    {
       "file": "protocols/brainbit/smr_classic_baseline_staged_cz_brainbit.refrain",
       "name": "smr_classic_baseline_staged_cz_brainbit",
       "draft": false,
@@ -557,8 +500,9 @@
         "evidence": "demo",
         "description": "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar",
         "title": "Classic SMR training (top of head)",
-        "summary": "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with adaptive thresholds.",
+        "summary": "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds.",
         "family": "smr_cz",
+        "threshold_style": "selectable",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -609,36 +553,6 @@
       }
     },
     {
-      "file": "protocols/brainbit/smr_graded_baseline_cz_brainbit.refrain",
-      "name": "smr_graded_baseline_cz_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "demo",
-        "description": "Graded SMR/theta composite at Cz with baseline-fixed anchors (continuous feedback, no drift), BrainBit Flex monopolar",
-        "title": "Graded SMR training (top of head)",
-        "summary": "BrainBit: always-on graded SMR/theta feedback at the top of the head, with fixed baseline anchors.",
-        "family": "smr_cz",
-        "status": "reviewed",
-        "goals": [
-          "adhd_attention"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
-        "population": "children_adults",
-        "indication": "ADHD_attention_regulation",
-        "control_ref": "library/operant/smr_sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
-        ],
-        "outcome_measures": [
-          "IVA-2_continuous_performance",
-          "Conners-3"
-        ]
-      }
-    },
-    {
       "file": "protocols/brainbit/smr_graded_cz_brainbit.refrain",
       "name": "smr_graded_cz_brainbit",
       "draft": false,
@@ -647,8 +561,9 @@
         "evidence": "demo",
         "description": "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback), BrainBit Flex monopolar",
         "title": "Graded SMR training (top of head)",
-        "summary": "BrainBit: always-on graded SMR/theta feedback showing how close you are, with adaptive anchors.",
+        "summary": "BrainBit: always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors.",
         "family": "smr_cz",
+        "threshold_style": "selectable",
         "status": "reviewed",
         "goals": [
           "adhd_attention"
@@ -665,36 +580,6 @@
         "outcome_measures": [
           "IVA-2_continuous_performance",
           "Conners-3"
-        ]
-      }
-    },
-    {
-      "file": "protocols/brainbit/smr_up_c4_baseline_brainbit.refrain",
-      "name": "smr_up_c4_baseline_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "demo",
-        "description": "SMR (12-15 Hz) uptraining at C4 with baseline-fixed threshold, BrainBit Flex monopolar \u2014 Sleep-goal protocol",
-        "title": "Wind down for sleep \u2014 boost SMR (right side)",
-        "summary": "BrainBit: SMR uptraining over the right sensorimotor cortex for sleep onset, with a fixed baseline threshold.",
-        "family": "smr_up_c4",
-        "status": "reviewed",
-        "goals": [
-          "sensorimotor_sleep"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416.",
-        "population": "adults_18_plus",
-        "indication": "sleep_onset_sensorimotor_stability",
-        "control_ref": "library/smr_up/sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check"
-        ],
-        "outcome_measures": [
-          "sleep_diary",
-          "PSQI",
-          "subjective_state_report"
         ]
       }
     },
@@ -707,8 +592,9 @@
         "evidence": "clinical",
         "description": "SMR (12-15 Hz) uptraining at C4, BrainBit Flex monopolar \u2014 Sleep-goal protocol",
         "title": "Wind down for sleep \u2014 boost SMR (right side)",
-        "summary": "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling.",
+        "summary": "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling, with adaptive or baseline-fixed thresholds.",
         "family": "smr_up_c4",
+        "threshold_style": "selectable",
         "status": "reviewed",
         "goals": [
           "sensorimotor_sleep"
