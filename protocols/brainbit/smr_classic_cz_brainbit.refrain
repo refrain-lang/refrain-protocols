@@ -26,8 +26,9 @@ protocol "smr_classic_cz_brainbit_v1" {
     evidence          = "demo"
     description       = "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar"
     title             = "Classic SMR training (top of head)"
-    summary           = "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with adaptive thresholds."
+    summary           = "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds."
     family            = "smr_cz"
+    threshold_style   = "selectable"
     status            = "reviewed"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
@@ -78,7 +79,9 @@ protocol "smr_classic_cz_brainbit_v1" {
   // auto-recalibration.
   threshold "smr_t" {
     signal       = "smr_envelope"
-    type         = percentile(target_pct: smr_reward_pct, window: 2 min)
+    type         = threshold_style == "baseline"
+                     ? absolute(value: smr_threshold_uv)
+                     : percentile(target_pct: smr_reward_pct, window: 2 min)
     live_tunable = true
   }
 
@@ -87,7 +90,9 @@ protocol "smr_classic_cz_brainbit_v1" {
   // 80% keeps it a loose guard that only vetoes the drowsy tail.
   threshold "theta_t" {
     signal       = "theta_envelope"
-    type         = percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    type         = threshold_style == "baseline"
+                     ? absolute(value: theta_threshold_uv)
+                     : percentile(target_pct: theta_inhibit_rate, window: 2 min)
     live_tunable = true
   }
 
@@ -126,6 +131,11 @@ protocol "smr_classic_cz_brainbit_v1" {
   // reward); the theta knob reads as a target rate — the % of time theta
   // should stay in its calm range.
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     smr_reward_pct = percent {
       default      = 40
       range        = (15, 70)
@@ -136,6 +146,18 @@ protocol "smr_classic_cz_brainbit_v1" {
       default      = 80
       range        = (50, 95)
       label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+    smr_threshold_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 10.0 uV)
+      label        = "SMR threshold"
+      live_tunable = true
+    }
+    theta_threshold_uv = voltage {
+      default      = 8.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "Theta threshold"
       live_tunable = true
     }
   }

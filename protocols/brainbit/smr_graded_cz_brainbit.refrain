@@ -25,8 +25,9 @@ protocol "smr_graded_cz_brainbit_v1" {
     evidence          = "demo"
     description       = "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback), BrainBit Flex monopolar"
     title             = "Graded SMR training (top of head)"
-    summary           = "BrainBit: always-on graded SMR/theta feedback showing how close you are, with adaptive anchors."
+    summary           = "BrainBit: always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors."
     family            = "smr_cz"
+    threshold_style   = "selectable"
     status            = "reviewed"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
@@ -78,13 +79,19 @@ protocol "smr_graded_cz_brainbit_v1" {
   // (how much each band counts), which is the intuitive control for a graded
   // composite, not a per-band rate.
   threshold "smr_t" {
-    signal = "smr_envelope"
-    type   = percentile(target_pct: 50, window: 2 min)
+    signal       = "smr_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: smr_anchor_uv)
+                     : percentile(target_pct: 50, window: 2 min)
+    live_tunable = true
   }
 
   threshold "theta_t" {
-    signal = "theta_envelope"
-    type   = percentile(target_pct: 50, window: 2 min)
+    signal       = "theta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: theta_anchor_uv)
+                     : percentile(target_pct: 50, window: 2 min)
+    live_tunable = true
   }
 
   // EMG artifact inhibit — mute feedback during muscle bursts (same as classic).
@@ -115,6 +122,11 @@ protocol "smr_graded_cz_brainbit_v1" {
   }
 
   controls {
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
     w_smr = percent {
       default      = 1.0
       range        = (0, 4)
@@ -125,6 +137,18 @@ protocol "smr_graded_cz_brainbit_v1" {
       default      = 0.6
       range        = (0, 4)
       label        = "Theta suppress weight"
+      live_tunable = true
+    }
+    smr_anchor_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 10.0 uV)
+      label        = "SMR anchor"
+      live_tunable = true
+    }
+    theta_anchor_uv = voltage {
+      default      = 5.0 uV
+      range        = (1.0 uV, 20.0 uV)
+      label        = "Theta anchor"
       live_tunable = true
     }
   }
