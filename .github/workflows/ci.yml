@@ -17,7 +17,7 @@ jobs:
       - name: Install refrain + dev deps
         run: |
           python -m pip install --upgrade pip
-          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.12.0"
+          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.14.0"
           pip install pytest jsonschema
       - name: Rebuild catalog (must match committed)
         run: |
@@ -25,3 +25,33 @@ jobs:
           git diff --exit-code catalog.json || (echo "::error::catalog.json is stale — run tools/build_catalog.py and commit" && exit 1)
       - name: Validate (parse + meta schema + catalog)
         run: pytest -q
+
+  # Behavioural gate. `validate` proves each protocol parses and carries valid
+  # metadata; this proves the engine actually behaves as the protocol claims.
+  # The fuzzer synthesizes EEG with known spectral content, predicts the
+  # expected evaluator behaviour independently of the evaluator, runs it, and
+  # asserts they agree — plus noise-robust metamorphic sweeps for the
+  # percentile protocols, whose firing is decided by the noise realization.
+  #
+  # The seed is FIXED so a failure is reproducible: `refrain fuzz protocols/
+  # --library lib --seed 42` locally reproduces exactly what CI saw.
+  #
+  # Exit-code contract: violations and errored protocols fail the build; a
+  # protocol whose shape the fuzzer cannot yet represent is a typed SKIP and
+  # does NOT. The skip breakdown is printed in the log — as of refrain
+  # v0.14.0 the corpus fuzzes 26/38 with 0 violations, and the 12 skips are
+  # coverage gaps in the fuzzer (composite-signal and coherence rewards
+  # mostly), not failures here.
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install refrain
+        run: |
+          python -m pip install --upgrade pip
+          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.14.0"
+      - name: Fuzz the corpus (structural + sample-exact + metamorphic tiers)
+        run: refrain fuzz protocols/ --library lib --seed 42
