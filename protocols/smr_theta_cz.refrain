@@ -1,7 +1,5 @@
 // smr_theta_cz.refrain  —  DRAFT (status=draft, untested)
-// SMR/THETA up-train at Cz, amp-neutral: the montage reference comes from the
-// connected amp (device on BrainBit, linked_ears on a clinical amp) and the
-// site is a placement the host binds. Sterman; Lubar; Arns 2009.
+// SMR/THETA up-train at Cz.  Sterman; Lubar; Arns 2009
 protocol "smr_theta_cz" {
   meta {
     version         = "0.1.0"
@@ -26,11 +24,7 @@ protocol "smr_theta_cz" {
     channels    = ["Cz"]
   }
 
-  groups {
-    sensorimotor = ["C3", "Cz", "C4"]
-  }
-
-  input "raw" { montage = referential(active: site, reference: amp.reference) }
+  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
@@ -61,11 +55,6 @@ protocol "smr_theta_cz" {
   }
 
   controls {
-    site = placement {
-      kind    = "active"
-      default = "Cz"
-      allowed = sensorimotor
-    }
     threshold_style = mode {
       choices = ["adaptive", "baseline"]
       default = "adaptive"
@@ -89,7 +78,8 @@ protocol "smr_theta_cz" {
       live_tunable = true
     }
   }
-
+  // Default: 4x5-min blocks with 2-min rests on one baseline (host overrides
+  // block_minutes / block_count by sending a different phase list).
   session {
     phases = [
       phase { name = "warmup";   duration = 90 s;  output_muted = true },

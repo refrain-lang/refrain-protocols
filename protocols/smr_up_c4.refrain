@@ -17,15 +17,14 @@ protocol "smr_up_c4" {
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
-    hardware        = "generic"
   }
 
   requires {
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["C4"]
   }
 
-  input "raw" { montage = referential(active: "C4", reference: "linked_ears") }
+  input "raw" { montage = referential(active: "C4", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
