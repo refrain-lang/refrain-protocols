@@ -1,5 +1,7 @@
 # Amp-Neutral Working Slice — Implementation Plan
 
+> **SUPERSEDED (2026-07-18) at Task 3.** Task 3 assumed `smr_theta_cz` was hand-editable; it is **generated** by `tools/gen_seed_protocols.py`, so the amp-neutral change was made in the **generator template** and applies to all 16 operant cores (no `placement` — the site stays a literal). See the "Revision (2026-07-18)" block in the design spec for the authoritative approach. Tasks 1–2 below shipped as written; Tasks 3–6 were replaced by the generator-based conversion. What actually shipped: fuzz readers run against **q21** (not brainbit_flex), and the amp-reader detector is `\bamp\.[a-z_]`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Re-author `smr_theta_cz` as a single amp-neutral protocol (`reference: amp.reference` + a `placement` site) and prove in CI that it resolves and runs on both `brainbit_flex` (→ `device`) and `q21` (→ `linked_ears`) from one source.

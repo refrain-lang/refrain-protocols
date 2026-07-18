@@ -60,14 +60,15 @@ jobs:
           # so every amp-reading protocol resolves. (A consumer amp like BrainBit
           # can't host all sites — that's WOR-163's full-amp matrix, not this gate.)
           AMP="$(python -c 'import refrain,os;print(os.path.join(os.path.dirname(refrain.__file__),"amp_profiles","q21.json"))')"
-          # Literal protocols (no amp.* reference) — resolve at amp=None, as before.
-          LITERAL="$(grep -rLE --include='*.refrain' '\bamp\.' protocols || true)"
+          # Literal protocols (no amp.<field> reference) — resolve at amp=None.
+          # The [a-z_] after the dot avoids matching prose like "...clinical amp.".
+          LITERAL="$(grep -rLE --include='*.refrain' '\bamp\.[a-z_]' protocols || true)"
           if [ -n "$LITERAL" ]; then
             echo "Fuzzing literal protocols at amp=None"
             refrain fuzz $LITERAL --library lib --seed 42
           fi
           # Amp-reading protocols — resolve against the clinical amp above.
-          READERS="$(grep -rlE --include='*.refrain' '\bamp\.' protocols || true)"
+          READERS="$(grep -rlE --include='*.refrain' '\bamp\.[a-z_]' protocols || true)"
           if [ -n "$READERS" ]; then
             echo "Fuzzing amp-reading protocols with --amp q21"
             refrain fuzz $READERS --library lib --amp "$AMP" --seed 42

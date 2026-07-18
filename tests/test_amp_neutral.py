@@ -20,10 +20,12 @@ PROF = Path(refrain.__file__).parent / "amp_profiles"
 BRAINBIT = load_amp_profile(PROF / "brainbit_flex.json")
 Q21 = load_amp_profile(PROF / "q21.json")
 
-# Amp-reading protocols: source references the `amp` namespace.
+# Amp-reading protocols: source references an `amp.<field>` namespace member.
+# The trailing identifier class is load-bearing — a bare `\bamp\.` would also
+# match English prose like "...a DC-coupled clinical amp." in a summary/comment.
 AMP_READERS = [
     p for p in sorted(ROOT.glob("protocols/**/*.refrain"))
-    if re.search(r'\bamp\.', p.read_text())
+    if re.search(r'\bamp\.[a-z_]', p.read_text())
 ]
 
 
