@@ -895,8 +895,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
