@@ -425,16 +425,23 @@ In `.github/workflows/ci.yml`, replace the fuzz job's `run:` (currently `refrain
           set -eu
           AMP="$(python -c 'import refrain,os;print(os.path.join(os.path.dirname(refrain.__file__),"amp_profiles","brainbit_flex.json"))')"
           # Literal protocols (no amp.* reference) — resolve at amp=None, as before.
-          LITERAL="$(grep -rL --include='*.refrain' 'amp\.' protocols)"
+          # `|| true`: grep exits 1 on zero matches, which under `set -e` would abort
+          # the assignment before the guard runs. Neutralize it so the guard can act.
+          LITERAL="$(grep -rL --include='*.refrain' 'amp\.' protocols || true)"
           echo "Fuzzing literal protocols at amp=None"
           refrain fuzz $LITERAL --library lib --seed 42
           # Amp-reading protocols — resolve against a real amp (brainbit_flex, 250 Hz).
-          READERS="$(grep -rl --include='*.refrain' 'amp\.' protocols)"
+          READERS="$(grep -rl --include='*.refrain' 'amp\.' protocols || true)"
           if [ -n "$READERS" ]; then
             echo "Fuzzing amp-reading protocols with --amp brainbit_flex"
             refrain fuzz $READERS --library lib --amp "$AMP" --seed 42
           fi
 ```
+
+**Local verification runs bash, not zsh.** The unquoted `$LITERAL`/`$READERS`
+word-splitting is a bash behaviour; a macOS default shell is zsh, which does NOT
+word-split unquoted variables. When running the split commands locally, wrap them
+in `bash -c '…'`. CI is unaffected (GitHub Actions runs `run:` steps in bash).
 
 Rationale: `grep -rL 'amp\.'` lists files WITHOUT `amp.` (literal); `grep -rl 'amp\.'` lists files WITH it (amp-readers). `refrain fuzz` accepts explicit file paths (`paths [paths …]`), so each set fuzzes under the right amp setting. `$LITERAL`/`$READERS` are left unquoted for word-splitting — `.refrain` filenames have no spaces — which keeps the command portable across CI bash and a local macOS shell (no `mapfile`, a bash-4-only builtin). Auto-scales as more protocols convert. `brainbit_flex` is used for readers because it is 250 Hz (close to the corpus's chosen rate) and `smr_theta_cz` resolves on it.
 
