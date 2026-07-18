@@ -68,6 +68,11 @@ KNOWN_GAPS = {
 # in-subset and gated by the round-trip test below. critical_fluctuation
 # (multi-band bands{} fan-out + autocorr) is a new non-operant gap added here.
 
+# NOTE: in-subset protocols are resolved at amp=None below. A protocol that
+# reads `amp.*` (amp-neutral) will ResolveError here (fail-closed by design) if
+# it is ever in-subset. When the amp-neutral sweep lands, teach this test to skip
+# amp-readers (or resolve them against a default amp). Today only smr_theta_cz
+# reads amp and it is a KNOWN_GAP, so it never reaches this path.
 _IN_SUBSET = [p for p in ALL if p.name not in KNOWN_GAPS]
 _GAPS = [p for p in ALL if p.name in KNOWN_GAPS]
 

@@ -2,10 +2,16 @@ from pathlib import Path
 
 import pytest
 
+import refrain
+from refrain.amp_profile import load_amp_profile
 from refrain.parser import parse
 from refrain.resolver import resolve
 
 ROOT = Path(__file__).resolve().parents[1]
+# The cores are amp-neutral (montage reads `amp.reference`) and so fail closed at
+# amp=None. Resolve against a clinical amp that declares every operant site (q21);
+# the threshold folding checked here is independent of the amp.
+_AMP = load_amp_profile(Path(refrain.__file__).parent / "amp_profiles" / "q21.json")
 
 # The 16 collapsed generic cores (families that had adaptive+baseline pairs).
 _COLLAPSED = [
@@ -19,12 +25,12 @@ _COLLAPSED = [
 @pytest.mark.parametrize("name", _COLLAPSED)
 def test_default_resolves_adaptive_percentile(name):
     src = (ROOT / "protocols" / f"{name}.refrain").read_text()
-    ir = resolve(parse(src))  # amp=None; default threshold_style="adaptive"
+    ir = resolve(parse(src), amp=_AMP)  # default threshold_style="adaptive"
     assert ir.thresholds["env_t"].threshold_call.callee == "percentile"
 
 
 @pytest.mark.parametrize("name", _COLLAPSED)
 def test_baseline_binding_resolves_absolute(name):
     src = (ROOT / "protocols" / f"{name}.refrain").read_text()
-    ir = resolve(parse(src), bindings={"threshold_style": "baseline"})
+    ir = resolve(parse(src), amp=_AMP, bindings={"threshold_style": "baseline"})
     assert ir.thresholds["env_t"].threshold_call.callee == "absolute"
