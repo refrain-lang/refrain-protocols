@@ -58,11 +58,11 @@ jobs:
           set -eu
           AMP="$(python -c 'import refrain,os;print(os.path.join(os.path.dirname(refrain.__file__),"amp_profiles","brainbit_flex.json"))')"
           # Literal protocols (no amp.* reference) — resolve at amp=None, as before.
-          LITERAL="$(grep -rL --include='*.refrain' 'amp\.' protocols)"
+          LITERAL="$(grep -rL --include='*.refrain' 'amp\.' protocols || true)"
           echo "Fuzzing literal protocols at amp=None"
           refrain fuzz $LITERAL --library lib --seed 42
           # Amp-reading protocols — resolve against a real amp (brainbit_flex, 250 Hz).
-          READERS="$(grep -rl --include='*.refrain' 'amp\.' protocols)"
+          READERS="$(grep -rl --include='*.refrain' 'amp\.' protocols || true)"
           if [ -n "$READERS" ]; then
             echo "Fuzzing amp-reading protocols with --amp brainbit_flex"
             refrain fuzz $READERS --library lib --amp "$AMP" --seed 42
