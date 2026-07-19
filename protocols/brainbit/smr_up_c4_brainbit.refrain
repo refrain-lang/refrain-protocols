@@ -124,6 +124,11 @@ protocol "smr_up_c4_brainbit_v1" {
       range        = (0.5 uV, 10.0 uV)
       label        = "SMR threshold"
       live_tunable = true
+      seed = percentile {
+        from       = "smr_envelope"
+        window     = 60 s
+        target_pct = 40
+      }
     }
   }
 

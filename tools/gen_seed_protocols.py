@@ -15,6 +15,13 @@ Each generated core carries a single `threshold_style` `mode` control
 percentile target and an absolute clinician-set value at resolve time —
 one file per target, no separate `_baseline` variant.
 
+Under the "baseline" mode the `thr_uv` control is baseline-seeded: its value
+is the `target_pct = reward_pct` percentile of the last 60 s of the `env`
+signal, measured during warmup and held for the run (refrain >= 0.15.0
+first-class baseline seeding). Under the default "adaptive" mode `thr_uv`
+folds out and the seed is dropped (dead-seed elimination), so the seeded
+value only materialises when a host selects baseline.
+
 Specials that don't fit the operant template (composite, coherence,
 alpha-theta crossover, HRV, SCP) are hand-authored, not generated here.
 """
@@ -150,6 +157,11 @@ def emit(name, band, direction, site, goals, bands, ev, cite, title, summary):
       range        = (0.5 uV, 30.0 uV)
       label        = "Threshold (baseline-seeded)"
       live_tunable = true
+      seed = percentile {{
+        from       = "env"
+        window     = 60 s
+        target_pct = reward_pct
+      }}
     }}
   }}"""
 
