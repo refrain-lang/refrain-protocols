@@ -17,7 +17,7 @@ jobs:
       - name: Install refrain + dev deps
         run: |
           python -m pip install --upgrade pip
-          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.14.0"
+          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.15.0"
           pip install pytest jsonschema
       - name: Rebuild catalog (must match committed)
         run: |
@@ -52,6 +52,24 @@ jobs:
       - name: Install refrain
         run: |
           python -m pip install --upgrade pip
-          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.14.0"
+          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.15.0"
       - name: Fuzz the corpus (structural + sample-exact + metamorphic tiers)
-        run: refrain fuzz protocols/ --library lib --seed 42
+        run: |
+          set -eu
+          # A clinical amp that declares every operant site (Cz/Fz/Pz/C3/C4 + ears),
+          # so every amp-reading protocol resolves. (A consumer amp like BrainBit
+          # can't host all sites — that's WOR-163's full-amp matrix, not this gate.)
+          AMP="$(python -c 'import refrain,os;print(os.path.join(os.path.dirname(refrain.__file__),"amp_profiles","q21.json"))')"
+          # Literal protocols (no amp.<field> reference) — resolve at amp=None.
+          # The [a-z_] after the dot avoids matching prose like "...clinical amp.".
+          LITERAL="$(grep -rLE --include='*.refrain' '\bamp\.[a-z_]' protocols || true)"
+          if [ -n "$LITERAL" ]; then
+            echo "Fuzzing literal protocols at amp=None"
+            refrain fuzz $LITERAL --library lib --seed 42
+          fi
+          # Amp-reading protocols — resolve against the clinical amp above.
+          READERS="$(grep -rlE --include='*.refrain' '\bamp\.[a-z_]' protocols || true)"
+          if [ -n "$READERS" ]; then
+            echo "Fuzzing amp-reading protocols with --amp q21"
+            refrain fuzz $READERS --library lib --amp "$AMP" --seed 42
+          fi

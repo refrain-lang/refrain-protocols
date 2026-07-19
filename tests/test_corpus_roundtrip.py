@@ -23,7 +23,7 @@ from refrain.ir_json import ir_to_json_obj  # noqa: E402
 from refrain.resolver import resolve  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-ALL = sorted((ROOT / "protocols").glob("*.refrain")) + sorted((ROOT / "drafts").glob("*.refrain"))
+ALL = sorted((ROOT / "protocols").rglob("*.refrain")) + sorted((ROOT / "drafts").rglob("*.refrain"))
 
 # Protocols not yet covered by catalog v1 — each is a catalog-growth TODO.
 # When the catalog grows to cover one, `test_known_gaps_stay_flagged` fails and
@@ -55,12 +55,24 @@ KNOWN_GAPS = {
     "fm_theta_up_fz.refrain",
     "alpha_down_pz.refrain",
     "theta_up_pz.refrain",
+    # BrainBit mode-folded-threshold cores — same catalog-v1 gap as the generic
+    # cores above (editor's _match_threshold doesn't recognise the mode-folded
+    # conditional). Surfaced when rglob brought protocols/brainbit/ into the test.
+    "beta_focus_staged_fz_brainbit.refrain",
+    "smr_classic_cz_brainbit.refrain",
+    "smr_graded_cz_brainbit.refrain",
+    "smr_up_c4_brainbit.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
 # in-subset and gated by the round-trip test below. critical_fluctuation
 # (multi-band bands{} fan-out + autocorr) is a new non-operant gap added here.
 
+# NOTE: in-subset protocols are resolved at amp=None below. A protocol that
+# reads `amp.*` (amp-neutral) will ResolveError here (fail-closed by design) if
+# it is ever in-subset. All 16 amp-reading operant cores are currently KNOWN_GAPS,
+# so none reach this path. When the sweep moves an amp-reader into subset, teach
+# this test to skip amp-readers (or resolve them against a default amp) first.
 _IN_SUBSET = [p for p in ALL if p.name not in KNOWN_GAPS]
 _GAPS = [p for p in ALL if p.name in KNOWN_GAPS]
 

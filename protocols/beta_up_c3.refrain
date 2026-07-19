@@ -17,15 +17,14 @@ protocol "beta_up_c3" {
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
-    hardware        = "generic"
   }
 
   requires {
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["C3"]
   }
 
-  input "raw" { montage = referential(active: "C3", reference: "linked_ears") }
+  input "raw" { montage = referential(active: "C3", reference: amp.reference) }
 
   derive "env" {
     from = "raw"

@@ -17,15 +17,14 @@ protocol "slow_down_fz" {
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
-    hardware        = "generic"
   }
 
   requires {
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["Fz"]
   }
 
-  input "raw" { montage = referential(active: "Fz", reference: "linked_ears") }
+  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"

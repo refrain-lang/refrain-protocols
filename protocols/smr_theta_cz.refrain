@@ -17,15 +17,14 @@ protocol "smr_theta_cz" {
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
-    hardware        = "generic"
   }
 
   requires {
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["Cz"]
   }
 
-  input "raw" { montage = referential(active: "Cz", reference: "linked_ears") }
+  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"

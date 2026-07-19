@@ -56,11 +56,6 @@ TABLE = [
     ("theta_up_pz",     (4,8),   "up",  "Pz", ["deep_meditative"], ["theta"], "exploratory", "Gruzelier (creativity/deep states)", "Theta up — reverie state (back of head)", "Rewards raising theta at the back of the head, associated with hypnagogic, creative reverie states."),
 ]
 
-_SITE_REF = {  # vendor-neutral reference montage; hardware overlay is a meta concern
-    "Cz": "linked_ears", "Fz": "linked_ears", "Pz": "linked_ears",
-    "C3": "linked_ears", "C4": "linked_ears",
-}
-
 OPERANT_SESSION = """\
   // Default: 4x5-min blocks with 2-min rests on one baseline (host overrides
   // block_minutes / block_count by sending a different phase list).
@@ -99,13 +94,11 @@ def _meta(name, desc, ev, cite, goals, bands, site, direction, title, summary):
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
-    hardware        = "generic"
   }}"""
 
 
 def emit(name, band, direction, site, goals, bands, ev, cite, title, summary):
     lo, hi = band
-    ref = _SITE_REF[site]
     cmp = "above" if direction == "up" else "below"
     desc = f"{'/'.join(bands).upper()} {direction}-train at {site}"
 
@@ -167,11 +160,11 @@ protocol "{name}" {{
 {_meta(name, desc, ev, cite, goals, bands, site, direction, title, summary)}
 
   requires {{
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["{site}"]
   }}
 
-  input "raw" {{ montage = referential(active: "{site}", reference: "{ref}") }}
+  input "raw" {{ montage = referential(active: "{site}", reference: amp.reference) }}
 
   derive "env" {{
     from = "raw"

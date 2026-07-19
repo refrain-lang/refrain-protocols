@@ -51,8 +51,7 @@
         "direction": "down",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -106,8 +105,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -134,8 +132,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -161,8 +158,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -726,8 +722,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -753,8 +748,7 @@
         "direction": "down",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -808,8 +802,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -837,8 +830,7 @@
         "direction": "down",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -866,8 +858,7 @@
         "direction": "down",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -895,8 +886,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -923,8 +913,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -951,8 +940,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -979,8 +967,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -1006,8 +993,7 @@
         "direction": "down",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -1033,8 +1019,7 @@
         "direction": "down",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {
@@ -1060,8 +1045,7 @@
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
-        "session_shape": "staged",
-        "hardware": "generic"
+        "session_shape": "staged"
       }
     },
     {

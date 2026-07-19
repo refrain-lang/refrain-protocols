@@ -17,15 +17,14 @@ protocol "theta_up_pz" {
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
-    hardware        = "generic"
   }
 
   requires {
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["Pz"]
   }
 
-  input "raw" { montage = referential(active: "Pz", reference: "linked_ears") }
+  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
