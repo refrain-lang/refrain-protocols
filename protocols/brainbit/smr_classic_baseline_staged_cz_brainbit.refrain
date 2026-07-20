@@ -135,12 +135,22 @@ protocol "smr_classic_baseline_staged_cz_brainbit_v1" {
       range        = (0.5 uV, 10.0 uV)
       label        = "SMR threshold"
       live_tunable = true
+      seed = percentile {
+        from       = "smr_envelope"
+        window     = 60 s
+        target_pct = 40
+      }
     }
     theta_threshold_uv = voltage {
       default      = 8.0 uV
       range        = (2.0 uV, 30.0 uV)
       label        = "Theta threshold"
       live_tunable = true
+      seed = percentile {
+        from       = "theta_envelope"
+        window     = 60 s
+        target_pct = 80
+      }
     }
   }
 
