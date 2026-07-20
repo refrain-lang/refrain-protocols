@@ -76,6 +76,11 @@ protocol "beta_up_fz" {
       range        = (0.5 uV, 30.0 uV)
       label        = "Threshold (baseline-seeded)"
       live_tunable = true
+      seed = percentile {
+        from       = "env"
+        window     = 60 s
+        target_pct = reward_pct
+      }
     }
   }
   // Default: 4x5-min blocks with 2-min rests on one baseline (host overrides

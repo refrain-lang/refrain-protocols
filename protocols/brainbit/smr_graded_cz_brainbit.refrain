@@ -144,12 +144,22 @@ protocol "smr_graded_cz_brainbit_v1" {
       range        = (0.5 uV, 10.0 uV)
       label        = "SMR anchor"
       live_tunable = true
+      seed = percentile {
+        from       = "smr_envelope"
+        window     = 60 s
+        target_pct = 50
+      }
     }
     theta_anchor_uv = voltage {
       default      = 5.0 uV
       range        = (1.0 uV, 20.0 uV)
       label        = "Theta anchor"
       live_tunable = true
+      seed = percentile {
+        from       = "theta_envelope"
+        window     = 60 s
+        target_pct = 50
+      }
     }
   }
 

@@ -158,18 +158,33 @@ protocol "beta_focus_staged_fz_brainbit_v1" {
       range        = (0.3 uV, 8.0 uV)
       label        = "Beta threshold"
       live_tunable = true
+      seed = percentile {
+        from       = "beta_envelope"
+        window     = 60 s
+        target_pct = 40
+      }
     }
     theta_threshold_uv = voltage {
       default      = 6.0 uV
       range        = (1.0 uV, 25.0 uV)
       label        = "Theta threshold"
       live_tunable = true
+      seed = percentile {
+        from       = "theta_envelope"
+        window     = 60 s
+        target_pct = 80
+      }
     }
     hbeta_threshold_uv = voltage {
       default      = 1.0 uV
       range        = (0.2 uV, 6.0 uV)
       label        = "High-beta threshold"
       live_tunable = true
+      seed = percentile {
+        from       = "high_beta_envelope"
+        window     = 60 s
+        target_pct = 80
+      }
     }
   }
 
