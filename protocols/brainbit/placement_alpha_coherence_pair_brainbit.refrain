@@ -43,10 +43,10 @@ protocol "placement_alpha_coherence_pair_brainbit_v1" {
       allowed = [("F3", "F4"), ("C3", "C4"), ("P3", "P4")]
       label   = "Coherence pair"
     }
-    coh_target_pct = percent {
+    coh_reward_pct = percent {
       default      = 60
-      range        = (40, 90)
-      label        = "Coherence target percentile"
+      range        = (30, 90)
+      label        = "Coherence reward rate"
       live_tunable = true
     }
   }
@@ -65,7 +65,7 @@ protocol "placement_alpha_coherence_pair_brainbit_v1" {
 
   threshold "coh_t" {
     signal       = "alpha_coh"
-    type         = percentile(target_pct: coh_target_pct, window: 2 min)
+    type         = percentile(target_pct: coh_reward_pct, window: 2 min)
     live_tunable = true
   }
 
