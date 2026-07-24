@@ -36,10 +36,10 @@ protocol "placement_smr_bipolar_brainbit_v1" {
       allowed = [("C3", "C4"), ("T3", "T4"), ("F3", "F4")]
       label   = "Bipolar motor pair"
     }
-    smr_target_pct = percent {
+    smr_reward_pct = percent {
       default      = 70
-      range        = (50, 90)
-      label        = "SMR target percentile"
+      range        = (30, 90)
+      label        = "SMR reward rate"
       live_tunable = true
     }
   }
@@ -60,7 +60,7 @@ protocol "placement_smr_bipolar_brainbit_v1" {
 
   threshold "smr_t" {
     signal       = "smr_envelope"
-    type         = percentile(target_pct: smr_target_pct, window: 2 min)
+    type         = percentile(target_pct: smr_reward_pct, window: 2 min)
     live_tunable = true
   }
 
