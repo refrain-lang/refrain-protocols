@@ -4,6 +4,11 @@
 // the composite is Sum(w*success)/Sum(w), so only the RATIO matters).
 // NOTE: requires refrain >= the release that adds the `number` control kind;
 // it parses today but won't resolve until then.
+//
+// RETIRED: weighted composite rewarding on fixed uV midpoints rather than
+// adaptively — sits at 0% and the session coach's reward-rate advice cannot
+// address its weight knobs. Kept runnable for subjects already assigned it;
+// hidden from the default picker.
 protocol "composite_smr_theta_cz" {
   meta {
     version         = "0.1.0"
@@ -11,7 +16,7 @@ protocol "composite_smr_theta_cz" {
     title           = "Steady focus — SMR up / theta down blend (top of head)"
     summary         = "A weighted blend rewarding more SMR and less theta together at the top of the head."
     family          = "composite_smr_theta_cz"
-    status          = "draft"
+    status          = "legacy"
     evidence        = "established"
     citation        = "Sterman; Lubar; Arns 2009"
     goals           = ["adhd_attention", "sensorimotor_sleep"]

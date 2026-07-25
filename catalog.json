@@ -253,36 +253,6 @@
       }
     },
     {
-      "file": "protocols/brainbit/composite_smr_theta_cz_brainbit.refrain",
-      "name": "composite_smr_theta_cz_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "demo",
-        "description": "SMR-up / theta-down weighted composite at Cz, BrainBit Flex monopolar",
-        "title": "Steady focus \u2014 SMR up / theta down blend (top of head)",
-        "summary": "BrainBit: a weighted blend rewarding more SMR and less theta together at the top of the head.",
-        "family": "composite_smr_theta_cz",
-        "status": "reviewed",
-        "goals": [
-          "adhd_attention"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
-        "population": "children_adults",
-        "indication": "ADHD_attention_regulation",
-        "control_ref": "library/operant/smr_sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
-        ],
-        "outcome_measures": [
-          "IVA-2_continuous_performance",
-          "Conners-3"
-        ]
-      }
-    },
-    {
       "file": "protocols/brainbit/high_beta_down_cz_brainbit.refrain",
       "name": "high_beta_down_cz_brainbit",
       "draft": false,
@@ -503,65 +473,6 @@
       }
     },
     {
-      "file": "protocols/brainbit/smr_up_c4_brainbit.refrain",
-      "name": "smr_up_c4_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "clinical",
-        "description": "SMR (12-15 Hz) uptraining at C4, BrainBit Flex monopolar \u2014 Sleep-goal protocol",
-        "title": "Wind down for sleep \u2014 boost SMR (right side)",
-        "summary": "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling, with adaptive or baseline-fixed thresholds.",
-        "family": "smr_up_c4",
-        "threshold_style": "selectable",
-        "status": "reviewed",
-        "goals": [
-          "sensorimotor_sleep"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416.",
-        "population": "adults_18_plus",
-        "indication": "sleep_onset_sensorimotor_stability",
-        "control_ref": "library/smr_up/sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check"
-        ],
-        "outcome_measures": [
-          "sleep_diary",
-          "PSQI",
-          "subjective_state_report"
-        ]
-      }
-    },
-    {
-      "file": "protocols/composite_smr_theta_cz.refrain",
-      "name": "composite_smr_theta_cz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "description": "SMR-up / theta-down weighted composite at Cz",
-        "title": "Steady focus \u2014 SMR up / theta down blend (top of head)",
-        "summary": "A weighted blend rewarding more SMR and less theta together at the top of the head.",
-        "family": "composite_smr_theta_cz",
-        "status": "draft",
-        "evidence": "established",
-        "citation": "Sterman; Lubar; Arns 2009",
-        "goals": [
-          "adhd_attention",
-          "sensorimotor_sleep"
-        ],
-        "bands": [
-          "smr",
-          "theta"
-        ],
-        "site": "Cz",
-        "direction": "composite",
-        "threshold_style": "adaptive",
-        "reward_style": "weighted",
-        "hardware": "generic"
-      }
-    },
-    {
       "file": "protocols/critical_fluctuation.refrain",
       "name": "critical_fluctuation",
       "draft": true,
@@ -668,6 +579,122 @@
           "pre_session_check"
         ],
         "outcome_measures": [
+          "subjective_state_report"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/composite_smr_theta_cz.refrain",
+      "name": "composite_smr_theta_cz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "description": "SMR-up / theta-down weighted composite at Cz",
+        "title": "Steady focus \u2014 SMR up / theta down blend (top of head)",
+        "summary": "A weighted blend rewarding more SMR and less theta together at the top of the head.",
+        "family": "composite_smr_theta_cz",
+        "status": "legacy",
+        "evidence": "established",
+        "citation": "Sterman; Lubar; Arns 2009",
+        "goals": [
+          "adhd_attention",
+          "sensorimotor_sleep"
+        ],
+        "bands": [
+          "smr",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "composite",
+        "threshold_style": "adaptive",
+        "reward_style": "weighted",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/composite_smr_theta_cz_brainbit.refrain",
+      "name": "composite_smr_theta_cz_brainbit",
+      "draft": false,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "SMR-up / theta-down weighted composite at Cz, BrainBit Flex monopolar",
+        "title": "Steady focus \u2014 SMR up / theta down blend (top of head)",
+        "summary": "BrainBit: a weighted blend rewarding more SMR and less theta together at the top of the head.",
+        "family": "composite_smr_theta_cz",
+        "status": "legacy",
+        "goals": [
+          "adhd_attention"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
+        "population": "children_adults",
+        "indication": "ADHD_attention_regulation",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "IVA-2_continuous_performance",
+          "Conners-3"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/smr_up_c4.refrain",
+      "name": "smr_up_c4",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Wind down for sleep \u2014 boost SMR (right side)",
+        "summary": "Rewards the calm sensorimotor rhythm over the right sensorimotor cortex, associated with sleep spindles and settling.",
+        "family": "smr_up_c4",
+        "description": "SMR up-train at C4",
+        "status": "legacy",
+        "evidence": "established",
+        "citation": "Sterman; Hoedlmoser 2008",
+        "goals": [
+          "sensorimotor_sleep",
+          "calm_anxiety"
+        ],
+        "bands": [
+          "smr"
+        ],
+        "site": "C4",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/smr_up_c4_brainbit.refrain",
+      "name": "smr_up_c4_brainbit",
+      "draft": false,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "clinical",
+        "description": "SMR (12-15 Hz) uptraining at C4, BrainBit Flex monopolar \u2014 Sleep-goal protocol",
+        "title": "Wind down for sleep \u2014 boost SMR (right side)",
+        "summary": "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling, with adaptive or baseline-fixed thresholds.",
+        "family": "smr_up_c4",
+        "threshold_style": "selectable",
+        "status": "legacy",
+        "goals": [
+          "sensorimotor_sleep"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416.",
+        "population": "adults_18_plus",
+        "indication": "sleep_onset_sensorimotor_stability",
+        "control_ref": "library/smr_up/sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check"
+        ],
+        "outcome_measures": [
+          "sleep_diary",
+          "PSQI",
           "subjective_state_report"
         ]
       }
@@ -883,33 +910,6 @@
           "theta"
         ],
         "site": "Cz",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/smr_up_c4.refrain",
-      "name": "smr_up_c4",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Wind down for sleep \u2014 boost SMR (right side)",
-        "summary": "Rewards the calm sensorimotor rhythm over the right sensorimotor cortex, associated with sleep spindles and settling.",
-        "family": "smr_up_c4",
-        "description": "SMR up-train at C4",
-        "status": "draft",
-        "evidence": "established",
-        "citation": "Sterman; Hoedlmoser 2008",
-        "goals": [
-          "sensorimotor_sleep",
-          "calm_anxiety"
-        ],
-        "bands": [
-          "smr"
-        ],
-        "site": "C4",
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",

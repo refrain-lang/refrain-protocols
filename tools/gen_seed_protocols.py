@@ -52,7 +52,11 @@ TABLE = [
     ("theta_down_fz",   (4,8),   "down","Fz", ["adhd_attention"], ["theta"], "probable", "Lubar; frontal-theta excess", "Quiet daydreaming — lower theta (forehead)", "Rewards lowering excess frontal theta associated with mind-wandering."),
     ("slow_down_cz",    (2,7),   "down","Cz", ["alertness_performance","adhd_attention"], ["delta","theta"], "exploratory", "Thatcher; Walker (qEEG-guided slowing)", "Clear mental fog — lower slow waves (top of head)", "Rewards reducing sluggish delta/theta slow-wave activity at the top of the head."),
     ("slow_down_fz",    (2,7),   "down","Fz", ["alertness_performance","adhd_attention"], ["delta","theta"], "exploratory", "Thatcher; Walker (frontal slowing)", "Clear mental fog — lower slow waves (forehead)", "Rewards reducing frontal delta/theta slow-wave activity linked to under-arousal."),
-    ("smr_up_c4",       (12,15), "up",  "C4", ["sensorimotor_sleep","calm_anxiety"], ["smr"], "established", "Sterman; Hoedlmoser 2008", "Wind down for sleep — boost SMR (right side)", "Rewards the calm sensorimotor rhythm over the right sensorimotor cortex, associated with sleep spindles and settling."),
+    # smr_up_c4 retired 2026-07: superseded by the configurable SMR template
+    # (site knob = C4). The old file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/smr_up_c4.refrain — do not re-add it here, that
+    # would resurrect a non-legacy duplicate at the top-level path on every
+    # regen.
     ("beta_up_c3",      (15,18), "up",  "C3", ["alertness_performance","adhd_attention"], ["beta"], "probable", "Othmer & Othmer (arousal model)", "Alert and engaged — boost beta (left side)", "Rewards raising engaged beta activity over the left sensorimotor cortex."),
     ("beta_up_fz",      (15,18), "up",  "Fz", ["alertness_performance"], ["beta"], "probable", "frontal beta activation", "Alert and engaged — boost beta (forehead)", "Rewards raising engaged frontal beta activity."),
     ("alpha_up_pz",     (8,12),  "up",  "Pz", ["calm_anxiety","deep_meditative"], ["alpha"], "probable", "Hardt & Kamiya 1978", "Calm the mind — boost alpha (back of head)", "Rewards raising relaxed alpha waves at the back of the head, the classic eyes-closed calm state."),

@@ -21,16 +21,27 @@ _COLLAPSED = [
     "theta_down_cz", "theta_down_fz", "theta_up_pz",
 ]
 
+# smr_up_c4 was retired 2026-07 (git mv'd to protocols/eeg/legacy/,
+# status=legacy; dropped from tools/gen_seed_protocols.py's TABLE so it's no
+# longer regenerated at the old top-level path) — superseded by the
+# configurable SMR template. It's still runnable/tested here, just relocated;
+# the other 15 cores stay at their original protocols/ path.
+_RELOCATED = {"smr_up_c4": ROOT / "protocols" / "eeg" / "legacy"}
+
+
+def _path_for(name):
+    return _RELOCATED.get(name, ROOT / "protocols") / f"{name}.refrain"
+
 
 @pytest.mark.parametrize("name", _COLLAPSED)
 def test_default_resolves_adaptive_percentile(name):
-    src = (ROOT / "protocols" / f"{name}.refrain").read_text()
+    src = _path_for(name).read_text()
     ir = resolve(parse(src), amp=_AMP)  # default threshold_style="adaptive"
     assert ir.thresholds["env_t"].threshold_call.callee == "percentile"
 
 
 @pytest.mark.parametrize("name", _COLLAPSED)
 def test_baseline_binding_resolves_absolute(name):
-    src = (ROOT / "protocols" / f"{name}.refrain").read_text()
+    src = _path_for(name).read_text()
     ir = resolve(parse(src), amp=_AMP, bindings={"threshold_style": "baseline"})
     assert ir.thresholds["env_t"].threshold_call.callee == "absolute"

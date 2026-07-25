@@ -19,10 +19,20 @@ _MODE_SWITCHED_THRESHOLDS = {
     "beta_focus_staged_fz_brainbit": ["beta_t", "theta_t", "hbeta_t"],
 }
 
+# smr_up_c4_brainbit was retired 2026-07 (git mv'd to protocols/eeg/legacy/,
+# status=legacy) — superseded by the configurable SMR template. It's still
+# runnable/tested here, just relocated; the other three cores stay at their
+# original protocols/brainbit/ path.
+_RELOCATED = {"smr_up_c4_brainbit": ROOT / "protocols" / "eeg" / "legacy"}
+
+
+def _path_for(name):
+    return _RELOCATED.get(name, ROOT / "protocols" / "brainbit") / f"{name}.refrain"
+
 
 @pytest.mark.parametrize("name", _MODE_SWITCHED_THRESHOLDS)
 def test_default_mode_switched_thresholds_are_percentile(name):
-    src = (ROOT / "protocols" / "brainbit" / f"{name}.refrain").read_text()
+    src = _path_for(name).read_text()
     ir = resolve(parse(src))  # bindings=None -> default threshold_style="adaptive"
     for tname in _MODE_SWITCHED_THRESHOLDS[name]:
         assert ir.thresholds[tname].threshold_call.callee == "percentile"
@@ -30,7 +40,7 @@ def test_default_mode_switched_thresholds_are_percentile(name):
 
 @pytest.mark.parametrize("name", _MODE_SWITCHED_THRESHOLDS)
 def test_baseline_binding_mode_switched_thresholds_are_absolute(name):
-    src = (ROOT / "protocols" / "brainbit" / f"{name}.refrain").read_text()
+    src = _path_for(name).read_text()
     ir = resolve(parse(src), bindings={"threshold_style": "baseline"})
     for tname in _MODE_SWITCHED_THRESHOLDS[name]:
         assert ir.thresholds[tname].threshold_call.callee == "absolute"
