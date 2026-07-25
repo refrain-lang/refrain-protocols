@@ -3,31 +3,6 @@
   "count": 39,
   "protocols": [
     {
-      "file": "protocols/alpha_coherence_c3c4.refrain",
-      "name": "alpha_coherence_c3c4",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "description": "Interhemispheric alpha coherence (C3<->C4)",
-        "title": "Sync the hemispheres \u2014 alpha coherence (left & right)",
-        "summary": "Rewards stronger alpha-band coherence between the left and right sensorimotor areas, a connectivity and flow target.",
-        "family": "alpha_coherence_c3c4",
-        "status": "draft",
-        "evidence": "exploratory",
-        "citation": "Gruzelier 2014",
-        "goals": [
-          "flow_connectivity"
-        ],
-        "bands": [
-          "alpha"
-        ],
-        "site": "C3/C4",
-        "direction": "up",
-        "threshold_style": "adaptive",
-        "hardware": "generic"
-      }
-    },
-    {
       "file": "protocols/alpha_down_pz.refrain",
       "name": "alpha_down_pz",
       "draft": true,
@@ -159,34 +134,6 @@
         "threshold_style": "selectable",
         "feedback_style": "discrete",
         "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/brainbit/alpha_symmetry_c3c4_brainbit.refrain",
-      "name": "alpha_symmetry_c3c4_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "demo",
-        "description": "Bilateral alpha (C3-C4) amplitude symmetry, BrainBit Flex \u2014 coherence stand-in",
-        "title": "Balance the hemispheres \u2014 alpha symmetry (left & right)",
-        "summary": "BrainBit: rewards balanced alpha amplitude between the left and right sensorimotor areas, a coherence stand-in.",
-        "family": "alpha_coherence_c3c4",
-        "status": "reviewed",
-        "goals": [
-          "flow_connectivity"
-        ],
-        "author": "Peak Mind",
-        "citation": "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36.",
-        "population": "adults_18_plus",
-        "indication": "flow_integration_balance",
-        "control_ref": "library/alpha_symmetry/sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check"
-        ],
-        "outcome_measures": [
-          "subjective_state_report"
-        ]
       }
     },
     {
@@ -361,30 +308,6 @@
         "outcome_measures": [
           "subjective_state_report",
           "STAI"
-        ]
-      }
-    },
-    {
-      "file": "protocols/brainbit/placement_alpha_coherence_pair_brainbit.refrain",
-      "name": "placement_alpha_coherence_pair_brainbit",
-      "draft": false,
-      "meta": {
-        "version": "1.0.0",
-        "evidence": "demo",
-        "description": "Alpha inter-hemispheric coherence up-training, clinician-selected pair (pair placement)",
-        "title": "Alpha coherence \u2014 clinician-chosen pair",
-        "summary": "BrainBit: alpha inter-hemispheric coherence up-training over an electrode pair the clinician selects.",
-        "family": "placement_alpha_coherence",
-        "status": "reviewed",
-        "goals": [
-          "flow_connectivity"
-        ],
-        "author": "Peak Mind",
-        "citation": "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36.",
-        "indication": "connectivity_regulation",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
         ]
       }
     },
@@ -669,6 +592,83 @@
         "requires_features": [
           "autocorr",
           "band_fanout"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/alpha_coherence.refrain",
+      "name": "alpha_coherence",
+      "draft": false,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "Alpha inter-hemispheric coherence up-training, clinician-selected pair (pair placement)",
+        "title": "Alpha coherence \u2014 clinician-chosen pair",
+        "summary": "BrainBit: alpha inter-hemispheric coherence up-training over an electrode pair the clinician selects.",
+        "family": "placement_alpha_coherence",
+        "status": "reviewed",
+        "goals": [
+          "flow_connectivity"
+        ],
+        "author": "Peak Mind",
+        "citation": "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36.",
+        "indication": "connectivity_regulation",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/alpha_coherence_c3c4.refrain",
+      "name": "alpha_coherence_c3c4",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "description": "Interhemispheric alpha coherence (C3<->C4)",
+        "title": "Sync the hemispheres \u2014 alpha coherence (left & right)",
+        "summary": "Rewards stronger alpha-band coherence between the left and right sensorimotor areas, a connectivity and flow target.",
+        "family": "alpha_coherence_c3c4",
+        "status": "legacy",
+        "evidence": "exploratory",
+        "citation": "Gruzelier 2014",
+        "goals": [
+          "flow_connectivity"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "C3/C4",
+        "direction": "up",
+        "threshold_style": "adaptive",
+        "hardware": "generic"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/alpha_symmetry_c3c4_brainbit.refrain",
+      "name": "alpha_symmetry_c3c4_brainbit",
+      "draft": false,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "Bilateral alpha (C3-C4) amplitude symmetry, BrainBit Flex \u2014 coherence stand-in",
+        "title": "Balance the hemispheres \u2014 alpha symmetry (left & right)",
+        "summary": "BrainBit: rewards balanced alpha amplitude between the left and right sensorimotor areas, a coherence stand-in.",
+        "family": "alpha_coherence_c3c4",
+        "status": "legacy",
+        "goals": [
+          "flow_connectivity"
+        ],
+        "author": "Peak Mind",
+        "citation": "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36.",
+        "population": "adults_18_plus",
+        "indication": "flow_integration_balance",
+        "control_ref": "library/alpha_symmetry/sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check"
+        ],
+        "outcome_measures": [
+          "subjective_state_report"
         ]
       }
     },

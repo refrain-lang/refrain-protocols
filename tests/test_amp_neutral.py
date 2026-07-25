@@ -29,9 +29,16 @@ AMP_READERS = [
 ]
 
 
-def _ref_arg(ir: dict) -> str:
-    m = ir["inputs"]["raw"]["montage"]
-    return next(a for a in m["args"] if a["name"] == "reference")["value"]["value"]
+def _ref_args(ir: dict) -> list[str]:
+    """The `reference` arg of every input's montage. Most protocols have a
+    single input named "raw"; multi-input ones (e.g. coherence over a pair
+    of sites) have more than one, and each must independently agree with
+    the amp fold — so this checks all of them, not just one input's worth."""
+    out = []
+    for inp in ir["inputs"].values():
+        m = inp["montage"]
+        out.append(next(a for a in m["args"] if a["name"] == "reference")["value"]["value"])
+    return out
 
 
 def test_there_is_at_least_one_amp_reader():
@@ -49,7 +56,9 @@ def test_amp_reader_resolves_on_q21(path: Path):
     # A clinical amp declares every standard site + A1/A2, so every amp-neutral
     # protocol resolves on it and folds the reference to linked_ears.
     q = ir_to_json_obj(resolve(refrain.parse(path.read_text()), amp=Q21))
-    assert _ref_arg(q) == "linked_ears"
+    refs = _ref_args(q)
+    assert refs, "no montage inputs found — did the IR shape change?"
+    assert all(r == "linked_ears" for r in refs)
 
 
 @pytest.mark.parametrize("path", AMP_READERS, ids=lambda p: p.name)
@@ -63,7 +72,9 @@ def test_amp_reader_on_brainbit_device_or_fail_closed(path: Path):
     hostable = all(BRAINBIT.has_channel(c) for c in needed)
     if hostable:
         bb = ir_to_json_obj(resolve(refrain.parse(src), amp=BRAINBIT))
-        assert _ref_arg(bb) == "device"
+        refs = _ref_args(bb)
+        assert refs, "no montage inputs found — did the IR shape change?"
+        assert all(r == "device" for r in refs)
     else:
         with pytest.raises(ResolveError):
             resolve(refrain.parse(src), amp=BRAINBIT)

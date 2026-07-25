@@ -62,6 +62,13 @@ KNOWN_GAPS = {
     "smr_classic_cz_brainbit.refrain",
     "smr_graded_cz_brainbit.refrain",
     "smr_up_c4_brainbit.refrain",
+    # Amp-neutral coherence consolidation (2026-07): now reads `amp.reference`
+    # on both of its inputs, per the general amp-reader exclusion documented
+    # below — resolve(amp=None) fails closed here exactly as predicted, same
+    # bucket as the 16 amp-reading operant cores above (unrelated mode-folded-
+    # threshold reason; this file has no threshold_style control at all, it's
+    # simply an amp-reader like they are).
+    "alpha_coherence.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now

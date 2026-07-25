@@ -1,18 +1,28 @@
-// Alpha inter-site coherence up-training over a CLINICIAN-CHOSEN pair
-// (parameterized placement, kind = "pair").
+// Canonical alpha inter-site coherence protocol — true phase coherence over
+// a CLINICIAN-CHOSEN pair (parameterized placement, kind = "pair").
+//
+// This supersedes two retired forks: the amplitude-symmetry stand-in
+// (protocols/eeg/legacy/alpha_symmetry_c3c4_brainbit.refrain — its own
+// header said it was a temporary substitute for real coherence) and the
+// fixed-C3/C4 coherence draft (protocols/eeg/legacy/alpha_coherence_c3c4.refrain).
+// Both used or wanted the real coherence() primitive; it has shipped, and
+// this file is the one place it now lives for alpha inter-site training.
+// The retired files are kept runnable for subjects already assigned them
+// but hidden from the default picker.
 //
 // Demonstrates the `pair` placement kind with its canonical use: phase
 // coherence between two sites. The `coh` placement binds to a 2-tuple at
 // resolve time (bindings={"coh": ("F3","F4")}); its legs feed two
 // referential inputs via `coh.a` / `coh.b`, and the `coherence()` derive
 // rewards phase-locked alpha between them. `allowed` is an inline list of
-// permitted pairs.
+// permitted pairs — the site pair is clinician-selectable, not fixed to
+// any one pair (including C3/C4, one of the allowed choices).
 //
 // Requires refrain >= 0.6.1 — live/push-mode coherence() runs on both the
 // Python and Rust backends as of that release (positional coherence inputs
 // canonicalize to named; fixed in v0.6.1).
 
-protocol "placement_alpha_coherence_pair_brainbit_v1" {
+protocol "alpha_coherence" {
 
   meta {
     version           = "1.0.0"
@@ -52,15 +62,15 @@ protocol "placement_alpha_coherence_pair_brainbit_v1" {
   }
 
   input "a" {
-    montage = referential(active: coh.a, reference: "device")
+    montage = referential(active: coh.a, reference: amp.reference)
   }
 
   input "b" {
-    montage = referential(active: coh.b, reference: "device")
+    montage = referential(active: coh.b, reference: amp.reference)
   }
 
   derive "alpha_coh" {
-    formula = coherence("a", "b", band: (8 Hz, 12 Hz))
+    formula = coherence("a", "b", band: (8 Hz, 12 Hz), window: 2 s)
   }
 
   threshold "coh_t" {
