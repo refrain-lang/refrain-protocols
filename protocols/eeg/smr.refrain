@@ -233,37 +233,37 @@ protocol "smr" {
     // --- Advanced: band edges (resolve-time only — see header) ---
     smr_lo_hz = frequency {
       default      = 12 Hz
-      range        = (10 Hz, 13 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "SMR band low edge"
       live_tunable = false
     }
     smr_hi_hz = frequency {
       default      = 15 Hz
-      range        = (14 Hz, 18 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "SMR band high edge"
       live_tunable = false
     }
     theta_lo_hz = frequency {
       default      = 4 Hz
-      range        = (3 Hz, 5 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Theta inhibit band low edge"
       live_tunable = false
     }
     theta_hi_hz = frequency {
       default      = 7 Hz
-      range        = (6 Hz, 8 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Theta inhibit band high edge"
       live_tunable = false
     }
     hbeta_lo_hz = frequency {
       default      = 20 Hz
-      range        = (18 Hz, 22 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "High-beta inhibit band low edge"
       live_tunable = false
     }
     hbeta_hi_hz = frequency {
       default      = 30 Hz
-      range        = (25 Hz, 35 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "High-beta inhibit band high edge"
       live_tunable = false
     }

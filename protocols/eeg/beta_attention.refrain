@@ -196,37 +196,37 @@ protocol "beta_attention" {
     // --- Advanced: band edges (resolve-time only) ---
     lobeta_lo_hz = frequency {
       default      = 15 Hz
-      range        = (13 Hz, 17 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Lo-beta band low edge"
       live_tunable = false
     }
     lobeta_hi_hz = frequency {
       default      = 18 Hz
-      range        = (16 Hz, 20 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Lo-beta band high edge"
       live_tunable = false
     }
     theta_lo_hz = frequency {
       default      = 4 Hz
-      range        = (3 Hz, 5 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Theta inhibit band low edge"
       live_tunable = false
     }
     theta_hi_hz = frequency {
       default      = 8 Hz
-      range        = (6 Hz, 9 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Theta inhibit band high edge"
       live_tunable = false
     }
     hbeta_lo_hz = frequency {
       default      = 22 Hz
-      range        = (20 Hz, 24 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "High-beta inhibit band low edge"
       live_tunable = false
     }
     hbeta_hi_hz = frequency {
       default      = 30 Hz
-      range        = (26 Hz, 35 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "High-beta inhibit band high edge"
       live_tunable = false
     }

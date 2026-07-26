@@ -200,25 +200,25 @@ protocol "alpha_theta" {
     // --- Advanced: band edges (resolve-time only) ---
     alpha_lo_hz = frequency {
       default      = 8 Hz
-      range        = (6 Hz, 9 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Alpha band low edge"
       live_tunable = false
     }
     alpha_hi_hz = frequency {
       default      = 12 Hz
-      range        = (10 Hz, 14 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Alpha band high edge"
       live_tunable = false
     }
     theta_lo_hz = frequency {
       default      = 4 Hz
-      range        = (3 Hz, 5 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Theta band low edge"
       live_tunable = false
     }
     theta_hi_hz = frequency {
       default      = 8 Hz
-      range        = (6 Hz, 9 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Theta band high edge"
       live_tunable = false
     }
