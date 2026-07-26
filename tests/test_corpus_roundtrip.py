@@ -30,15 +30,33 @@ ALL = sorted((ROOT / "protocols").rglob("*.refrain")) + sorted((ROOT / "drafts")
 # reminds us to move it out of this set (it will then be gated as in-subset).
 KNOWN_GAPS = {
     "critical_fluctuation.refrain",    # bands{} fan-out + autocorr — a non-operant early-warning cue, outside catalog v1
-    "scp_cz.refrain",                  # draft: not resolvable yet (needs engine SCP primitives)
-    # The 16 generated seed cores (tools/gen_seed_protocols.py) collapsed their
-    # adaptive/baseline variants into one mode-based core per refrain 0.12.0:
-    # `threshold "env_t" { type = threshold_style == "baseline" ? absolute(...) : percentile(...) }`.
-    # The engine resolves this ternary (folds on the `mode` control) fine, but the
-    # installed 0.12.0 `refrain.editor` catalog-v1 matcher (`_match_threshold`)
-    # only recognizes a bare `percentile(...)`/`absolute(...)` call as a `type`,
-    # not a mode-folded conditional — so these fall out of subset until the
-    # editor's catalog grows mode-threshold support (engine-side, not this repo).
+    # draft: resolves fine (no engine gap) — out of subset because its near-DC
+    # derive pipeline (`bandpass(...), smooth(...)`, no hilbert/magnitude/rectify
+    # envelope detector) isn't one of catalog v1's recognized derive shapes
+    # (`_match_derive` only knows envelope/envelope_band/lf_envelope/rectify/
+    # auto_range pipelines). Not the "needs engine SCP primitives" reason this
+    # entry used to carry — that description predates this check and no longer
+    # matches what `describe_protocol` actually reports.
+    "scp_cz.refrain",
+    # refrain v0.21.0 (this repo's CI pin, bumped from v0.18.0 — see
+    # .github/workflows/ci.yml) taught the editor's catalog-v1 `_match_threshold`
+    # matcher to recognize a mode-folded ternary threshold —
+    # `threshold "env_t" { type = threshold_style == "baseline" ? absolute(...) : percentile(...) }`
+    # — which is the gap that originally put the 16 generated seed cores
+    # (tools/gen_seed_protocols.py) below, and the 3 BrainBit-origin cores after
+    # them, in this set. That matcher gap is now closed: `smr_up_c4_brainbit`,
+    # the one member of this whole family whose montage still uses a literal
+    # reference instead of `amp.reference`, round-trips exactly and has moved
+    # out of KNOWN_GAPS as a result.
+    #
+    # Every protocol below stays a gap anyway, for an UNRELATED reason: the
+    # 2026-07 amp-portability sweep (docs/fork-audit-2026-07.md) switched their
+    # `montage.referential` reference to `amp.reference`, so
+    # `describe_protocol`'s `resolve(amp=None)` call fails closed (see the
+    # amp-neutral NOTE below) before the now-fixed threshold matcher is ever
+    # reached. Resolving them against a real amp profile (verified here against
+    # refrain's bundled `amp_profiles/q21.json`) shows they describe in-subset
+    # and round-trip exactly — the amp-neutral gate is their only blocker.
     "smr_theta_cz.refrain",
     "theta_beta_cz.refrain",
     "theta_beta_fz.refrain",
@@ -55,16 +73,17 @@ KNOWN_GAPS = {
     "fm_theta_up_fz.refrain",
     "alpha_down_pz.refrain",
     "theta_up_pz.refrain",
-    # BrainBit-origin mode-folded-threshold cores — same catalog-v1 gap as the
-    # generic cores above (editor's _match_threshold doesn't recognise the
-    # mode-folded conditional). 2026-07: three of these four dropped their
-    # "_brainbit" filename suffix when protocols/brainbit/ was dissolved
-    # (relocated to protocols/eeg/, made amp-portable); smr_up_c4_brainbit was
-    # already retired to protocols/eeg/legacy/ under its original name.
+    # BrainBit-origin mode-folded-threshold cores — same amp-neutral gap as the
+    # generic cores above (the threshold-matcher gap they used to share is
+    # fixed; see above). 2026-07: these three dropped their "_brainbit" filename
+    # suffix when protocols/brainbit/ was dissolved (relocated to protocols/eeg/,
+    # made amp-portable, i.e. switched to `amp.reference`). The fourth member of
+    # this original foursome, smr_up_c4_brainbit, was already retired to
+    # protocols/eeg/legacy/ under its original name and kept a literal
+    # reference — which is why it alone closed and is no longer in this set.
     "beta_focus_staged_fz.refrain",
     "smr_classic_cz.refrain",
     "smr_graded_cz.refrain",
-    "smr_up_c4_brainbit.refrain",
     # Amp-neutral coherence consolidation (2026-07): now reads `amp.reference`
     # on both of its inputs, per the general amp-reader exclusion documented
     # below — resolve(amp=None) fails closed here exactly as predicted, same
@@ -107,12 +126,21 @@ KNOWN_GAPS = {
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
 # in-subset and gated by the round-trip test below. critical_fluctuation
 # (multi-band bands{} fan-out + autocorr) is a new non-operant gap added here.
+#
+# Closed by refrain v0.21.0 (2026-07, CI pin bumped from v0.18.0): the
+# catalog-v1 mode-folded-threshold matcher gap. Measured upstream: the
+# round-trippable subset went from 16/38 to 36/38 with this fix, with zero
+# round-trip mismatches. Only `smr_up_c4_brainbit.refrain` actually moved out
+# of this set as a direct result (it's the only mode-folded-threshold core
+# with a literal montage reference); its 19 amp-portable siblings above stay
+# gapped for the unrelated amp-neutral reason documented next to them.
 
 # NOTE: in-subset protocols are resolved at amp=None below. A protocol that
 # reads `amp.*` (amp-neutral) will ResolveError here (fail-closed by design) if
-# it is ever in-subset. All 16 amp-reading operant cores are currently KNOWN_GAPS,
-# so none reach this path. When the sweep moves an amp-reader into subset, teach
-# this test to skip amp-readers (or resolve them against a default amp) first.
+# it is ever in-subset. 33 of the 34 protocols in this set are amp-readers (all
+# but scp_cz.refrain, whose gap is unrelated to amp), so none reach this path.
+# When the sweep moves an amp-reader into subset, teach this test to skip
+# amp-readers (or resolve them against a default amp) first.
 _IN_SUBSET = [p for p in ALL if p.name not in KNOWN_GAPS]
 _GAPS = [p for p in ALL if p.name in KNOWN_GAPS]
 
