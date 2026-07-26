@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 40,
+  "count": 44,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -54,6 +54,47 @@
       }
     },
     {
+      "file": "protocols/eeg/alpha_theta.refrain",
+      "name": "alpha_theta",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "Configurable alpha/theta crossover template (Peniston-Kulkosky) \u2014 clinician-selected site, bands, and thresholds",
+        "title": "Deep meditative state \u2014 configurable alpha/theta crossover",
+        "summary": "Eyes-closed deep-state training that rewards theta rising above alpha at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds.",
+        "family": "alpha_theta",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "goals": [
+          "deep_meditative",
+          "trauma_recovery"
+        ],
+        "author": "Peak Mind",
+        "citation": "Peniston & Kulkosky 1989, 1991",
+        "population": "adults_18_plus",
+        "indication": "deep_meditative_trauma_recovery",
+        "control_ref": "library/operant/alpha_theta_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "subjective_state_report"
+        ],
+        "advanced_controls": [
+          "site",
+          "alpha_lo_hz",
+          "alpha_hi_hz",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "artifact_guard",
+          "artifact_strictness",
+          "theta_threshold_uv"
+        ]
+      }
+    },
+    {
       "file": "protocols/eeg/alpha_theta_pz.refrain",
       "name": "alpha_theta_pz",
       "draft": true,
@@ -81,6 +122,49 @@
       }
     },
     {
+      "file": "protocols/eeg/alpha_up.refrain",
+      "name": "alpha_up",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "Configurable alpha (8-12 Hz) up-training template \u2014 clinician-selected site, bands, and thresholds",
+        "title": "Calm the mind \u2014 configurable alpha training",
+        "summary": "Rewards raising relaxed alpha waves at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds.",
+        "family": "alpha_up",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "goals": [
+          "calm_anxiety",
+          "deep_meditative"
+        ],
+        "author": "Peak Mind",
+        "citation": "Hardt & Kamiya 1978",
+        "population": "adults_18_plus",
+        "indication": "relaxation_calm",
+        "control_ref": "library/operant/alpha_up_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "subjective_state_report"
+        ],
+        "advanced_controls": [
+          "site",
+          "alpha_lo_hz",
+          "alpha_hi_hz",
+          "hbeta_lo_hz",
+          "hbeta_hi_hz",
+          "hbeta_inhibit_rate",
+          "artifact_guard",
+          "artifact_strictness",
+          "alpha_threshold_uv",
+          "hbeta_threshold_uv"
+        ]
+      }
+    },
+    {
       "file": "protocols/eeg/alpha_up_pz.refrain",
       "name": "alpha_up_pz",
       "draft": true,
@@ -105,6 +189,53 @@
         "threshold_style": "selectable",
         "feedback_style": "discrete",
         "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/beta_attention.refrain",
+      "name": "beta_attention",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "Configurable lo-beta (15-18 Hz) up-training template \u2014 clinician-selected site, bands, and thresholds",
+        "title": "Beta attention training \u2014 configurable",
+        "summary": "Rewards raising engaged lo-beta while inhibiting theta and high-beta, at a clinician-chosen site, with adaptive or baseline-fixed thresholds.",
+        "family": "beta_attention",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "goals": [
+          "adhd_attention"
+        ],
+        "author": "Peak Mind",
+        "citation": "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139.",
+        "population": "children_adults",
+        "indication": "attention_regulation",
+        "control_ref": "library/operant/beta_attention_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "IVA-2_continuous_performance",
+          "Conners-3"
+        ],
+        "advanced_controls": [
+          "site",
+          "lobeta_lo_hz",
+          "lobeta_hi_hz",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "hbeta_lo_hz",
+          "hbeta_hi_hz",
+          "theta_inhibit_rate",
+          "hbeta_inhibit_rate",
+          "artifact_guard",
+          "artifact_strictness",
+          "lobeta_threshold_uv",
+          "theta_threshold_uv",
+          "hbeta_threshold_uv"
+        ]
       }
     },
     {
@@ -303,6 +434,44 @@
         "threshold_style": "selectable",
         "feedback_style": "discrete",
         "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/high_beta_down.refrain",
+      "name": "high_beta_down",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "Configurable high-beta (22-30 Hz) down-training template \u2014 clinician-selected site and thresholds",
+        "title": "Ease over-arousal \u2014 configurable",
+        "summary": "Rewards lowering fast high-beta activity associated with anxiety and rumination, at a clinician-chosen site, with adaptive or baseline-fixed thresholds.",
+        "family": "high_beta_down",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "goals": [
+          "calm_anxiety"
+        ],
+        "author": "Peak Mind",
+        "citation": "clinical convention (anxiety/rumination)",
+        "population": "adults_18_plus",
+        "indication": "anxiety_arousal_regulation",
+        "control_ref": "library/operant/hibeta_down_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "subjective_state_report"
+        ],
+        "advanced_controls": [
+          "site",
+          "hbeta_lo_hz",
+          "hbeta_hi_hz",
+          "artifact_guard",
+          "artifact_strictness",
+          "hbeta_threshold_uv"
+        ]
       }
     },
     {

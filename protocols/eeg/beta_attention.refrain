@@ -1,0 +1,313 @@
+// Beta/attention up-training — CONFIGURABLE canonical template.
+//
+// Second of the four goal templates that copy protocols/eeg/smr.refrain's
+// shape (docs/superpowers/specs/2026-07-25-configurable-eeg-protocol-
+// templates-design.md, recorder repo). Supersedes beta_up_cz.refrain: same
+// three-band operant shape (lo-beta reward, theta + high-beta inhibit) that
+// file's own header predicted would be reproduced "by configuration" once
+// this template existed — site, bands, and thresholds are clinician-tunable
+// instead of frozen at Cz/15-20/4-8/22-30.
+//
+// Canonical defaults (the standard ADHD/attention menu) reproduce the
+// beta_up_cz recipe at Cz: reward lo-beta (15-18 Hz) up, inhibit theta
+// (4-8 Hz) and high-beta (22-30 Hz), with an EMG artifact guard — one click,
+// every knob there for the clinician who wants to deviate.
+//
+// Design choices carried verbatim from smr.refrain (see that file's header
+// for the full rationale):
+//   - `site` is a `placement` control (kind = "active") over a named
+//     `sensorimotor` group — device-generic, resolves against whatever
+//     channels the connected amp exposes. Cz is the beta_up_cz default;
+//     C3/C4 are clinician alternates on the same strip.
+//   - `threshold_style` folds all three thresholds between adaptive
+//     percentile and baseline-fixed absolute (seeded from the live signal).
+//   - Band edges are PAIRED `frequency` controls, referenced directly in
+//     `bandpass(band: (...))`, and `live_tunable = false` — they bake into
+//     the filter at resolve time; the recorder's envelope classifier reads
+//     the declared default for the filter caption and refuses to caption a
+//     live-tunable edge.
+//   - The EMG artifact guard is a `mode` control (on/off), not `boolean`,
+//     folded one level down inside `percentile(...)`'s `target_pct`
+//     argument — refrain's `inhibit` resolver does not fold a top-level mode
+//     ternary on `threshold`. "Off" pins `target_pct` to 100.
+//   - `lobeta_reward_pct` is named so the recorder's manifest flags it
+//     `display_as_reward_rate`. `theta_inhibit_rate` / `hbeta_inhibit_rate`
+//     feed `below(...)` conditions and are deliberately NOT `*_reward_pct`.
+//
+// Amp-portable: reads amp.reference instead of a hardcoded reference.
+//
+// meta.advanced_controls collapses everything except `threshold_style` and
+// `lobeta_reward_pct` behind "Advanced".
+
+protocol "beta_attention" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Configurable lo-beta (15-18 Hz) up-training template — clinician-selected site, bands, and thresholds"
+    title             = "Beta attention training — configurable"
+    summary           = "Rewards raising engaged lo-beta while inhibiting theta and high-beta, at a clinician-chosen site, with adaptive or baseline-fixed thresholds."
+    family            = "beta_attention"
+    threshold_style   = "selectable"
+    status            = "draft"
+    goals             = ["adhd_attention"]
+    author            = "Peak Mind"
+    citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."
+    population        = "children_adults"
+    indication        = "attention_regulation"
+    control_ref       = "library/operant/beta_attention_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
+    advanced_controls = [
+      "site",
+      "lobeta_lo_hz", "lobeta_hi_hz",
+      "theta_lo_hz", "theta_hi_hz",
+      "hbeta_lo_hz", "hbeta_hi_hz",
+      "theta_inhibit_rate", "hbeta_inhibit_rate",
+      "artifact_guard", "artifact_strictness",
+      "lobeta_threshold_uv", "theta_threshold_uv", "hbeta_threshold_uv",
+    ]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  groups {
+    sensorimotor = ["C3", "Cz", "C4"]
+  }
+
+  input "raw" {
+    montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "lobeta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (lobeta_lo_hz, lobeta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (theta_lo_hz, theta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // High-beta artifact/arousal guard — lo-beta uptrain is vulnerable to EMG
+  // contamination bleeding into 20-30 Hz, and to reward for hyperarousal.
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (hbeta_lo_hz, hbeta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  threshold "lobeta_t" {
+    signal       = "lobeta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: lobeta_threshold_uv)
+                     : percentile(target_pct: lobeta_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: theta_threshold_uv)
+                     : percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: hbeta_threshold_uv)
+                     : percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  // EMG artifact guard — same idiom as smr.refrain: on/off folded inside the
+  // target_pct argument (refrain's inhibit resolver has no top-level mode
+  // fold on `threshold`). "Off" pins target_pct to 100 (the window's own
+  // historical ceiling), which in practice never trips.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(
+      target_pct: artifact_guard == "on" ? artifact_strictness : 100,
+      window: 2 min
+    )
+    action    = mute(release: 200 ms)
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("lobeta_envelope",    "lobeta_t"),
+        below("theta_envelope",     "theta_t"),
+        below("high_beta_envelope", "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("lobeta_envelope" / "lobeta_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    // --- Basic ---
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
+    lobeta_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "Lo-beta reward rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: site ---
+    site = placement {
+      kind    = "active"
+      default = "Cz"
+      allowed = sensorimotor
+      label   = "Training site"
+    }
+
+    // --- Advanced: band edges (resolve-time only) ---
+    lobeta_lo_hz = frequency {
+      default      = 15 Hz
+      range        = (13 Hz, 17 Hz)
+      label        = "Lo-beta band low edge"
+      live_tunable = false
+    }
+    lobeta_hi_hz = frequency {
+      default      = 18 Hz
+      range        = (16 Hz, 20 Hz)
+      label        = "Lo-beta band high edge"
+      live_tunable = false
+    }
+    theta_lo_hz = frequency {
+      default      = 4 Hz
+      range        = (3 Hz, 5 Hz)
+      label        = "Theta inhibit band low edge"
+      live_tunable = false
+    }
+    theta_hi_hz = frequency {
+      default      = 8 Hz
+      range        = (6 Hz, 9 Hz)
+      label        = "Theta inhibit band high edge"
+      live_tunable = false
+    }
+    hbeta_lo_hz = frequency {
+      default      = 22 Hz
+      range        = (20 Hz, 24 Hz)
+      label        = "High-beta inhibit band low edge"
+      live_tunable = false
+    }
+    hbeta_hi_hz = frequency {
+      default      = 30 Hz
+      range        = (26 Hz, 35 Hz)
+      label        = "High-beta inhibit band high edge"
+      live_tunable = false
+    }
+
+    // --- Advanced: inhibit rates ---
+    theta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: artifact guard ---
+    artifact_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Artifact guard (EMG)"
+    }
+    artifact_strictness = percent {
+      default      = 95
+      range        = (50, 99)
+      label        = "Artifact guard strictness"
+      live_tunable = true
+    }
+
+    // --- Advanced: baseline-mode absolute thresholds (seeded) ---
+    lobeta_threshold_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 10.0 uV)
+      label        = "Lo-beta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "lobeta_envelope"
+        window     = 60 s
+        target_pct = lobeta_reward_pct
+      }
+    }
+    theta_threshold_uv = voltage {
+      default      = 8.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "Theta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "theta_envelope"
+        window     = 60 s
+        target_pct = theta_inhibit_rate
+      }
+    }
+    hbeta_threshold_uv = voltage {
+      default      = 6.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "High-beta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "high_beta_envelope"
+        window     = 60 s
+        target_pct = hbeta_inhibit_rate
+      }
+    }
+  }
+
+  // Full staged session — same shape as smr.refrain. Warmup matches the
+  // percentile window (2 min) so the adaptive threshold buffer is fully
+  // baseline-trained at run start.
+  session {
+    phases = [
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "block1";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min; output_muted = true },
+      phase { name = "block2";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest2";    duration = 2 min; output_muted = true },
+      phase { name = "block3";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest3";    duration = 2 min; output_muted = true },
+      phase { name = "block4";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

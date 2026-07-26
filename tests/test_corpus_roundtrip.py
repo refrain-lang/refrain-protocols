@@ -94,6 +94,14 @@ KNOWN_GAPS = {
     # threshold.type) — none of which catalog v1's matcher covers yet, so
     # this would stay a gap even once amp-neutral resolution is handled.
     "smr.refrain",
+    # The four remaining configurable goal templates (2026-07): each copies
+    # smr.refrain's shape verbatim (placement site, paired frequency
+    # band-edge controls, mode-folded artifact guard, amp.reference) — same
+    # catalog-v1 gap as smr.refrain above, for the same reasons.
+    "beta_attention.refrain",
+    "high_beta_down.refrain",
+    "alpha_up.refrain",
+    "alpha_theta.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
