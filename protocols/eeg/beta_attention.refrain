@@ -76,9 +76,6 @@ protocol "beta_attention" {
     markers     = "not_required"
   }
 
-  groups {
-    sensorimotor = ["C3", "Cz", "C4"]
-  }
 
   input "raw" {
     montage = referential(active: site, reference: amp.reference)
@@ -189,7 +186,6 @@ protocol "beta_attention" {
     site = placement {
       kind    = "active"
       default = "Cz"
-      allowed = sensorimotor
       label   = "Training site"
     }
 

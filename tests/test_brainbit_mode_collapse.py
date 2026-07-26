@@ -38,9 +38,18 @@ _MODE_SWITCHED_THRESHOLDS = {
 # superseded by the configurable SMR template (protocols/eeg/smr.refrain,
 # site knob = Cz). git mv'd to protocols/eeg/legacy/, status=legacy, still
 # runnable/tested here, just relocated.
+#
+# smr_graded_cz retired 2026-07 (on its own merits, not absorbed by a
+# template): a weighted composite whose reward rate is pinned at a fixed
+# 50th-percentile midpoint rather than exposed as an adaptive control — it
+# sits at 0% and the session coach's reward-rate advice has no percentile
+# knob to act on. git mv'd to protocols/eeg/legacy/, status=legacy; its
+# mode-switched smr_t/theta_t thresholds still fold correctly, just
+# relocated.
 _RELOCATED = {
     "smr_up_c4_brainbit": ROOT / "protocols" / "eeg" / "legacy",
     "smr_classic_cz": ROOT / "protocols" / "eeg" / "legacy",
+    "smr_graded_cz": ROOT / "protocols" / "eeg" / "legacy",
 }
 
 

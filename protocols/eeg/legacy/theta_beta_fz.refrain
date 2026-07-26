@@ -1,19 +1,21 @@
-// alpha_down_pz.refrain  —  DRAFT (status=draft, untested)
-// ALPHA down-train at Pz.  Kluetsch/Ros/Lanius 2014; Nicholson 2016
-protocol "alpha_down_pz" {
+// RETIRED: superseded by protocols/eeg/beta_attention.refrain — set the site to Fz (single-band envelope despite the name; computes no ratio).
+// Kept runnable for subjects already assigned it; hidden from the default picker.
+// theta_beta_fz.refrain  —  DRAFT (status=draft, untested)
+// BETA/THETA up-train at Fz.  Lubar (theta/beta); frontal-theta excess
+protocol "theta_beta_fz" {
   meta {
     version         = "0.1.0"
-    title           = "Down-regulate alpha (back of head)"
-    summary         = "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work."
-    family          = "alpha_down_pz"
-    description     = "ALPHA down-train at Pz"
-    status          = "draft"
-    evidence        = "probable"
-    citation        = "Kluetsch/Ros/Lanius 2014; Nicholson 2016"
-    goals           = ["trauma_recovery", "deep_meditative"]
-    bands           = ["alpha"]
-    site            = "Pz"
-    direction       = "down"
+    title           = "Sharpen attention — beta up over theta (forehead)"
+    summary         = "Trains focused beta up relative to theta at the forehead, where theta excess is common in inattention."
+    family          = "theta_beta_fz"
+    description     = "BETA/THETA up-train at Fz"
+    status          = "legacy"
+    evidence        = "established"
+    citation        = "Lubar (theta/beta); frontal-theta excess"
+    goals           = ["adhd_attention"]
+    bands           = ["beta", "theta"]
+    site            = "Fz"
+    direction       = "up"
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
@@ -21,15 +23,15 @@ protocol "alpha_down_pz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Pz"]
+    channels    = ["Fz"]
   }
 
-  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(1.5), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -45,7 +47,7 @@ protocol "alpha_down_pz" {
   }
 
   reward {
-    event      = dwell(condition: below("env", "env_t"), duration: 250 ms)
+    event      = dwell(condition: above("env", "env_t"), duration: 250 ms)
     continuous = sigmoid("env" / "env_t", midpoint: 1.0, steepness: 3)
   }
 
@@ -61,13 +63,13 @@ protocol "alpha_down_pz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 9.79796 Hz
-      range   = (7.84 Hz, 11.76 Hz)
-      label   = "ALPHA band center"
+      default = 16.4317 Hz
+      range   = (13.15 Hz, 19.72 Hz)
+      label   = "BETA/THETA band center"
     }
     reward_pct = percent {
-      default      = 30
-      range        = (10, 50)
+      default      = 70
+      range        = (50, 90)
       label        = "Target reward %"
       live_tunable = true
     }

@@ -69,9 +69,6 @@ protocol "alpha_up" {
     markers     = "not_required"
   }
 
-  groups {
-    posterior = ["P3", "Pz", "P4"]
-  }
 
   input "raw" {
     montage = referential(active: site, reference: amp.reference)
@@ -162,7 +159,6 @@ protocol "alpha_up" {
     site = placement {
       kind    = "active"
       default = "Pz"
-      allowed = posterior
       label   = "Training site"
     }
 

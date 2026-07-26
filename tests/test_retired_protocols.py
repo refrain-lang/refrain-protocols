@@ -86,13 +86,21 @@ def test_old_paths_no_longer_exist(path: Path):
 
 
 # ---------------------------------------------------------------------------
-# Retire-the-absorbed-duplicates sweep (2026-07): 14 more protocols, each
+# Retire-the-absorbed-duplicates sweep (2026-07): 18 more protocols, each
 # reproduced by configuration alone by one of the five configurable goal
 # templates (site in the template's `allowed` group, same reward direction,
 # same measurement) — docs/superpowers/specs/2026-07-25-configurable-eeg-
 # protocol-templates-design.md (recorder repo). Same proof shape as the
 # batch above: still parseable/runnable, `status = "legacy"`, moved to
 # protocols/eeg/legacy/, gone from the old top-level path.
+#
+# peak_alpha_up_pz, fm_theta_up_fz, alpha_down_pz, and theta_beta_fz were
+# initially kept below (a template only matched their band/site at its
+# default). Once the five templates' band edges were widened to (1 Hz,
+# 45 Hz) and their site `allowed` restriction was dropped (site now resolves
+# against whatever amp is connected, no fixed group), the templates
+# reproduce these four by configuration alone too — moved here from
+# _KEPT_2.
 # ---------------------------------------------------------------------------
 
 _LEGACY_DIR = ROOT / "protocols" / "eeg" / "legacy"
@@ -113,6 +121,10 @@ _RETIRED_2 = [
     "theta_up_pz",
     "alpha_theta_pz",
     "theta_beta_cz",
+    "peak_alpha_up_pz",
+    "fm_theta_up_fz",
+    "alpha_down_pz",
+    "theta_beta_fz",
 ]
 
 ALL_RETIRED_2 = [_LEGACY_DIR / f"{name}.refrain" for name in _RETIRED_2]
@@ -125,16 +137,10 @@ _KEPT_2 = [
     "alpha_coherence",
     "faa_f3f4",
     "critical_fluctuation",
-    "peak_alpha_up_pz",
     "beta_focus_staged_fz",
     "smr_classic_baseline_staged_cz",
-    "smr_cz_modulating",
-    "smr_graded_cz",
     "placement_smr_bipolar",
     "placement_smr_set",
-    "fm_theta_up_fz",
-    "theta_beta_fz",
-    "alpha_down_pz",
 ]
 
 ALL_KEPT_2 = [_TOP_DIR / f"{name}.refrain" for name in _KEPT_2]
@@ -170,3 +176,51 @@ def test_kept_2_still_at_original_path(path: Path):
 def test_kept_2_not_marked_legacy(path: Path):
     meta = _meta(path.read_text())
     assert meta["status"] != "legacy", f"{path.name} should not have been retired"
+
+
+# ---------------------------------------------------------------------------
+# Task-A retirements (2026-07): smr_graded_cz and smr_cz_modulating, retired
+# on their own merits — NOT absorbed by a configurable template.
+#
+# smr_graded_cz is a weighted composite whose reward rate is pinned at a
+# fixed 50th-percentile midpoint rather than exposed as an adaptive control
+# — it sits at 0% and the session coach's reward-rate advice has no
+# percentile knob to act on, only the w_smr/w_theta weight controls. The
+# original design doc already flagged weighted composites for retirement.
+#
+# smr_cz_modulating uses continuous audio_gain modulation as the operant
+# signal itself, rather than a discrete chime.
+#
+# Same proof shape as the other retirements: still parseable/runnable,
+# `status = "legacy"`, moved to protocols/eeg/legacy/, gone from the old
+# top-level path.
+# ---------------------------------------------------------------------------
+
+_RETIRED_3 = [
+    "smr_graded_cz",
+    "smr_cz_modulating",
+]
+
+ALL_RETIRED_3 = [_LEGACY_DIR / f"{name}.refrain" for name in _RETIRED_3]
+ALL_OLD_PATHS_3 = [_TOP_DIR / f"{name}.refrain" for name in _RETIRED_3]
+
+
+@pytest.mark.parametrize("path", ALL_RETIRED_3, ids=lambda p: p.name)
+def test_retired_3_file_exists_at_new_path(path: Path):
+    assert path.exists(), f"expected {path} to exist under protocols/eeg/legacy/"
+
+
+@pytest.mark.parametrize("path", ALL_RETIRED_3, ids=lambda p: p.name)
+def test_retired_3_files_still_parse(path: Path):
+    parse(path.read_text())  # hidden from the picker, not broken
+
+
+@pytest.mark.parametrize("path", ALL_RETIRED_3, ids=lambda p: p.name)
+def test_retired_3_files_are_marked_legacy(path: Path):
+    meta = _meta(path.read_text())
+    assert meta["status"] == "legacy"
+
+
+@pytest.mark.parametrize("path", ALL_OLD_PATHS_3, ids=lambda p: p.name)
+def test_retired_3_old_paths_no_longer_exist(path: Path):
+    assert not path.exists(), f"expected {path} to be gone (moved via git mv)"

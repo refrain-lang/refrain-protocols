@@ -61,7 +61,10 @@ TABLE = [
     # lives on, legacy-tagged, at protocols/eeg/legacy/theta_beta_cz.refrain —
     # do not re-add it here, that would resurrect a non-legacy duplicate at
     # the top-level path on every regen.
-    ("theta_beta_fz",   (15,18), "up",  "Fz", ["adhd_attention"], ["beta","theta"], "established", "Lubar (theta/beta); frontal-theta excess", "Sharpen attention — beta up over theta (forehead)", "Trains focused beta up relative to theta at the forehead, where theta excess is common in inattention."),
+    # theta_beta_fz retired 2026-07: reproduced by a configurable template
+    # (any site, 1-45 Hz band edges). Lives legacy-tagged at
+    # protocols/eeg/legacy/theta_beta_fz.refrain — do NOT re-add, that would
+    # resurrect a non-legacy duplicate on every regen.
     # theta_down_cz retired 2026-07: superseded by
     # protocols/eeg/high_beta_down.refrain (band retuned to 4-8 Hz, site knob
     # = Cz). The old file lives on, legacy-tagged, at
@@ -108,9 +111,18 @@ TABLE = [
     # protocols/eeg/legacy/hibeta_down_cz.refrain — do not re-add it here,
     # that would resurrect a non-legacy duplicate at the top-level path on
     # every regen.
-    ("peak_alpha_up_pz",(9,11),  "up",  "Pz", ["alertness_performance","deep_meditative"], ["alpha"], "exploratory", "Hanslmayr; Gruzelier 2014", "Sharpen peak alpha (back of head)", "Rewards raising the individual peak-alpha frequency band at the back of the head."),
-    ("fm_theta_up_fz",  (4,8),   "up",  "Fz", ["deep_meditative","alertness_performance"], ["theta"], "exploratory", "Ishihara & Yoshii; Gruzelier", "Frontal-midline theta — focused calm (forehead)", "Rewards raising frontal-midline theta, associated with focused absorption and meditation."),
-    ("alpha_down_pz",   (8,12),  "down","Pz", ["trauma_recovery","deep_meditative"], ["alpha"], "probable", "Kluetsch/Ros/Lanius 2014; Nicholson 2016", "Down-regulate alpha (back of head)", "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work."),
+    # peak_alpha_up_pz retired 2026-07: reproduced by a configurable template
+    # (any site, 1-45 Hz band edges). Lives legacy-tagged at
+    # protocols/eeg/legacy/peak_alpha_up_pz.refrain — do NOT re-add, that would
+    # resurrect a non-legacy duplicate on every regen.
+    # fm_theta_up_fz retired 2026-07: reproduced by a configurable template
+    # (any site, 1-45 Hz band edges). Lives legacy-tagged at
+    # protocols/eeg/legacy/fm_theta_up_fz.refrain — do NOT re-add, that would
+    # resurrect a non-legacy duplicate on every regen.
+    # alpha_down_pz retired 2026-07: reproduced by a configurable template
+    # (any site, 1-45 Hz band edges). Lives legacy-tagged at
+    # protocols/eeg/legacy/alpha_down_pz.refrain — do NOT re-add, that would
+    # resurrect a non-legacy duplicate on every regen.
     # theta_up_pz retired 2026-07: superseded by protocols/eeg/alpha_up.refrain
     # (band retuned to 4-8 Hz, site knob = Pz). The old file lives on,
     # legacy-tagged, at protocols/eeg/legacy/theta_up_pz.refrain — do not

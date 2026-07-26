@@ -98,9 +98,6 @@ protocol "alpha_theta" {
     markers     = "not_required"
   }
 
-  groups {
-    posterior = ["P3", "Pz", "P4"]
-  }
 
   input "raw" {
     montage = referential(active: site, reference: amp.reference)
@@ -193,7 +190,6 @@ protocol "alpha_theta" {
     site = placement {
       kind    = "active"
       default = "Pz"
-      allowed = posterior
       label   = "Training site"
     }
 

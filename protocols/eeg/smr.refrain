@@ -100,9 +100,6 @@ protocol "smr" {
     markers     = "not_required"
   }
 
-  groups {
-    sensorimotor = ["C3", "Cz", "C4"]
-  }
 
   // The chosen site substitutes here; reference resolves per the connected
   // amp's profile, not a hardcoded scheme.
@@ -226,7 +223,6 @@ protocol "smr" {
     site = placement {
       kind    = "active"
       default = "Cz"
-      allowed = sensorimotor
       label   = "Training site"
     }
 

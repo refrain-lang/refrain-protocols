@@ -1,3 +1,5 @@
+// RETIRED: superseded by protocols/eeg/alpha_up.refrain — set the band to 9-11 Hz (this file has no peak-detection logic; it is alpha_up with a narrower band).
+// Kept runnable for subjects already assigned it; hidden from the default picker.
 // peak_alpha_up_pz.refrain  —  DRAFT (status=draft, untested)
 // ALPHA up-train at Pz.  Hanslmayr; Gruzelier 2014
 protocol "peak_alpha_up_pz" {
@@ -7,7 +9,7 @@ protocol "peak_alpha_up_pz" {
     summary         = "Rewards raising the individual peak-alpha frequency band at the back of the head."
     family          = "peak_alpha_up_pz"
     description     = "ALPHA up-train at Pz"
-    status          = "draft"
+    status          = "legacy"
     evidence        = "exploratory"
     citation        = "Hanslmayr; Gruzelier 2014"
     goals           = ["alertness_performance", "deep_meditative"]

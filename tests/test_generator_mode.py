@@ -26,10 +26,20 @@ def test_generator_emits_one_file_per_target_no_baseline():
 
 def test_generated_core_has_mode_and_resolves_both_ways():
     _regen()
-    # smr_theta_cz was retired 2026-07 (git mv'd to protocols/eeg/legacy/,
-    # dropped from TABLE) — use another still-generated TABLE entry instead
-    # so this test keeps exercising a freshly-regenerated file.
-    src = (ROOT / "protocols" / "eeg" / "fm_theta_up_fz.refrain").read_text()
+    # TABLE is now EMPTY (2026-07): the last four still-generated entries —
+    # theta_beta_fz, peak_alpha_up_pz, fm_theta_up_fz, alpha_down_pz — were
+    # dropped once the five configurable goal templates (widened to 1-45 Hz,
+    # any site) absorbed them too, so _regen() above emits zero files at
+    # protocols/eeg/ (verified separately by
+    # test_generator_emits_one_file_per_target_no_baseline's empty glob).
+    # There is no longer a "still generated" top-level file to repoint at.
+    # This test's real subject is the shared emit()-templated mode-collapse
+    # shape (single `env_t` threshold gated by a `threshold_style` mode
+    # control) — read it off a legacy copy of that same generated shape
+    # instead: smr_theta_cz was retired well before this sweep (superseded by
+    # protocols/eeg/smr.refrain) and is guaranteed to keep parsing/resolving
+    # under the retirement contract (tests/test_retired_protocols.py).
+    src = (ROOT / "protocols" / "eeg" / "legacy" / "smr_theta_cz.refrain").read_text()
     assert 'threshold_style = mode' in src
     assert 'title' in src and 'family' in src
     ir_adaptive = resolve(parse(src), amp=_AMP)

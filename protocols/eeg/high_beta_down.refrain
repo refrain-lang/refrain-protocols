@@ -72,9 +72,6 @@ protocol "high_beta_down" {
     markers     = "not_required"
   }
 
-  groups {
-    frontal = ["Fz", "F3", "F4", "Cz"]
-  }
 
   input "raw" {
     montage = referential(active: site, reference: amp.reference)
@@ -144,7 +141,6 @@ protocol "high_beta_down" {
     site = placement {
       kind    = "active"
       default = "Cz"
-      allowed = frontal
       label   = "Training site"
     }
 

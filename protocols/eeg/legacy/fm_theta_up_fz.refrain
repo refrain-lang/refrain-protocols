@@ -1,3 +1,5 @@
+// RETIRED: superseded by protocols/eeg/alpha_up.refrain — set the site to Fz and the band to 4-8 Hz.
+// Kept runnable for subjects already assigned it; hidden from the default picker.
 // fm_theta_up_fz.refrain  —  DRAFT (status=draft, untested)
 // THETA up-train at Fz.  Ishihara & Yoshii; Gruzelier
 protocol "fm_theta_up_fz" {
@@ -7,7 +9,7 @@ protocol "fm_theta_up_fz" {
     summary         = "Rewards raising frontal-midline theta, associated with focused absorption and meditation."
     family          = "fm_theta_up_fz"
     description     = "THETA up-train at Fz"
-    status          = "draft"
+    status          = "legacy"
     evidence        = "exploratory"
     citation        = "Ishihara & Yoshii; Gruzelier"
     goals           = ["deep_meditative", "alertness_performance"]

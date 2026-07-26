@@ -39,6 +39,11 @@ _COLLAPSED = [
 # theta_up_pz/hibeta_down_cz/theta_down_cz/theta_down_fz/slow_down_cz/
 # slow_down_fz/beta_up_c3/theta_beta_cz. Still runnable/tested here, just
 # relocated.
+#
+# alpha_down_pz/fm_theta_up_fz/peak_alpha_up_pz/theta_beta_fz followed once
+# the five configurable templates' band edges were widened to (1 Hz, 45 Hz)
+# and their site `allowed` restriction was dropped, so the templates
+# reproduce these four too — also git mv'd to protocols/eeg/legacy/.
 _RELOCATED = {
     "smr_up_c4": ROOT / "protocols" / "eeg" / "legacy",
     "beta_up_fz": ROOT / "protocols" / "eeg" / "legacy",
@@ -52,6 +57,10 @@ _RELOCATED = {
     "slow_down_fz": ROOT / "protocols" / "eeg" / "legacy",
     "beta_up_c3": ROOT / "protocols" / "eeg" / "legacy",
     "theta_beta_cz": ROOT / "protocols" / "eeg" / "legacy",
+    "alpha_down_pz": ROOT / "protocols" / "eeg" / "legacy",
+    "fm_theta_up_fz": ROOT / "protocols" / "eeg" / "legacy",
+    "peak_alpha_up_pz": ROOT / "protocols" / "eeg" / "legacy",
+    "theta_beta_fz": ROOT / "protocols" / "eeg" / "legacy",
 }
 
 
