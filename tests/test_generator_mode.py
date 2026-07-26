@@ -20,13 +20,13 @@ def _regen():
 
 def test_generator_emits_one_file_per_target_no_baseline():
     _regen()
-    baselines = list((ROOT / "protocols").glob("*_baseline.refrain"))
+    baselines = list((ROOT / "protocols" / "eeg").glob("*_baseline.refrain"))
     assert baselines == [], f"generator still emitting baseline files: {baselines}"
 
 
 def test_generated_core_has_mode_and_resolves_both_ways():
     _regen()
-    src = (ROOT / "protocols" / "smr_theta_cz.refrain").read_text()
+    src = (ROOT / "protocols" / "eeg" / "smr_theta_cz.refrain").read_text()
     assert 'threshold_style = mode' in src
     assert 'title' in src and 'family' in src
     ir_adaptive = resolve(parse(src), amp=_AMP)

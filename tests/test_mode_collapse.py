@@ -21,16 +21,24 @@ _COLLAPSED = [
     "theta_down_cz", "theta_down_fz", "theta_up_pz",
 ]
 
-# smr_up_c4 was retired 2026-07 (git mv'd to protocols/eeg/legacy/,
-# status=legacy; dropped from tools/gen_seed_protocols.py's TABLE so it's no
-# longer regenerated at the old top-level path) — superseded by the
-# configurable SMR template. It's still runnable/tested here, just relocated;
-# the other 15 cores stay at their original protocols/ path.
-_RELOCATED = {"smr_up_c4": ROOT / "protocols" / "eeg" / "legacy"}
+# smr_up_c4 and beta_up_fz were both retired (git mv'd to protocols/eeg/legacy/,
+# status=legacy; dropped from tools/gen_seed_protocols.py's TABLE so neither is
+# regenerated at a stale path) — smr_up_c4 superseded by the configurable SMR
+# template (2026-07), beta_up_fz superseded by the fuller three-band
+# protocols/eeg/beta_focus_staged_fz.refrain (2026-07, ex-BrainBit fork). Both
+# are still runnable/tested here, just relocated.
+#
+# 2026-07 library reorg: the flat protocols/ top level was dissolved into
+# protocols/eeg/ (amp-portable, no device-specific folder) — the other 14
+# cores now live there instead of at their original protocols/ path.
+_RELOCATED = {
+    "smr_up_c4": ROOT / "protocols" / "eeg" / "legacy",
+    "beta_up_fz": ROOT / "protocols" / "eeg" / "legacy",
+}
 
 
 def _path_for(name):
-    return _RELOCATED.get(name, ROOT / "protocols") / f"{name}.refrain"
+    return _RELOCATED.get(name, ROOT / "protocols" / "eeg") / f"{name}.refrain"
 
 
 @pytest.mark.parametrize("name", _COLLAPSED)

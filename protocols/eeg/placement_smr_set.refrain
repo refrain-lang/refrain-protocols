@@ -13,15 +13,19 @@
 // replicated stream needs aggregation Refrain doesn't yet ship
 // ("Mode 2b"), so this protocol gates an audio chime on the combined
 // dwell and leaves the analog gain to single-site protocols.
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "device" reference, so one file resolves on both a clinical amp and a
+// consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3).
 
-protocol "placement_smr_set_brainbit_v1" {
+protocol "placement_smr_set" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
     description       = "SMR up-training replicated across a clinician-selected site set (set placement, Mode 2a)"
     title             = "SMR training — clinician-chosen site set"
-    summary           = "BrainBit: SMR up-training replicated across a set of sites the clinician selects."
+    summary           = "SMR up-training replicated across a set of sites the clinician selects."
     family            = "placement_smr"
     status            = "draft"
     goals             = ["sensorimotor_sleep"]
@@ -54,7 +58,7 @@ protocol "placement_smr_set_brainbit_v1" {
 
   // The chosen set substitutes here; the pipeline below replicates per site.
   input "raw" {
-    montage = referential(active: sites, reference: "device")
+    montage = referential(active: sites, reference: amp.reference)
   }
 
   derive "smr_envelope" {

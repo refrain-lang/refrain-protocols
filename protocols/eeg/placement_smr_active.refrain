@@ -7,15 +7,19 @@
 // substitutes into the montage and `requires.channels`. The `allowed`
 // list references a named group (v0.5.0), which expands to the concrete
 // channel tuple at resolve time — transparent to the site picker.
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "device" reference, so one file resolves on both a clinical amp and a
+// consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3).
 
-protocol "placement_smr_active_brainbit_v1" {
+protocol "placement_smr_active" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
     description       = "SMR up-training, clinician-selected single site (active placement)"
     title             = "SMR training — clinician-chosen site"
-    summary           = "BrainBit: SMR up-training at a single sensorimotor site the clinician selects at session start."
+    summary           = "SMR up-training at a single sensorimotor site the clinician selects at session start."
     family            = "placement_smr"
     status            = "draft"
     goals             = ["adhd_attention"]
@@ -52,7 +56,7 @@ protocol "placement_smr_active_brainbit_v1" {
 
   // The chosen site substitutes here at resolve time.
   input "raw" {
-    montage = referential(active: site, reference: "device")
+    montage = referential(active: site, reference: amp.reference)
   }
 
   derive "smr_envelope" {

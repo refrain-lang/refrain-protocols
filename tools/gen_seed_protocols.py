@@ -8,7 +8,7 @@ consistent. Generated files are parse-valid; they graduate from `draft` to
 `reviewed`/`stable` by hand as they're tested.
 
 Run:  python tools/gen_seed_protocols.py
-Emits: protocols/<name>.refrain
+Emits: protocols/eeg/<name>.refrain
 
 Each generated core carries a single `threshold_style` `mode` control
 ("adaptive" default / "baseline") that switches the threshold between a
@@ -32,7 +32,11 @@ import textwrap
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "protocols"
+# 2026-07 library reorg: the flat protocols/ top level was dissolved into
+# protocols/eeg/ (amp-portable, no device-specific folder) — emit there, not
+# to the old top-level path, or every regen would resurrect a stale duplicate
+# at protocols/<name>.refrain right next to the real (portable) file.
+OUT = ROOT / "protocols" / "eeg"
 
 # Each entry = one TARGET, emitted as a single mode-based core.
 #   bands:     low/high edges in Hz for the trained envelope
@@ -58,7 +62,10 @@ TABLE = [
     # would resurrect a non-legacy duplicate at the top-level path on every
     # regen.
     ("beta_up_c3",      (15,18), "up",  "C3", ["alertness_performance","adhd_attention"], ["beta"], "probable", "Othmer & Othmer (arousal model)", "Alert and engaged — boost beta (left side)", "Rewards raising engaged beta activity over the left sensorimotor cortex."),
-    ("beta_up_fz",      (15,18), "up",  "Fz", ["alertness_performance"], ["beta"], "probable", "frontal beta activation", "Alert and engaged — boost beta (forehead)", "Rewards raising engaged frontal beta activity."),
+    # beta_up_fz retired 2026-07: superseded by protocols/eeg/beta_focus_staged_fz.refrain
+    # (the fuller three-band Egner & Gruzelier recipe, ex-BrainBit fork). The old
+    # file lives on, legacy-tagged, at protocols/eeg/legacy/beta_up_fz.refrain — do
+    # not re-add it here, that would resurrect a non-legacy duplicate on every regen.
     ("alpha_up_pz",     (8,12),  "up",  "Pz", ["calm_anxiety","deep_meditative"], ["alpha"], "probable", "Hardt & Kamiya 1978", "Calm the mind — boost alpha (back of head)", "Rewards raising relaxed alpha waves at the back of the head, the classic eyes-closed calm state."),
     ("hibeta_down_cz",  (22,30), "down","Cz", ["calm_anxiety"], ["high-beta"], "probable", "clinical convention (anxiety/rumination)", "Ease over-arousal — quiet high-beta (top of head)", "Rewards lowering fast high-beta activity associated with anxiety and rumination."),
     ("peak_alpha_up_pz",(9,11),  "up",  "Pz", ["alertness_performance","deep_meditative"], ["alpha"], "exploratory", "Hanslmayr; Gruzelier 2014", "Sharpen peak alpha (back of head)", "Rewards raising the individual peak-alpha frequency band at the back of the head."),
@@ -220,7 +227,7 @@ def main():
     for name, band, direction, site, goals, bands, ev, cite, title, summary in TABLE:
         written.append(emit(name, band, direction, site, goals, bands, ev, cite, title, summary))
     for f in sorted(written):
-        print("  wrote protocols/%s.refrain" % f)
+        print(f"  wrote {(OUT / f'{f}.refrain').relative_to(ROOT)}")
     print(f"{len(written)} mode-based protocols generated (all status=draft).")
 
 

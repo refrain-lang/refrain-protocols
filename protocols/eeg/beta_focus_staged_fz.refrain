@@ -8,8 +8,9 @@
 // Thresholds are ADAPTIVE percentiles of the trainee's own recent signal
 // (2-min window), so they self-calibrate; the percentile windows freeze
 // during muted rests (Refrain v0.7.0) so a fidgety rest can't pollute the
-// next block. Companion baseline-fixed variant:
-// beta_focus_baseline_staged_fz_brainbit.refrain.
+// next block. The threshold_style mode control below covers the
+// baseline-fixed case in this same file, so there is no separate
+// baseline-only companion file.
 //
 // The high-beta-DOWN component doubles as the artifact guard — muscle/EMG
 // shows up in 22-30 Hz, so earning reward already requires quiet
@@ -19,15 +20,21 @@
 //
 // Band choices: reward = beta1-2 13-19 Hz (beta1 13-15 + beta2 15-19);
 // theta 4-8 Hz; high-beta 22-30 Hz. Electrode placement: channel #1 at Fz.
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "device" reference, so one file resolves on both a clinical amp and a
+// consumer amp. Supersedes protocols/eeg/legacy/beta_up_fz.refrain, a
+// single-band placeholder next to this fuller three-band recipe — see
+// docs/fork-audit-2026-07.md §2.4/F6.
 
-protocol "beta_focus_staged_fz_brainbit_v1" {
+protocol "beta_focus_staged_fz" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
-    description       = "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4×5-min blocks), adaptive percentile thresholds, BrainBit Flex monopolar"
+    description       = "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4×5-min blocks), adaptive percentile thresholds"
     title             = "Sustained focus — staged beta training (forehead)"
-    summary           = "BrainBit: staged beta uptraining with theta and high-beta inhibits at the forehead, using adaptive or baseline-fixed thresholds."
+    summary           = "Staged beta uptraining with theta and high-beta inhibits at the forehead, using adaptive or baseline-fixed thresholds."
     family            = "beta_focus_fz"
     threshold_style   = "selectable"
     status            = "reviewed"
@@ -50,7 +57,7 @@ protocol "beta_focus_staged_fz_brainbit_v1" {
   }
 
   input "raw" {
-    montage = referential(active: "Fz", reference: "device")
+    montage = referential(active: "Fz", reference: amp.reference)
   }
 
   // beta1-2 reward band = beta1 (13-15 Hz) + beta2 (15-19 Hz) = 13-19 Hz.

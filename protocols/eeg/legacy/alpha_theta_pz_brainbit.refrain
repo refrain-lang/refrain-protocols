@@ -15,6 +15,11 @@
 // Electrode placement: scalp channel #1 at Pz. The other three may be
 // placed wherever the clinician wishes or left as artifact references.
 // Only the Pz channel is used by this protocol.
+//
+// RETIRED: superseded by protocols/eeg/alpha_theta_pz.refrain, which is now
+// amp-portable (reads a live amp-reference montage) and carries this file's
+// EMG inhibit forward. Kept runnable for subjects already assigned it;
+// hidden from the default picker.
 
 protocol "alpha_theta_pz_brainbit_v1" {
 
@@ -25,7 +30,7 @@ protocol "alpha_theta_pz_brainbit_v1" {
     title             = "Deep meditative state — alpha/theta (back of head)"
     summary           = "BrainBit: eyes-closed alpha-theta training at the back of the head for deep, restorative states."
     family            = "alpha_theta_pz"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["deep_meditative"]
     author            = "Peak Mind"
     citation          = "Peniston E.G. & Kulkosky P.J. (1989). Alpha-Theta Brainwave Training and Beta-Endorphin Levels in Alcoholics. Alcoholism: Clinical & Experimental Research, 13(2), 271-279."

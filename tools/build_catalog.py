@@ -41,7 +41,7 @@ def read_meta(path: Path) -> dict:
 def main() -> None:
     entries = []
     for d in ("protocols", "drafts"):
-        # rglob: device-specific sets live in subfolders (e.g. protocols/brainbit/)
+        # rglob: retired/legacy protocols live in a subfolder (protocols/eeg/legacy/)
         for path in sorted((ROOT / d).rglob("*.refrain")):
             meta = read_meta(path)
             entries.append({

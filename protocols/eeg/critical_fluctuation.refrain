@@ -21,10 +21,26 @@
 // Evidence (early-warning-signals / critical-slowing-down literature):
 //   Scheffer et al. 2009 (Nature 461:53-59); Dakos et al. 2012 (PLoS ONE 7:e41010);
 //   Maturana et al. 2020 (Nat. Commun. 11:2172); Yang et al. 2012 (J. Neurosci. 32:1061).
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "linked_ears" reference, so one file resolves on both a clinical amp and a
+// consumer amp.
+//
+// sample_rate deliberately LEFT at >= 256 Hz (not relaxed to 250 Hz like the
+// rest of the library): the `ac1` critical-slowing-down indicator below uses
+// autocorr(lag: 125 ms) specifically because 125 ms lands on an exact whole
+// sample count (32) at 256 Hz — at 250 Hz it is 31.25 samples, a non-integer
+// lag that forces silent rounding and shifts the estimator away from the
+// value this file was designed and reasoned about. Unlike the alpha/theta/
+// beta envelope protocols, this file has no BrainBit fork or any other
+// empirical run at 250 Hz to show the rounded estimator still behaves — it
+// is `status = "draft"`/`evidence = "exploratory"` with no field validation
+// at all. A criticality estimator that cannot be shown correct at 250 Hz
+// must not be made to look as though it can.
 
 protocol "critical_fluctuation" {
   meta {
-    version           = "0.1.0"
+    version           = "0.2.0"
     description       = "Dynamical neurofeedback: cue on critical fluctuations (early-warning signals) across bands, at any site"
     title             = "Catch the tipping point — critical-fluctuation cue (any site)"
     summary           = "Experimental dynamical neurofeedback that cues on early-warning fluctuations across bands, at any site."
@@ -62,7 +78,7 @@ protocol "critical_fluctuation" {
   }
 
   input "raw" {
-    montage = referential(active: site, reference: "linked_ears")
+    montage = referential(active: site, reference: amp.reference)
   }
 
   // Band envelope. `bands` is the band-axis placeholder — the resolver replicates
