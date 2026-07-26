@@ -1,3 +1,9 @@
+// RETIRED: weighted composite whose reward rate is pinned at a fixed 50th-
+// percentile midpoint (not exposed as a live control) rather than adaptive —
+// it sits at 0% and the session coach's reward-rate advice has no percentile
+// knob to act on, only the w_smr/w_theta weight controls. The original
+// design doc already flagged weighted composites for retirement.
+// Kept runnable for subjects already assigned it; hidden from the default picker.
 // SMR training at Cz — GRADED ADAPTIVE proposal.
 //
 // The modern counterpart to smr_classic_cz.refrain. Instead of an
@@ -33,7 +39,7 @@ protocol "smr_graded_cz" {
     summary           = "Always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors."
     family            = "smr_cz"
     threshold_style   = "selectable"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"

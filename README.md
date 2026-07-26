@@ -35,7 +35,7 @@ drafts/         # documented but NOT resolvable yet (e.g. SCP — needs engine f
 lib/sessions/   # canonical session templates (defaults; host overrides durations/counts)
 schema/         # protocol-meta.schema.json — the tag contract
 docs/           # host-app-guide, tagging, conventions, evidence, contributing
-tools/          # gen_seed_protocols.py (regenerates the operant set), build_catalog.py
+tools/          # build_catalog.py
 catalog.json    # derived cache (CI rebuilds it)
 ```
 

@@ -22,7 +22,7 @@ _COLLAPSED = [
 ]
 
 # smr_up_c4 and beta_up_fz were both retired (git mv'd to protocols/eeg/legacy/,
-# status=legacy; dropped from tools/gen_seed_protocols.py's TABLE so neither is
+# status=legacy; dropped from the (since-deleted) seed generator so neither is
 # regenerated at a stale path) — smr_up_c4 superseded by the configurable SMR
 # template (2026-07), beta_up_fz superseded by the fuller three-band
 # protocols/eeg/beta_focus_staged_fz.refrain (2026-07, ex-BrainBit fork). Both
@@ -31,9 +31,36 @@ _COLLAPSED = [
 # 2026-07 library reorg: the flat protocols/ top level was dissolved into
 # protocols/eeg/ (amp-portable, no device-specific folder) — the other 14
 # cores now live there instead of at their original protocols/ path.
+#
+# Retire-the-absorbed-duplicates sweep (2026-07): 10 more of these were git
+# mv'd to protocols/eeg/legacy/ (status=legacy, dropped from
+# the since-deleted seed generator) once a configurable goal template
+# reproduced each by configuration alone — smr_theta_cz/alpha_up_pz/
+# theta_up_pz/hibeta_down_cz/theta_down_cz/theta_down_fz/slow_down_cz/
+# slow_down_fz/beta_up_c3/theta_beta_cz. Still runnable/tested here, just
+# relocated.
+#
+# alpha_down_pz/fm_theta_up_fz/peak_alpha_up_pz/theta_beta_fz followed once
+# the five configurable templates' band edges were widened to (1 Hz, 45 Hz)
+# and their site `allowed` restriction was dropped, so the templates
+# reproduce these four too — also git mv'd to protocols/eeg/legacy/.
 _RELOCATED = {
     "smr_up_c4": ROOT / "protocols" / "eeg" / "legacy",
     "beta_up_fz": ROOT / "protocols" / "eeg" / "legacy",
+    "smr_theta_cz": ROOT / "protocols" / "eeg" / "legacy",
+    "alpha_up_pz": ROOT / "protocols" / "eeg" / "legacy",
+    "theta_up_pz": ROOT / "protocols" / "eeg" / "legacy",
+    "hibeta_down_cz": ROOT / "protocols" / "eeg" / "legacy",
+    "theta_down_cz": ROOT / "protocols" / "eeg" / "legacy",
+    "theta_down_fz": ROOT / "protocols" / "eeg" / "legacy",
+    "slow_down_cz": ROOT / "protocols" / "eeg" / "legacy",
+    "slow_down_fz": ROOT / "protocols" / "eeg" / "legacy",
+    "beta_up_c3": ROOT / "protocols" / "eeg" / "legacy",
+    "theta_beta_cz": ROOT / "protocols" / "eeg" / "legacy",
+    "alpha_down_pz": ROOT / "protocols" / "eeg" / "legacy",
+    "fm_theta_up_fz": ROOT / "protocols" / "eeg" / "legacy",
+    "peak_alpha_up_pz": ROOT / "protocols" / "eeg" / "legacy",
+    "theta_beta_fz": ROOT / "protocols" / "eeg" / "legacy",
 }
 
 

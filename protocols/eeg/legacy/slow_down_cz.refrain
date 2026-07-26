@@ -1,18 +1,22 @@
-// slow_down_fz.refrain  —  DRAFT (status=draft, untested)
-// DELTA/THETA down-train at Fz.  Thatcher; Walker (frontal slowing)
-protocol "slow_down_fz" {
+// slow_down_cz.refrain  —  DRAFT (status=draft, untested)
+// DELTA/THETA down-train at Cz.  Thatcher; Walker (qEEG-guided slowing)
+//
+// RETIRED: superseded by protocols/eeg/high_beta_down.refrain — set the band
+// to 2-7 Hz and the site to Cz. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
+protocol "slow_down_cz" {
   meta {
     version         = "0.1.0"
-    title           = "Clear mental fog — lower slow waves (forehead)"
-    summary         = "Rewards reducing frontal delta/theta slow-wave activity linked to under-arousal."
-    family          = "slow_down_fz"
-    description     = "DELTA/THETA down-train at Fz"
-    status          = "draft"
+    title           = "Clear mental fog — lower slow waves (top of head)"
+    summary         = "Rewards reducing sluggish delta/theta slow-wave activity at the top of the head."
+    family          = "slow_down_cz"
+    description     = "DELTA/THETA down-train at Cz"
+    status          = "legacy"
     evidence        = "exploratory"
-    citation        = "Thatcher; Walker (frontal slowing)"
+    citation        = "Thatcher; Walker (qEEG-guided slowing)"
     goals           = ["alertness_performance", "adhd_attention"]
     bands           = ["delta", "theta"]
-    site            = "Fz"
+    site            = "Cz"
     direction       = "down"
     threshold_style = "selectable"
     feedback_style  = "discrete"
@@ -21,10 +25,10 @@ protocol "slow_down_fz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Fz"]
+    channels    = ["Cz"]
   }
 
-  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"

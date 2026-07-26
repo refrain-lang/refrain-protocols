@@ -20,6 +20,11 @@
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
 // "device" reference, so one file resolves on both a clinical amp and a
 // consumer amp.
+//
+// RETIRED: superseded by protocols/eeg/beta_attention.refrain — the
+// forthcoming configurable Beta-attention template predicted above has now
+// shipped; set the band to 15-20 Hz and the site to Cz. Kept runnable for
+// subjects already assigned it; hidden from the default picker.
 
 protocol "beta_up_cz" {
 
@@ -30,7 +35,7 @@ protocol "beta_up_cz" {
     title             = "Alert focus — boost beta (top of head)"
     summary           = "Rewards raising engaged beta with a theta inhibit at the top of the head."
     family            = "beta_up_cz"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["alertness_performance"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."

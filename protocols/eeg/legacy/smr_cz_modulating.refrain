@@ -1,3 +1,7 @@
+// RETIRED: uses continuous ambient audio_gain modulation as the operant
+// signal itself, rather than a discrete chime — a feedback mode the
+// clinical library no longer differentiates as a separate protocol.
+// Kept runnable for subjects already assigned it; hidden from the default picker.
 // SMR / theta-beta operant training at Cz — continuously-modulating
 // output variant.
 //
@@ -25,7 +29,7 @@ protocol "smr_cz_modulating" {
     title             = "Classic SMR training — ambient feedback (top of head)"
     summary           = "SMR operant at the top of the head with continuous ambient (modulating) audio feedback."
     family            = "smr_cz"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"

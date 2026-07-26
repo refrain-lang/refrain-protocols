@@ -69,9 +69,6 @@ protocol "alpha_up" {
     markers     = "not_required"
   }
 
-  groups {
-    posterior = ["P3", "Pz", "P4"]
-  }
 
   input "raw" {
     montage = referential(active: site, reference: amp.reference)
@@ -162,32 +159,31 @@ protocol "alpha_up" {
     site = placement {
       kind    = "active"
       default = "Pz"
-      allowed = posterior
       label   = "Training site"
     }
 
     // --- Advanced: band edges (resolve-time only) ---
     alpha_lo_hz = frequency {
       default      = 8 Hz
-      range        = (6 Hz, 9 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Alpha band low edge"
       live_tunable = false
     }
     alpha_hi_hz = frequency {
       default      = 12 Hz
-      range        = (10 Hz, 14 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "Alpha band high edge"
       live_tunable = false
     }
     hbeta_lo_hz = frequency {
       default      = 22 Hz
-      range        = (20 Hz, 24 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "High-beta inhibit band low edge"
       live_tunable = false
     }
     hbeta_hi_hz = frequency {
       default      = 30 Hz
-      range        = (26 Hz, 35 Hz)
+      range        = (1 Hz, 45 Hz)
       label        = "High-beta inhibit band high edge"
       live_tunable = false
     }

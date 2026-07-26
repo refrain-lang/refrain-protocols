@@ -1,19 +1,24 @@
-// alpha_down_pz.refrain  —  DRAFT (status=draft, untested)
-// ALPHA down-train at Pz.  Kluetsch/Ros/Lanius 2014; Nicholson 2016
-protocol "alpha_down_pz" {
+// beta_up_c3.refrain  —  DRAFT (status=draft, untested)
+// BETA up-train at C3.  Othmer & Othmer (arousal model)
+//
+// RETIRED: superseded by protocols/eeg/beta_attention.refrain — set the site
+// to C3 (the trained band, ~15-18 Hz, already matches the template's
+// default lo-beta band). Kept runnable for subjects already assigned it;
+// hidden from the default picker.
+protocol "beta_up_c3" {
   meta {
     version         = "0.1.0"
-    title           = "Down-regulate alpha (back of head)"
-    summary         = "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work."
-    family          = "alpha_down_pz"
-    description     = "ALPHA down-train at Pz"
-    status          = "draft"
+    title           = "Alert and engaged — boost beta (left side)"
+    summary         = "Rewards raising engaged beta activity over the left sensorimotor cortex."
+    family          = "beta_up_c3"
+    description     = "BETA up-train at C3"
+    status          = "legacy"
     evidence        = "probable"
-    citation        = "Kluetsch/Ros/Lanius 2014; Nicholson 2016"
-    goals           = ["trauma_recovery", "deep_meditative"]
-    bands           = ["alpha"]
-    site            = "Pz"
-    direction       = "down"
+    citation        = "Othmer & Othmer (arousal model)"
+    goals           = ["alertness_performance", "adhd_attention"]
+    bands           = ["beta"]
+    site            = "C3"
+    direction       = "up"
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
@@ -21,15 +26,15 @@ protocol "alpha_down_pz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Pz"]
+    channels    = ["C3"]
   }
 
-  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "C3", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(1.5), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -45,7 +50,7 @@ protocol "alpha_down_pz" {
   }
 
   reward {
-    event      = dwell(condition: below("env", "env_t"), duration: 250 ms)
+    event      = dwell(condition: above("env", "env_t"), duration: 250 ms)
     continuous = sigmoid("env" / "env_t", midpoint: 1.0, steepness: 3)
   }
 
@@ -61,13 +66,13 @@ protocol "alpha_down_pz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 9.79796 Hz
-      range   = (7.84 Hz, 11.76 Hz)
-      label   = "ALPHA band center"
+      default = 16.4317 Hz
+      range   = (13.15 Hz, 19.72 Hz)
+      label   = "BETA band center"
     }
     reward_pct = percent {
-      default      = 30
-      range        = (10, 50)
+      default      = 70
+      range        = (50, 90)
       label        = "Target reward %"
       live_tunable = true
     }

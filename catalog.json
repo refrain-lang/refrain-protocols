@@ -27,33 +27,6 @@
       }
     },
     {
-      "file": "protocols/eeg/alpha_down_pz.refrain",
-      "name": "alpha_down_pz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Down-regulate alpha (back of head)",
-        "summary": "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work.",
-        "family": "alpha_down_pz",
-        "description": "ALPHA down-train at Pz",
-        "status": "draft",
-        "evidence": "probable",
-        "citation": "Kluetsch/Ros/Lanius 2014; Nicholson 2016",
-        "goals": [
-          "trauma_recovery",
-          "deep_meditative"
-        ],
-        "bands": [
-          "alpha"
-        ],
-        "site": "Pz",
-        "direction": "down",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
       "file": "protocols/eeg/alpha_theta.refrain",
       "name": "alpha_theta",
       "draft": true,
@@ -92,33 +65,6 @@
           "artifact_strictness",
           "theta_threshold_uv"
         ]
-      }
-    },
-    {
-      "file": "protocols/eeg/alpha_theta_pz.refrain",
-      "name": "alpha_theta_pz",
-      "draft": true,
-      "meta": {
-        "version": "0.2.0",
-        "description": "Alpha/theta crossover at Pz (eyes-closed, deep state)",
-        "title": "Deep meditative state \u2014 alpha/theta crossover (back of head)",
-        "summary": "Eyes-closed deep-state training that rewards theta rising above alpha at the back of the head (the Peniston-Kulkosky protocol).",
-        "family": "alpha_theta_pz",
-        "status": "draft",
-        "evidence": "established",
-        "citation": "Peniston & Kulkosky 1989, 1991",
-        "goals": [
-          "deep_meditative",
-          "trauma_recovery"
-        ],
-        "bands": [
-          "alpha",
-          "theta"
-        ],
-        "site": "Pz",
-        "direction": "crossover",
-        "threshold_style": "crossover",
-        "hardware": "generic"
       }
     },
     {
@@ -162,33 +108,6 @@
           "alpha_threshold_uv",
           "hbeta_threshold_uv"
         ]
-      }
-    },
-    {
-      "file": "protocols/eeg/alpha_up_pz.refrain",
-      "name": "alpha_up_pz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Calm the mind \u2014 boost alpha (back of head)",
-        "summary": "Rewards raising relaxed alpha waves at the back of the head, the classic eyes-closed calm state.",
-        "family": "alpha_up_pz",
-        "description": "ALPHA up-train at Pz",
-        "status": "draft",
-        "evidence": "probable",
-        "citation": "Hardt & Kamiya 1978",
-        "goals": [
-          "calm_anxiety",
-          "deep_meditative"
-        ],
-        "bands": [
-          "alpha"
-        ],
-        "site": "Pz",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
       }
     },
     {
@@ -269,61 +188,6 @@
       }
     },
     {
-      "file": "protocols/eeg/beta_up_c3.refrain",
-      "name": "beta_up_c3",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Alert and engaged \u2014 boost beta (left side)",
-        "summary": "Rewards raising engaged beta activity over the left sensorimotor cortex.",
-        "family": "beta_up_c3",
-        "description": "BETA up-train at C3",
-        "status": "draft",
-        "evidence": "probable",
-        "citation": "Othmer & Othmer (arousal model)",
-        "goals": [
-          "alertness_performance",
-          "adhd_attention"
-        ],
-        "bands": [
-          "beta"
-        ],
-        "site": "C3",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/beta_up_cz.refrain",
-      "name": "beta_up_cz",
-      "draft": false,
-      "meta": {
-        "version": "1.1.0",
-        "evidence": "demo",
-        "description": "Beta1 (15-20 Hz) uptraining at Cz with theta inhibit",
-        "title": "Alert focus \u2014 boost beta (top of head)",
-        "summary": "Rewards raising engaged beta with a theta inhibit at the top of the head.",
-        "family": "beta_up_cz",
-        "status": "reviewed",
-        "goals": [
-          "alertness_performance"
-        ],
-        "author": "Peak Mind",
-        "citation": "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139.",
-        "population": "adults_18_plus",
-        "indication": "attention_alertness_performance",
-        "control_ref": "library/beta_up/sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check"
-        ],
-        "outcome_measures": [
-          "subjective_state_report"
-        ]
-      }
-    },
-    {
       "file": "protocols/eeg/critical_fluctuation.refrain",
       "name": "critical_fluctuation",
       "draft": true,
@@ -381,59 +245,6 @@
         "direction": "asymmetry",
         "threshold_style": "adaptive",
         "hardware": "generic"
-      }
-    },
-    {
-      "file": "protocols/eeg/fm_theta_up_fz.refrain",
-      "name": "fm_theta_up_fz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Frontal-midline theta \u2014 focused calm (forehead)",
-        "summary": "Rewards raising frontal-midline theta, associated with focused absorption and meditation.",
-        "family": "fm_theta_up_fz",
-        "description": "THETA up-train at Fz",
-        "status": "draft",
-        "evidence": "exploratory",
-        "citation": "Ishihara & Yoshii; Gruzelier",
-        "goals": [
-          "deep_meditative",
-          "alertness_performance"
-        ],
-        "bands": [
-          "theta"
-        ],
-        "site": "Fz",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/hibeta_down_cz.refrain",
-      "name": "hibeta_down_cz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Ease over-arousal \u2014 quiet high-beta (top of head)",
-        "summary": "Rewards lowering fast high-beta activity associated with anxiety and rumination.",
-        "family": "hibeta_down_cz",
-        "description": "HIGH-BETA down-train at Cz",
-        "status": "draft",
-        "evidence": "probable",
-        "citation": "clinical convention (anxiety/rumination)",
-        "goals": [
-          "calm_anxiety"
-        ],
-        "bands": [
-          "high-beta"
-        ],
-        "site": "Cz",
-        "direction": "down",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
       }
     },
     {
@@ -500,6 +311,33 @@
       }
     },
     {
+      "file": "protocols/eeg/legacy/alpha_down_pz.refrain",
+      "name": "alpha_down_pz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Down-regulate alpha (back of head)",
+        "summary": "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work.",
+        "family": "alpha_down_pz",
+        "description": "ALPHA down-train at Pz",
+        "status": "legacy",
+        "evidence": "probable",
+        "citation": "Kluetsch/Ros/Lanius 2014; Nicholson 2016",
+        "goals": [
+          "trauma_recovery",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "down",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
       "file": "protocols/eeg/legacy/alpha_symmetry_c3c4_brainbit.refrain",
       "name": "alpha_symmetry_c3c4_brainbit",
       "draft": false,
@@ -525,6 +363,33 @@
         "outcome_measures": [
           "subjective_state_report"
         ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/alpha_theta_pz.refrain",
+      "name": "alpha_theta_pz",
+      "draft": false,
+      "meta": {
+        "version": "0.2.0",
+        "description": "Alpha/theta crossover at Pz (eyes-closed, deep state)",
+        "title": "Deep meditative state \u2014 alpha/theta crossover (back of head)",
+        "summary": "Eyes-closed deep-state training that rewards theta rising above alpha at the back of the head (the Peniston-Kulkosky protocol).",
+        "family": "alpha_theta_pz",
+        "status": "legacy",
+        "evidence": "established",
+        "citation": "Peniston & Kulkosky 1989, 1991",
+        "goals": [
+          "deep_meditative",
+          "trauma_recovery"
+        ],
+        "bands": [
+          "alpha",
+          "theta"
+        ],
+        "site": "Pz",
+        "direction": "crossover",
+        "threshold_style": "crossover",
+        "hardware": "generic"
       }
     },
     {
@@ -557,6 +422,33 @@
       }
     },
     {
+      "file": "protocols/eeg/legacy/alpha_up_pz.refrain",
+      "name": "alpha_up_pz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Calm the mind \u2014 boost alpha (back of head)",
+        "summary": "Rewards raising relaxed alpha waves at the back of the head, the classic eyes-closed calm state.",
+        "family": "alpha_up_pz",
+        "description": "ALPHA up-train at Pz",
+        "status": "legacy",
+        "evidence": "probable",
+        "citation": "Hardt & Kamiya 1978",
+        "goals": [
+          "calm_anxiety",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
       "file": "protocols/eeg/legacy/alpha_up_pz_brainbit.refrain",
       "name": "alpha_up_pz_brainbit",
       "draft": false,
@@ -582,6 +474,61 @@
         "outcome_measures": [
           "subjective_state_report",
           "STAI"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/beta_up_c3.refrain",
+      "name": "beta_up_c3",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Alert and engaged \u2014 boost beta (left side)",
+        "summary": "Rewards raising engaged beta activity over the left sensorimotor cortex.",
+        "family": "beta_up_c3",
+        "description": "BETA up-train at C3",
+        "status": "legacy",
+        "evidence": "probable",
+        "citation": "Othmer & Othmer (arousal model)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "beta"
+        ],
+        "site": "C3",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/beta_up_cz.refrain",
+      "name": "beta_up_cz",
+      "draft": false,
+      "meta": {
+        "version": "1.1.0",
+        "evidence": "demo",
+        "description": "Beta1 (15-20 Hz) uptraining at Cz with theta inhibit",
+        "title": "Alert focus \u2014 boost beta (top of head)",
+        "summary": "Rewards raising engaged beta with a theta inhibit at the top of the head.",
+        "family": "beta_up_cz",
+        "status": "legacy",
+        "goals": [
+          "alertness_performance"
+        ],
+        "author": "Peak Mind",
+        "citation": "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139.",
+        "population": "adults_18_plus",
+        "indication": "attention_alertness_performance",
+        "control_ref": "library/beta_up/sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check"
+        ],
+        "outcome_measures": [
+          "subjective_state_report"
         ]
       }
     },
@@ -670,6 +617,59 @@
       }
     },
     {
+      "file": "protocols/eeg/legacy/fm_theta_up_fz.refrain",
+      "name": "fm_theta_up_fz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Frontal-midline theta \u2014 focused calm (forehead)",
+        "summary": "Rewards raising frontal-midline theta, associated with focused absorption and meditation.",
+        "family": "fm_theta_up_fz",
+        "description": "THETA up-train at Fz",
+        "status": "legacy",
+        "evidence": "exploratory",
+        "citation": "Ishihara & Yoshii; Gruzelier",
+        "goals": [
+          "deep_meditative",
+          "alertness_performance"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/hibeta_down_cz.refrain",
+      "name": "hibeta_down_cz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Ease over-arousal \u2014 quiet high-beta (top of head)",
+        "summary": "Rewards lowering fast high-beta activity associated with anxiety and rumination.",
+        "family": "hibeta_down_cz",
+        "description": "HIGH-BETA down-train at Cz",
+        "status": "legacy",
+        "evidence": "probable",
+        "citation": "clinical convention (anxiety/rumination)",
+        "goals": [
+          "calm_anxiety"
+        ],
+        "bands": [
+          "high-beta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
       "file": "protocols/eeg/legacy/high_beta_down_cz_brainbit.refrain",
       "name": "high_beta_down_cz_brainbit",
       "draft": false,
@@ -696,6 +696,233 @@
           "subjective_state_report",
           "STAI"
         ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/peak_alpha_up_pz.refrain",
+      "name": "peak_alpha_up_pz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Sharpen peak alpha (back of head)",
+        "summary": "Rewards raising the individual peak-alpha frequency band at the back of the head.",
+        "family": "peak_alpha_up_pz",
+        "description": "ALPHA up-train at Pz",
+        "status": "legacy",
+        "evidence": "exploratory",
+        "citation": "Hanslmayr; Gruzelier 2014",
+        "goals": [
+          "alertness_performance",
+          "deep_meditative"
+        ],
+        "bands": [
+          "alpha"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/placement_smr_active.refrain",
+      "name": "placement_smr_active",
+      "draft": false,
+      "meta": {
+        "version": "1.1.0",
+        "evidence": "demo",
+        "description": "SMR up-training, clinician-selected single site (active placement)",
+        "title": "SMR training \u2014 clinician-chosen site",
+        "summary": "SMR up-training at a single sensorimotor site the clinician selects at session start.",
+        "family": "placement_smr",
+        "status": "legacy",
+        "goals": [
+          "adhd_attention"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
+        "indication": "ADHD_attention_regulation",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/slow_down_cz.refrain",
+      "name": "slow_down_cz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Clear mental fog \u2014 lower slow waves (top of head)",
+        "summary": "Rewards reducing sluggish delta/theta slow-wave activity at the top of the head.",
+        "family": "slow_down_cz",
+        "description": "DELTA/THETA down-train at Cz",
+        "status": "legacy",
+        "evidence": "exploratory",
+        "citation": "Thatcher; Walker (qEEG-guided slowing)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "delta",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/slow_down_fz.refrain",
+      "name": "slow_down_fz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Clear mental fog \u2014 lower slow waves (forehead)",
+        "summary": "Rewards reducing frontal delta/theta slow-wave activity linked to under-arousal.",
+        "family": "slow_down_fz",
+        "description": "DELTA/THETA down-train at Fz",
+        "status": "legacy",
+        "evidence": "exploratory",
+        "citation": "Thatcher; Walker (frontal slowing)",
+        "goals": [
+          "alertness_performance",
+          "adhd_attention"
+        ],
+        "bands": [
+          "delta",
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "down",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/smr_classic_cz.refrain",
+      "name": "smr_classic_cz",
+      "draft": false,
+      "meta": {
+        "version": "1.1.0",
+        "evidence": "demo",
+        "description": "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection)",
+        "title": "Classic SMR training (top of head)",
+        "summary": "The faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds.",
+        "family": "smr_cz",
+        "threshold_style": "selectable",
+        "status": "legacy",
+        "goals": [
+          "adhd_attention"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
+        "population": "children_adults",
+        "indication": "ADHD_attention_regulation",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "IVA-2_continuous_performance",
+          "Conners-3"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/smr_cz_modulating.refrain",
+      "name": "smr_cz_modulating",
+      "draft": false,
+      "meta": {
+        "version": "1.1.0",
+        "evidence": "demo",
+        "description": "SMR/theta-beta operant training at Cz",
+        "title": "Classic SMR training \u2014 ambient feedback (top of head)",
+        "summary": "SMR operant at the top of the head with continuous ambient (modulating) audio feedback.",
+        "family": "smr_cz",
+        "status": "legacy",
+        "goals": [
+          "adhd_attention"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
+        "population": "children_adults",
+        "indication": "ADHD_attention_regulation",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "IVA-2_continuous_performance",
+          "Conners-3"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/smr_graded_cz.refrain",
+      "name": "smr_graded_cz",
+      "draft": false,
+      "meta": {
+        "version": "1.1.0",
+        "evidence": "demo",
+        "description": "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback)",
+        "title": "Graded SMR training (top of head)",
+        "summary": "Always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors.",
+        "family": "smr_cz",
+        "threshold_style": "selectable",
+        "status": "legacy",
+        "goals": [
+          "adhd_attention"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
+        "population": "children_adults",
+        "indication": "ADHD_attention_regulation",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "IVA-2_continuous_performance",
+          "Conners-3"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/smr_theta_cz.refrain",
+      "name": "smr_theta_cz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Steady focus \u2014 boost SMR, calm theta (top of head)",
+        "summary": "Rewards a calm-but-alert sensorimotor rhythm at the top of the head while keeping drowsy theta down.",
+        "family": "smr_theta_cz",
+        "description": "SMR/THETA up-train at Cz",
+        "status": "legacy",
+        "evidence": "established",
+        "citation": "Sterman; Lubar; Arns 2009",
+        "goals": [
+          "adhd_attention",
+          "sensorimotor_sleep"
+        ],
+        "bands": [
+          "smr",
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
       }
     },
     {
@@ -757,26 +984,26 @@
       }
     },
     {
-      "file": "protocols/eeg/peak_alpha_up_pz.refrain",
-      "name": "peak_alpha_up_pz",
-      "draft": true,
+      "file": "protocols/eeg/legacy/theta_beta_cz.refrain",
+      "name": "theta_beta_cz",
+      "draft": false,
       "meta": {
         "version": "0.1.0",
-        "title": "Sharpen peak alpha (back of head)",
-        "summary": "Rewards raising the individual peak-alpha frequency band at the back of the head.",
-        "family": "peak_alpha_up_pz",
-        "description": "ALPHA up-train at Pz",
-        "status": "draft",
-        "evidence": "exploratory",
-        "citation": "Hanslmayr; Gruzelier 2014",
+        "title": "Sharpen attention \u2014 beta up over theta (top of head)",
+        "summary": "Trains focused beta up relative to daydreamy theta at the top of the head.",
+        "family": "theta_beta_cz",
+        "description": "BETA/THETA up-train at Cz",
+        "status": "legacy",
+        "evidence": "established",
+        "citation": "Lubar (theta/beta)",
         "goals": [
-          "alertness_performance",
-          "deep_meditative"
+          "adhd_attention"
         ],
         "bands": [
-          "alpha"
+          "beta",
+          "theta"
         ],
-        "site": "Pz",
+        "site": "Cz",
         "direction": "up",
         "threshold_style": "selectable",
         "feedback_style": "discrete",
@@ -784,26 +1011,108 @@
       }
     },
     {
-      "file": "protocols/eeg/placement_smr_active.refrain",
-      "name": "placement_smr_active",
-      "draft": true,
+      "file": "protocols/eeg/legacy/theta_beta_fz.refrain",
+      "name": "theta_beta_fz",
+      "draft": false,
       "meta": {
-        "version": "1.1.0",
-        "evidence": "demo",
-        "description": "SMR up-training, clinician-selected single site (active placement)",
-        "title": "SMR training \u2014 clinician-chosen site",
-        "summary": "SMR up-training at a single sensorimotor site the clinician selects at session start.",
-        "family": "placement_smr",
-        "status": "draft",
+        "version": "0.1.0",
+        "title": "Sharpen attention \u2014 beta up over theta (forehead)",
+        "summary": "Trains focused beta up relative to theta at the forehead, where theta excess is common in inattention.",
+        "family": "theta_beta_fz",
+        "description": "BETA/THETA up-train at Fz",
+        "status": "legacy",
+        "evidence": "established",
+        "citation": "Lubar (theta/beta); frontal-theta excess",
         "goals": [
           "adhd_attention"
         ],
-        "author": "Peak Mind",
-        "indication": "ADHD_attention_regulation",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
-        ]
+        "bands": [
+          "beta",
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/theta_down_cz.refrain",
+      "name": "theta_down_cz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Quiet daydreaming \u2014 lower theta (top of head)",
+        "summary": "Rewards lowering the slow, drifting theta rhythm at the top of the head.",
+        "family": "theta_down_cz",
+        "description": "THETA down-train at Cz",
+        "status": "legacy",
+        "evidence": "probable",
+        "citation": "Lubar (theta downtraining)",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Cz",
+        "direction": "down",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/theta_down_fz.refrain",
+      "name": "theta_down_fz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Quiet daydreaming \u2014 lower theta (forehead)",
+        "summary": "Rewards lowering excess frontal theta associated with mind-wandering.",
+        "family": "theta_down_fz",
+        "description": "THETA down-train at Fz",
+        "status": "legacy",
+        "evidence": "probable",
+        "citation": "Lubar; frontal-theta excess",
+        "goals": [
+          "adhd_attention"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Fz",
+        "direction": "down",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/legacy/theta_up_pz.refrain",
+      "name": "theta_up_pz",
+      "draft": false,
+      "meta": {
+        "version": "0.1.0",
+        "title": "Theta up \u2014 reverie state (back of head)",
+        "summary": "Rewards raising theta at the back of the head, associated with hypnagogic, creative reverie states.",
+        "family": "theta_up_pz",
+        "description": "THETA up-train at Pz",
+        "status": "legacy",
+        "evidence": "exploratory",
+        "citation": "Gruzelier (creativity/deep states)",
+        "goals": [
+          "deep_meditative"
+        ],
+        "bands": [
+          "theta"
+        ],
+        "site": "Pz",
+        "direction": "up",
+        "threshold_style": "selectable",
+        "feedback_style": "discrete",
+        "session_shape": "staged"
       }
     },
     {
@@ -850,62 +1159,6 @@
           "pre_session_check",
           "intra_session_clinician_observation"
         ]
-      }
-    },
-    {
-      "file": "protocols/eeg/slow_down_cz.refrain",
-      "name": "slow_down_cz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Clear mental fog \u2014 lower slow waves (top of head)",
-        "summary": "Rewards reducing sluggish delta/theta slow-wave activity at the top of the head.",
-        "family": "slow_down_cz",
-        "description": "DELTA/THETA down-train at Cz",
-        "status": "draft",
-        "evidence": "exploratory",
-        "citation": "Thatcher; Walker (qEEG-guided slowing)",
-        "goals": [
-          "alertness_performance",
-          "adhd_attention"
-        ],
-        "bands": [
-          "delta",
-          "theta"
-        ],
-        "site": "Cz",
-        "direction": "down",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/slow_down_fz.refrain",
-      "name": "slow_down_fz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Clear mental fog \u2014 lower slow waves (forehead)",
-        "summary": "Rewards reducing frontal delta/theta slow-wave activity linked to under-arousal.",
-        "family": "slow_down_fz",
-        "description": "DELTA/THETA down-train at Fz",
-        "status": "draft",
-        "evidence": "exploratory",
-        "citation": "Thatcher; Walker (frontal slowing)",
-        "goals": [
-          "alertness_performance",
-          "adhd_attention"
-        ],
-        "bands": [
-          "delta",
-          "theta"
-        ],
-        "site": "Fz",
-        "direction": "down",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
       }
     },
     {
@@ -986,258 +1239,6 @@
           "IVA-2_continuous_performance",
           "Conners-3"
         ]
-      }
-    },
-    {
-      "file": "protocols/eeg/smr_classic_cz.refrain",
-      "name": "smr_classic_cz",
-      "draft": false,
-      "meta": {
-        "version": "1.1.0",
-        "evidence": "demo",
-        "description": "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection)",
-        "title": "Classic SMR training (top of head)",
-        "summary": "The faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds.",
-        "family": "smr_cz",
-        "threshold_style": "selectable",
-        "status": "reviewed",
-        "goals": [
-          "adhd_attention"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
-        "population": "children_adults",
-        "indication": "ADHD_attention_regulation",
-        "control_ref": "library/operant/smr_sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
-        ],
-        "outcome_measures": [
-          "IVA-2_continuous_performance",
-          "Conners-3"
-        ]
-      }
-    },
-    {
-      "file": "protocols/eeg/smr_cz_modulating.refrain",
-      "name": "smr_cz_modulating",
-      "draft": false,
-      "meta": {
-        "version": "1.1.0",
-        "evidence": "demo",
-        "description": "SMR/theta-beta operant training at Cz",
-        "title": "Classic SMR training \u2014 ambient feedback (top of head)",
-        "summary": "SMR operant at the top of the head with continuous ambient (modulating) audio feedback.",
-        "family": "smr_cz",
-        "status": "reviewed",
-        "goals": [
-          "adhd_attention"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
-        "population": "children_adults",
-        "indication": "ADHD_attention_regulation",
-        "control_ref": "library/operant/smr_sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
-        ],
-        "outcome_measures": [
-          "IVA-2_continuous_performance",
-          "Conners-3"
-        ]
-      }
-    },
-    {
-      "file": "protocols/eeg/smr_graded_cz.refrain",
-      "name": "smr_graded_cz",
-      "draft": false,
-      "meta": {
-        "version": "1.1.0",
-        "evidence": "demo",
-        "description": "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback)",
-        "title": "Graded SMR training (top of head)",
-        "summary": "Always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors.",
-        "family": "smr_cz",
-        "threshold_style": "selectable",
-        "status": "reviewed",
-        "goals": [
-          "adhd_attention"
-        ],
-        "author": "Peak Mind",
-        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
-        "population": "children_adults",
-        "indication": "ADHD_attention_regulation",
-        "control_ref": "library/operant/smr_sham@1.0",
-        "safety_monitoring": [
-          "pre_session_check",
-          "intra_session_clinician_observation"
-        ],
-        "outcome_measures": [
-          "IVA-2_continuous_performance",
-          "Conners-3"
-        ]
-      }
-    },
-    {
-      "file": "protocols/eeg/smr_theta_cz.refrain",
-      "name": "smr_theta_cz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Steady focus \u2014 boost SMR, calm theta (top of head)",
-        "summary": "Rewards a calm-but-alert sensorimotor rhythm at the top of the head while keeping drowsy theta down.",
-        "family": "smr_theta_cz",
-        "description": "SMR/THETA up-train at Cz",
-        "status": "draft",
-        "evidence": "established",
-        "citation": "Sterman; Lubar; Arns 2009",
-        "goals": [
-          "adhd_attention",
-          "sensorimotor_sleep"
-        ],
-        "bands": [
-          "smr",
-          "theta"
-        ],
-        "site": "Cz",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/theta_beta_cz.refrain",
-      "name": "theta_beta_cz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Sharpen attention \u2014 beta up over theta (top of head)",
-        "summary": "Trains focused beta up relative to daydreamy theta at the top of the head.",
-        "family": "theta_beta_cz",
-        "description": "BETA/THETA up-train at Cz",
-        "status": "draft",
-        "evidence": "established",
-        "citation": "Lubar (theta/beta)",
-        "goals": [
-          "adhd_attention"
-        ],
-        "bands": [
-          "beta",
-          "theta"
-        ],
-        "site": "Cz",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/theta_beta_fz.refrain",
-      "name": "theta_beta_fz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Sharpen attention \u2014 beta up over theta (forehead)",
-        "summary": "Trains focused beta up relative to theta at the forehead, where theta excess is common in inattention.",
-        "family": "theta_beta_fz",
-        "description": "BETA/THETA up-train at Fz",
-        "status": "draft",
-        "evidence": "established",
-        "citation": "Lubar (theta/beta); frontal-theta excess",
-        "goals": [
-          "adhd_attention"
-        ],
-        "bands": [
-          "beta",
-          "theta"
-        ],
-        "site": "Fz",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/theta_down_cz.refrain",
-      "name": "theta_down_cz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Quiet daydreaming \u2014 lower theta (top of head)",
-        "summary": "Rewards lowering the slow, drifting theta rhythm at the top of the head.",
-        "family": "theta_down_cz",
-        "description": "THETA down-train at Cz",
-        "status": "draft",
-        "evidence": "probable",
-        "citation": "Lubar (theta downtraining)",
-        "goals": [
-          "adhd_attention"
-        ],
-        "bands": [
-          "theta"
-        ],
-        "site": "Cz",
-        "direction": "down",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/theta_down_fz.refrain",
-      "name": "theta_down_fz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Quiet daydreaming \u2014 lower theta (forehead)",
-        "summary": "Rewards lowering excess frontal theta associated with mind-wandering.",
-        "family": "theta_down_fz",
-        "description": "THETA down-train at Fz",
-        "status": "draft",
-        "evidence": "probable",
-        "citation": "Lubar; frontal-theta excess",
-        "goals": [
-          "adhd_attention"
-        ],
-        "bands": [
-          "theta"
-        ],
-        "site": "Fz",
-        "direction": "down",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
-      }
-    },
-    {
-      "file": "protocols/eeg/theta_up_pz.refrain",
-      "name": "theta_up_pz",
-      "draft": true,
-      "meta": {
-        "version": "0.1.0",
-        "title": "Theta up \u2014 reverie state (back of head)",
-        "summary": "Rewards raising theta at the back of the head, associated with hypnagogic, creative reverie states.",
-        "family": "theta_up_pz",
-        "description": "THETA up-train at Pz",
-        "status": "draft",
-        "evidence": "exploratory",
-        "citation": "Gruzelier (creativity/deep states)",
-        "goals": [
-          "deep_meditative"
-        ],
-        "bands": [
-          "theta"
-        ],
-        "site": "Pz",
-        "direction": "up",
-        "threshold_style": "selectable",
-        "feedback_style": "discrete",
-        "session_shape": "staged"
       }
     },
     {

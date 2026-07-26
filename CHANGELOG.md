@@ -10,7 +10,7 @@ Initial seed of the reference protocol library. **All protocols `status = "draft
 - Specials: weighted composite (uses the `number` weight kind), alpha/theta crossover, interhemispheric alpha coherence, frontal alpha asymmetry, HRV resonance.
 - `drafts/scp_cz.refrain` — SCP roadmap draft enumerating the four engine gaps it needs.
 - Docs: host-app chooser guide, tagging, conventions, evidence policy, contributing.
-- `tools/gen_seed_protocols.py` (regenerates the operant set), `tools/build_catalog.py` (derived cache).
+- `tools/build_catalog.py` (derived cache).
 - CI: parse gate + meta-schema validation + catalog-drift check.
 - `critical_fluctuation.refrain` — a new **non-operant** paradigm: dynamical
   neurofeedback that cues on "critical fluctuations" (early-warning signals —

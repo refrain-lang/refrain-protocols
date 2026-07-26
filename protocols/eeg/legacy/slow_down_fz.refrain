@@ -1,19 +1,23 @@
-// peak_alpha_up_pz.refrain  —  DRAFT (status=draft, untested)
-// ALPHA up-train at Pz.  Hanslmayr; Gruzelier 2014
-protocol "peak_alpha_up_pz" {
+// slow_down_fz.refrain  —  DRAFT (status=draft, untested)
+// DELTA/THETA down-train at Fz.  Thatcher; Walker (frontal slowing)
+//
+// RETIRED: superseded by protocols/eeg/high_beta_down.refrain — set the band
+// to 2-7 Hz and the site to Fz. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
+protocol "slow_down_fz" {
   meta {
     version         = "0.1.0"
-    title           = "Sharpen peak alpha (back of head)"
-    summary         = "Rewards raising the individual peak-alpha frequency band at the back of the head."
-    family          = "peak_alpha_up_pz"
-    description     = "ALPHA up-train at Pz"
-    status          = "draft"
+    title           = "Clear mental fog — lower slow waves (forehead)"
+    summary         = "Rewards reducing frontal delta/theta slow-wave activity linked to under-arousal."
+    family          = "slow_down_fz"
+    description     = "DELTA/THETA down-train at Fz"
+    status          = "legacy"
     evidence        = "exploratory"
-    citation        = "Hanslmayr; Gruzelier 2014"
-    goals           = ["alertness_performance", "deep_meditative"]
-    bands           = ["alpha"]
-    site            = "Pz"
-    direction       = "up"
+    citation        = "Thatcher; Walker (frontal slowing)"
+    goals           = ["alertness_performance", "adhd_attention"]
+    bands           = ["delta", "theta"]
+    site            = "Fz"
+    direction       = "down"
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
@@ -21,15 +25,15 @@ protocol "peak_alpha_up_pz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Pz"]
+    channels    = ["Fz"]
   }
 
-  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(1.22222), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(3.5), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -45,7 +49,7 @@ protocol "peak_alpha_up_pz" {
   }
 
   reward {
-    event      = dwell(condition: above("env", "env_t"), duration: 250 ms)
+    event      = dwell(condition: below("env", "env_t"), duration: 250 ms)
     continuous = sigmoid("env" / "env_t", midpoint: 1.0, steepness: 3)
   }
 
@@ -61,13 +65,13 @@ protocol "peak_alpha_up_pz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 9.94987 Hz
-      range   = (7.96 Hz, 11.94 Hz)
-      label   = "ALPHA band center"
+      default = 3.74166 Hz
+      range   = (2.99 Hz, 4.49 Hz)
+      label   = "DELTA/THETA band center"
     }
     reward_pct = percent {
-      default      = 70
-      range        = (50, 90)
+      default      = 30
+      range        = (10, 50)
       label        = "Target reward %"
       live_tunable = true
     }

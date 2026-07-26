@@ -1,16 +1,18 @@
-// alpha_up_pz.refrain  —  DRAFT (status=draft, untested)
-// ALPHA up-train at Pz.  Hardt & Kamiya 1978
-protocol "alpha_up_pz" {
+// RETIRED: superseded by protocols/eeg/alpha_up.refrain — set the band to 9-11 Hz (this file has no peak-detection logic; it is alpha_up with a narrower band).
+// Kept runnable for subjects already assigned it; hidden from the default picker.
+// peak_alpha_up_pz.refrain  —  DRAFT (status=draft, untested)
+// ALPHA up-train at Pz.  Hanslmayr; Gruzelier 2014
+protocol "peak_alpha_up_pz" {
   meta {
     version         = "0.1.0"
-    title           = "Calm the mind — boost alpha (back of head)"
-    summary         = "Rewards raising relaxed alpha waves at the back of the head, the classic eyes-closed calm state."
-    family          = "alpha_up_pz"
+    title           = "Sharpen peak alpha (back of head)"
+    summary         = "Rewards raising the individual peak-alpha frequency band at the back of the head."
+    family          = "peak_alpha_up_pz"
     description     = "ALPHA up-train at Pz"
-    status          = "draft"
-    evidence        = "probable"
-    citation        = "Hardt & Kamiya 1978"
-    goals           = ["calm_anxiety", "deep_meditative"]
+    status          = "legacy"
+    evidence        = "exploratory"
+    citation        = "Hanslmayr; Gruzelier 2014"
+    goals           = ["alertness_performance", "deep_meditative"]
     bands           = ["alpha"]
     site            = "Pz"
     direction       = "up"
@@ -29,7 +31,7 @@ protocol "alpha_up_pz" {
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(1.5), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.22222), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -61,8 +63,8 @@ protocol "alpha_up_pz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 9.79796 Hz
-      range   = (7.84 Hz, 11.76 Hz)
+      default = 9.94987 Hz
+      range   = (7.96 Hz, 11.94 Hz)
       label   = "ALPHA band center"
     }
     reward_pct = percent {

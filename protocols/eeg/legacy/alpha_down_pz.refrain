@@ -1,18 +1,20 @@
-// theta_down_fz.refrain  —  DRAFT (status=draft, untested)
-// THETA down-train at Fz.  Lubar; frontal-theta excess
-protocol "theta_down_fz" {
+// RETIRED: superseded by protocols/eeg/high_beta_down.refrain — set the site to Pz and the band to 8-12 Hz.
+// Kept runnable for subjects already assigned it; hidden from the default picker.
+// alpha_down_pz.refrain  —  DRAFT (status=draft, untested)
+// ALPHA down-train at Pz.  Kluetsch/Ros/Lanius 2014; Nicholson 2016
+protocol "alpha_down_pz" {
   meta {
     version         = "0.1.0"
-    title           = "Quiet daydreaming — lower theta (forehead)"
-    summary         = "Rewards lowering excess frontal theta associated with mind-wandering."
-    family          = "theta_down_fz"
-    description     = "THETA down-train at Fz"
-    status          = "draft"
+    title           = "Down-regulate alpha (back of head)"
+    summary         = "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work."
+    family          = "alpha_down_pz"
+    description     = "ALPHA down-train at Pz"
+    status          = "legacy"
     evidence        = "probable"
-    citation        = "Lubar; frontal-theta excess"
-    goals           = ["adhd_attention"]
-    bands           = ["theta"]
-    site            = "Fz"
+    citation        = "Kluetsch/Ros/Lanius 2014; Nicholson 2016"
+    goals           = ["trauma_recovery", "deep_meditative"]
+    bands           = ["alpha"]
+    site            = "Pz"
     direction       = "down"
     threshold_style = "selectable"
     feedback_style  = "discrete"
@@ -21,15 +23,15 @@ protocol "theta_down_fz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Fz"]
+    channels    = ["Pz"]
   }
 
-  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.5), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -61,9 +63,9 @@ protocol "theta_down_fz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 5.65685 Hz
-      range   = (4.53 Hz, 6.79 Hz)
-      label   = "THETA band center"
+      default = 9.79796 Hz
+      range   = (7.84 Hz, 11.76 Hz)
+      label   = "ALPHA band center"
     }
     reward_pct = percent {
       default      = 30

@@ -23,6 +23,11 @@
 // "device" reference, so one file resolves on both a clinical amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
 // one of the four deliberately differentiated "smr_cz" family protocols.
+//
+// RETIRED: superseded by protocols/eeg/smr.refrain — set the site to Cz
+// (already the template default; bands already match the default SMR
+// 12-15 Hz / theta 4-8 Hz). Kept runnable for subjects already assigned it;
+// hidden from the default picker.
 
 protocol "smr_classic_cz" {
 
@@ -34,7 +39,7 @@ protocol "smr_classic_cz" {
     summary           = "The faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds."
     family            = "smr_cz"
     threshold_style   = "selectable"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"

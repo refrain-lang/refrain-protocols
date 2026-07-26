@@ -1,18 +1,22 @@
-// smr_theta_cz.refrain  —  DRAFT (status=draft, untested)
-// SMR/THETA up-train at Cz.  Sterman; Lubar; Arns 2009
-protocol "smr_theta_cz" {
+// theta_up_pz.refrain  —  DRAFT (status=draft, untested)
+// THETA up-train at Pz.  Gruzelier (creativity/deep states)
+//
+// RETIRED: superseded by protocols/eeg/alpha_up.refrain — set the band to
+// 4-8 Hz and the site to Pz. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
+protocol "theta_up_pz" {
   meta {
     version         = "0.1.0"
-    title           = "Steady focus — boost SMR, calm theta (top of head)"
-    summary         = "Rewards a calm-but-alert sensorimotor rhythm at the top of the head while keeping drowsy theta down."
-    family          = "smr_theta_cz"
-    description     = "SMR/THETA up-train at Cz"
-    status          = "draft"
-    evidence        = "established"
-    citation        = "Sterman; Lubar; Arns 2009"
-    goals           = ["adhd_attention", "sensorimotor_sleep"]
-    bands           = ["smr", "theta"]
-    site            = "Cz"
+    title           = "Theta up — reverie state (back of head)"
+    summary         = "Rewards raising theta at the back of the head, associated with hypnagogic, creative reverie states."
+    family          = "theta_up_pz"
+    description     = "THETA up-train at Pz"
+    status          = "legacy"
+    evidence        = "exploratory"
+    citation        = "Gruzelier (creativity/deep states)"
+    goals           = ["deep_meditative"]
+    bands           = ["theta"]
+    site            = "Pz"
     direction       = "up"
     threshold_style = "selectable"
     feedback_style  = "discrete"
@@ -21,15 +25,15 @@ protocol "smr_theta_cz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Cz"]
+    channels    = ["Pz"]
   }
 
-  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(1.25), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -61,9 +65,9 @@ protocol "smr_theta_cz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 13.4164 Hz
-      range   = (10.73 Hz, 16.1 Hz)
-      label   = "SMR/THETA band center"
+      default = 5.65685 Hz
+      range   = (4.53 Hz, 6.79 Hz)
+      label   = "THETA band center"
     }
     reward_pct = percent {
       default      = 70

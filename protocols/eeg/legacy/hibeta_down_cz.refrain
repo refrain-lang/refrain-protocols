@@ -1,5 +1,10 @@
 // hibeta_down_cz.refrain  —  DRAFT (status=draft, untested)
 // HIGH-BETA down-train at Cz.  clinical convention (anxiety/rumination)
+//
+// RETIRED: superseded by protocols/eeg/high_beta_down.refrain — set the site
+// to Cz (already the template default; the trained band, ~20.5-30.8 Hz,
+// already matches the template's default 22-30 Hz). Kept runnable for
+// subjects already assigned it; hidden from the default picker.
 protocol "hibeta_down_cz" {
   meta {
     version         = "0.1.0"
@@ -7,7 +12,7 @@ protocol "hibeta_down_cz" {
     summary         = "Rewards lowering fast high-beta activity associated with anxiety and rumination."
     family          = "hibeta_down_cz"
     description     = "HIGH-BETA down-train at Cz"
-    status          = "draft"
+    status          = "legacy"
     evidence        = "probable"
     citation        = "clinical convention (anxiety/rumination)"
     goals           = ["calm_anxiety"]
