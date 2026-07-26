@@ -34,7 +34,14 @@ _MODE_SWITCHED_THRESHOLDS = {
     "beta_focus_staged_fz": ["beta_t", "theta_t", "hbeta_t"],
 }
 
-_RELOCATED = {"smr_up_c4_brainbit": ROOT / "protocols" / "eeg" / "legacy"}
+# smr_classic_cz retired 2026-07 (retire-the-absorbed-duplicates sweep):
+# superseded by the configurable SMR template (protocols/eeg/smr.refrain,
+# site knob = Cz). git mv'd to protocols/eeg/legacy/, status=legacy, still
+# runnable/tested here, just relocated.
+_RELOCATED = {
+    "smr_up_c4_brainbit": ROOT / "protocols" / "eeg" / "legacy",
+    "smr_classic_cz": ROOT / "protocols" / "eeg" / "legacy",
+}
 
 
 def _path_for(name):

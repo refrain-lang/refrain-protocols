@@ -12,6 +12,11 @@
 // 250 Hz: alpha/theta envelope work (4-12 Hz) is nowhere near Nyquist at
 // either rate, and the retired BrainBit fork already proved this protocol
 // runs at 250 Hz.
+//
+// RETIRED: superseded by protocols/eeg/alpha_theta.refrain — set the site to
+// Pz (already the template default; both bands, alpha 8-12 Hz / theta
+// 4-8 Hz, already match the template's defaults). Kept runnable for
+// subjects already assigned it; hidden from the default picker.
 protocol "alpha_theta_pz" {
   meta {
     version         = "0.2.0"
@@ -19,7 +24,7 @@ protocol "alpha_theta_pz" {
     title           = "Deep meditative state — alpha/theta crossover (back of head)"
     summary         = "Eyes-closed deep-state training that rewards theta rising above alpha at the back of the head (the Peniston-Kulkosky protocol)."
     family          = "alpha_theta_pz"
-    status          = "draft"
+    status          = "legacy"
     evidence        = "established"
     citation        = "Peniston & Kulkosky 1989, 1991"
     goals           = ["deep_meditative", "trauma_recovery"]

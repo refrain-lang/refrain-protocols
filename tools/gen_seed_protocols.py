@@ -49,29 +49,73 @@ OUT = ROOT / "protocols" / "eeg"
 #   summary:   curated plain-language one-liner
 TABLE = [
     # name, band, dir, site, goals, band_tags, evidence, citation, title, summary
-    ("smr_theta_cz",    (12,15), "up",  "Cz", ["adhd_attention","sensorimotor_sleep"], ["smr","theta"], "established", "Sterman; Lubar; Arns 2009", "Steady focus — boost SMR, calm theta (top of head)", "Rewards a calm-but-alert sensorimotor rhythm at the top of the head while keeping drowsy theta down."),
-    ("theta_beta_cz",   (15,18), "up",  "Cz", ["adhd_attention"], ["beta","theta"], "established", "Lubar (theta/beta)", "Sharpen attention — beta up over theta (top of head)", "Trains focused beta up relative to daydreamy theta at the top of the head."),
+    # smr_theta_cz retired 2026-07: superseded by protocols/eeg/smr.refrain
+    # (site knob = Cz; the 12-15 Hz band already matches the template's
+    # default SMR band). The old file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/smr_theta_cz.refrain — do not re-add it here, that
+    # would resurrect a non-legacy duplicate at the top-level path on every
+    # regen.
+    # theta_beta_cz retired 2026-07: superseded by
+    # protocols/eeg/beta_attention.refrain (site knob = Cz; the 15-18 Hz band
+    # already matches the template's default lo-beta band). The old file
+    # lives on, legacy-tagged, at protocols/eeg/legacy/theta_beta_cz.refrain —
+    # do not re-add it here, that would resurrect a non-legacy duplicate at
+    # the top-level path on every regen.
     ("theta_beta_fz",   (15,18), "up",  "Fz", ["adhd_attention"], ["beta","theta"], "established", "Lubar (theta/beta); frontal-theta excess", "Sharpen attention — beta up over theta (forehead)", "Trains focused beta up relative to theta at the forehead, where theta excess is common in inattention."),
-    ("theta_down_cz",   (4,8),   "down","Cz", ["adhd_attention"], ["theta"], "probable", "Lubar (theta downtraining)", "Quiet daydreaming — lower theta (top of head)", "Rewards lowering the slow, drifting theta rhythm at the top of the head."),
-    ("theta_down_fz",   (4,8),   "down","Fz", ["adhd_attention"], ["theta"], "probable", "Lubar; frontal-theta excess", "Quiet daydreaming — lower theta (forehead)", "Rewards lowering excess frontal theta associated with mind-wandering."),
-    ("slow_down_cz",    (2,7),   "down","Cz", ["alertness_performance","adhd_attention"], ["delta","theta"], "exploratory", "Thatcher; Walker (qEEG-guided slowing)", "Clear mental fog — lower slow waves (top of head)", "Rewards reducing sluggish delta/theta slow-wave activity at the top of the head."),
-    ("slow_down_fz",    (2,7),   "down","Fz", ["alertness_performance","adhd_attention"], ["delta","theta"], "exploratory", "Thatcher; Walker (frontal slowing)", "Clear mental fog — lower slow waves (forehead)", "Rewards reducing frontal delta/theta slow-wave activity linked to under-arousal."),
+    # theta_down_cz retired 2026-07: superseded by
+    # protocols/eeg/high_beta_down.refrain (band retuned to 4-8 Hz, site knob
+    # = Cz). The old file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/theta_down_cz.refrain — do not re-add it here,
+    # that would resurrect a non-legacy duplicate at the top-level path on
+    # every regen.
+    # theta_down_fz retired 2026-07: same template, band retuned to 4-8 Hz,
+    # site knob = Fz. The old file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/theta_down_fz.refrain — do not re-add it here.
+    # slow_down_cz retired 2026-07: superseded by
+    # protocols/eeg/high_beta_down.refrain (band retuned to 2-7 Hz, site knob
+    # = Cz). The old file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/slow_down_cz.refrain — do not re-add it here, that
+    # would resurrect a non-legacy duplicate at the top-level path on every
+    # regen.
+    # slow_down_fz retired 2026-07: same template, band retuned to 2-7 Hz,
+    # site knob = Fz. The old file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/slow_down_fz.refrain — do not re-add it here.
     # smr_up_c4 retired 2026-07: superseded by the configurable SMR template
     # (site knob = C4). The old file lives on, legacy-tagged, at
     # protocols/eeg/legacy/smr_up_c4.refrain — do not re-add it here, that
     # would resurrect a non-legacy duplicate at the top-level path on every
     # regen.
-    ("beta_up_c3",      (15,18), "up",  "C3", ["alertness_performance","adhd_attention"], ["beta"], "probable", "Othmer & Othmer (arousal model)", "Alert and engaged — boost beta (left side)", "Rewards raising engaged beta activity over the left sensorimotor cortex."),
+    # beta_up_c3 retired 2026-07: superseded by
+    # protocols/eeg/beta_attention.refrain (site knob = C3; the ~15-18 Hz
+    # band already matches the template's default lo-beta band). The old
+    # file lives on, legacy-tagged, at protocols/eeg/legacy/beta_up_c3.refrain
+    # — do not re-add it here, that would resurrect a non-legacy duplicate at
+    # the top-level path on every regen.
     # beta_up_fz retired 2026-07: superseded by protocols/eeg/beta_focus_staged_fz.refrain
     # (the fuller three-band Egner & Gruzelier recipe, ex-BrainBit fork). The old
     # file lives on, legacy-tagged, at protocols/eeg/legacy/beta_up_fz.refrain — do
     # not re-add it here, that would resurrect a non-legacy duplicate on every regen.
-    ("alpha_up_pz",     (8,12),  "up",  "Pz", ["calm_anxiety","deep_meditative"], ["alpha"], "probable", "Hardt & Kamiya 1978", "Calm the mind — boost alpha (back of head)", "Rewards raising relaxed alpha waves at the back of the head, the classic eyes-closed calm state."),
-    ("hibeta_down_cz",  (22,30), "down","Cz", ["calm_anxiety"], ["high-beta"], "probable", "clinical convention (anxiety/rumination)", "Ease over-arousal — quiet high-beta (top of head)", "Rewards lowering fast high-beta activity associated with anxiety and rumination."),
+    # alpha_up_pz retired 2026-07: superseded by protocols/eeg/alpha_up.refrain
+    # (site knob = Pz; the 8-12 Hz band already matches the template's
+    # default alpha band). The old file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/alpha_up_pz.refrain — do not re-add it here, that
+    # would resurrect a non-legacy duplicate at the top-level path on every
+    # regen.
+    # hibeta_down_cz retired 2026-07: superseded by
+    # protocols/eeg/high_beta_down.refrain (site knob = Cz; the ~20.5-30.8 Hz
+    # band already matches the template's default 22-30 Hz band). The old
+    # file lives on, legacy-tagged, at
+    # protocols/eeg/legacy/hibeta_down_cz.refrain — do not re-add it here,
+    # that would resurrect a non-legacy duplicate at the top-level path on
+    # every regen.
     ("peak_alpha_up_pz",(9,11),  "up",  "Pz", ["alertness_performance","deep_meditative"], ["alpha"], "exploratory", "Hanslmayr; Gruzelier 2014", "Sharpen peak alpha (back of head)", "Rewards raising the individual peak-alpha frequency band at the back of the head."),
     ("fm_theta_up_fz",  (4,8),   "up",  "Fz", ["deep_meditative","alertness_performance"], ["theta"], "exploratory", "Ishihara & Yoshii; Gruzelier", "Frontal-midline theta — focused calm (forehead)", "Rewards raising frontal-midline theta, associated with focused absorption and meditation."),
     ("alpha_down_pz",   (8,12),  "down","Pz", ["trauma_recovery","deep_meditative"], ["alpha"], "probable", "Kluetsch/Ros/Lanius 2014; Nicholson 2016", "Down-regulate alpha (back of head)", "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work."),
-    ("theta_up_pz",     (4,8),   "up",  "Pz", ["deep_meditative"], ["theta"], "exploratory", "Gruzelier (creativity/deep states)", "Theta up — reverie state (back of head)", "Rewards raising theta at the back of the head, associated with hypnagogic, creative reverie states."),
+    # theta_up_pz retired 2026-07: superseded by protocols/eeg/alpha_up.refrain
+    # (band retuned to 4-8 Hz, site knob = Pz). The old file lives on,
+    # legacy-tagged, at protocols/eeg/legacy/theta_up_pz.refrain — do not
+    # re-add it here, that would resurrect a non-legacy duplicate at the
+    # top-level path on every regen.
 ]
 
 OPERANT_SESSION = """\

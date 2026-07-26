@@ -1,19 +1,23 @@
-// slow_down_fz.refrain  —  DRAFT (status=draft, untested)
-// DELTA/THETA down-train at Fz.  Thatcher; Walker (frontal slowing)
-protocol "slow_down_fz" {
+// theta_up_pz.refrain  —  DRAFT (status=draft, untested)
+// THETA up-train at Pz.  Gruzelier (creativity/deep states)
+//
+// RETIRED: superseded by protocols/eeg/alpha_up.refrain — set the band to
+// 4-8 Hz and the site to Pz. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
+protocol "theta_up_pz" {
   meta {
     version         = "0.1.0"
-    title           = "Clear mental fog — lower slow waves (forehead)"
-    summary         = "Rewards reducing frontal delta/theta slow-wave activity linked to under-arousal."
-    family          = "slow_down_fz"
-    description     = "DELTA/THETA down-train at Fz"
-    status          = "draft"
+    title           = "Theta up — reverie state (back of head)"
+    summary         = "Rewards raising theta at the back of the head, associated with hypnagogic, creative reverie states."
+    family          = "theta_up_pz"
+    description     = "THETA up-train at Pz"
+    status          = "legacy"
     evidence        = "exploratory"
-    citation        = "Thatcher; Walker (frontal slowing)"
-    goals           = ["alertness_performance", "adhd_attention"]
-    bands           = ["delta", "theta"]
-    site            = "Fz"
-    direction       = "down"
+    citation        = "Gruzelier (creativity/deep states)"
+    goals           = ["deep_meditative"]
+    bands           = ["theta"]
+    site            = "Pz"
+    direction       = "up"
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
@@ -21,15 +25,15 @@ protocol "slow_down_fz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Fz"]
+    channels    = ["Pz"]
   }
 
-  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(3.5), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -45,7 +49,7 @@ protocol "slow_down_fz" {
   }
 
   reward {
-    event      = dwell(condition: below("env", "env_t"), duration: 250 ms)
+    event      = dwell(condition: above("env", "env_t"), duration: 250 ms)
     continuous = sigmoid("env" / "env_t", midpoint: 1.0, steepness: 3)
   }
 
@@ -61,13 +65,13 @@ protocol "slow_down_fz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 3.74166 Hz
-      range   = (2.99 Hz, 4.49 Hz)
-      label   = "DELTA/THETA band center"
+      default = 5.65685 Hz
+      range   = (4.53 Hz, 6.79 Hz)
+      label   = "THETA band center"
     }
     reward_pct = percent {
-      default      = 30
-      range        = (10, 50)
+      default      = 70
+      range        = (50, 90)
       label        = "Target reward %"
       live_tunable = true
     }

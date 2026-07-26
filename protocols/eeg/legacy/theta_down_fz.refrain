@@ -1,18 +1,22 @@
-// slow_down_cz.refrain  —  DRAFT (status=draft, untested)
-// DELTA/THETA down-train at Cz.  Thatcher; Walker (qEEG-guided slowing)
-protocol "slow_down_cz" {
+// theta_down_fz.refrain  —  DRAFT (status=draft, untested)
+// THETA down-train at Fz.  Lubar; frontal-theta excess
+//
+// RETIRED: superseded by protocols/eeg/high_beta_down.refrain — set the band
+// to 4-8 Hz and the site to Fz. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
+protocol "theta_down_fz" {
   meta {
     version         = "0.1.0"
-    title           = "Clear mental fog — lower slow waves (top of head)"
-    summary         = "Rewards reducing sluggish delta/theta slow-wave activity at the top of the head."
-    family          = "slow_down_cz"
-    description     = "DELTA/THETA down-train at Cz"
-    status          = "draft"
-    evidence        = "exploratory"
-    citation        = "Thatcher; Walker (qEEG-guided slowing)"
-    goals           = ["alertness_performance", "adhd_attention"]
-    bands           = ["delta", "theta"]
-    site            = "Cz"
+    title           = "Quiet daydreaming — lower theta (forehead)"
+    summary         = "Rewards lowering excess frontal theta associated with mind-wandering."
+    family          = "theta_down_fz"
+    description     = "THETA down-train at Fz"
+    status          = "legacy"
+    evidence        = "probable"
+    citation        = "Lubar; frontal-theta excess"
+    goals           = ["adhd_attention"]
+    bands           = ["theta"]
+    site            = "Fz"
     direction       = "down"
     threshold_style = "selectable"
     feedback_style  = "discrete"
@@ -21,15 +25,15 @@ protocol "slow_down_cz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Cz"]
+    channels    = ["Fz"]
   }
 
-  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(3.5), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -61,9 +65,9 @@ protocol "slow_down_cz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 3.74166 Hz
-      range   = (2.99 Hz, 4.49 Hz)
-      label   = "DELTA/THETA band center"
+      default = 5.65685 Hz
+      range   = (4.53 Hz, 6.79 Hz)
+      label   = "THETA band center"
     }
     reward_pct = percent {
       default      = 30

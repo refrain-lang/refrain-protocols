@@ -1,18 +1,23 @@
-// theta_beta_cz.refrain  —  DRAFT (status=draft, untested)
-// BETA/THETA up-train at Cz.  Lubar (theta/beta)
-protocol "theta_beta_cz" {
+// beta_up_c3.refrain  —  DRAFT (status=draft, untested)
+// BETA up-train at C3.  Othmer & Othmer (arousal model)
+//
+// RETIRED: superseded by protocols/eeg/beta_attention.refrain — set the site
+// to C3 (the trained band, ~15-18 Hz, already matches the template's
+// default lo-beta band). Kept runnable for subjects already assigned it;
+// hidden from the default picker.
+protocol "beta_up_c3" {
   meta {
     version         = "0.1.0"
-    title           = "Sharpen attention — beta up over theta (top of head)"
-    summary         = "Trains focused beta up relative to daydreamy theta at the top of the head."
-    family          = "theta_beta_cz"
-    description     = "BETA/THETA up-train at Cz"
-    status          = "draft"
-    evidence        = "established"
-    citation        = "Lubar (theta/beta)"
-    goals           = ["adhd_attention"]
-    bands           = ["beta", "theta"]
-    site            = "Cz"
+    title           = "Alert and engaged — boost beta (left side)"
+    summary         = "Rewards raising engaged beta activity over the left sensorimotor cortex."
+    family          = "beta_up_c3"
+    description     = "BETA up-train at C3"
+    status          = "legacy"
+    evidence        = "probable"
+    citation        = "Othmer & Othmer (arousal model)"
+    goals           = ["alertness_performance", "adhd_attention"]
+    bands           = ["beta"]
+    site            = "C3"
     direction       = "up"
     threshold_style = "selectable"
     feedback_style  = "discrete"
@@ -21,10 +26,10 @@ protocol "theta_beta_cz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Cz"]
+    channels    = ["C3"]
   }
 
-  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "C3", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
@@ -63,7 +68,7 @@ protocol "theta_beta_cz" {
     env_center = frequency {
       default = 16.4317 Hz
       range   = (13.15 Hz, 19.72 Hz)
-      label   = "BETA/THETA band center"
+      label   = "BETA band center"
     }
     reward_pct = percent {
       default      = 70

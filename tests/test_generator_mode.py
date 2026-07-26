@@ -26,7 +26,10 @@ def test_generator_emits_one_file_per_target_no_baseline():
 
 def test_generated_core_has_mode_and_resolves_both_ways():
     _regen()
-    src = (ROOT / "protocols" / "eeg" / "smr_theta_cz.refrain").read_text()
+    # smr_theta_cz was retired 2026-07 (git mv'd to protocols/eeg/legacy/,
+    # dropped from TABLE) — use another still-generated TABLE entry instead
+    # so this test keeps exercising a freshly-regenerated file.
+    src = (ROOT / "protocols" / "eeg" / "fm_theta_up_fz.refrain").read_text()
     assert 'threshold_style = mode' in src
     assert 'title' in src and 'family' in src
     ir_adaptive = resolve(parse(src), amp=_AMP)

@@ -1,19 +1,24 @@
-// theta_down_fz.refrain  —  DRAFT (status=draft, untested)
-// THETA down-train at Fz.  Lubar; frontal-theta excess
-protocol "theta_down_fz" {
+// smr_theta_cz.refrain  —  DRAFT (status=draft, untested)
+// SMR/THETA up-train at Cz.  Sterman; Lubar; Arns 2009
+//
+// RETIRED: superseded by protocols/eeg/smr.refrain — set the site to Cz
+// (already the template default; the trained band, 12-15 Hz, already
+// matches the template's default SMR band). Kept runnable for subjects
+// already assigned it; hidden from the default picker.
+protocol "smr_theta_cz" {
   meta {
     version         = "0.1.0"
-    title           = "Quiet daydreaming — lower theta (forehead)"
-    summary         = "Rewards lowering excess frontal theta associated with mind-wandering."
-    family          = "theta_down_fz"
-    description     = "THETA down-train at Fz"
-    status          = "draft"
-    evidence        = "probable"
-    citation        = "Lubar; frontal-theta excess"
-    goals           = ["adhd_attention"]
-    bands           = ["theta"]
-    site            = "Fz"
-    direction       = "down"
+    title           = "Steady focus — boost SMR, calm theta (top of head)"
+    summary         = "Rewards a calm-but-alert sensorimotor rhythm at the top of the head while keeping drowsy theta down."
+    family          = "smr_theta_cz"
+    description     = "SMR/THETA up-train at Cz"
+    status          = "legacy"
+    evidence        = "established"
+    citation        = "Sterman; Lubar; Arns 2009"
+    goals           = ["adhd_attention", "sensorimotor_sleep"]
+    bands           = ["smr", "theta"]
+    site            = "Cz"
+    direction       = "up"
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
@@ -21,15 +26,15 @@ protocol "theta_down_fz" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["Fz"]
+    channels    = ["Cz"]
   }
 
-  input "raw" { montage = referential(active: "Fz", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.25), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -45,7 +50,7 @@ protocol "theta_down_fz" {
   }
 
   reward {
-    event      = dwell(condition: below("env", "env_t"), duration: 250 ms)
+    event      = dwell(condition: above("env", "env_t"), duration: 250 ms)
     continuous = sigmoid("env" / "env_t", midpoint: 1.0, steepness: 3)
   }
 
@@ -61,13 +66,13 @@ protocol "theta_down_fz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 5.65685 Hz
-      range   = (4.53 Hz, 6.79 Hz)
-      label   = "THETA band center"
+      default = 13.4164 Hz
+      range   = (10.73 Hz, 16.1 Hz)
+      label   = "SMR/THETA band center"
     }
     reward_pct = percent {
-      default      = 30
-      range        = (10, 50)
+      default      = 70
+      range        = (50, 90)
       label        = "Target reward %"
       live_tunable = true
     }

@@ -1,19 +1,23 @@
-// beta_up_c3.refrain  —  DRAFT (status=draft, untested)
-// BETA up-train at C3.  Othmer & Othmer (arousal model)
-protocol "beta_up_c3" {
+// theta_down_cz.refrain  —  DRAFT (status=draft, untested)
+// THETA down-train at Cz.  Lubar (theta downtraining)
+//
+// RETIRED: superseded by protocols/eeg/high_beta_down.refrain — set the band
+// to 4-8 Hz and the site to Cz. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
+protocol "theta_down_cz" {
   meta {
     version         = "0.1.0"
-    title           = "Alert and engaged — boost beta (left side)"
-    summary         = "Rewards raising engaged beta activity over the left sensorimotor cortex."
-    family          = "beta_up_c3"
-    description     = "BETA up-train at C3"
-    status          = "draft"
+    title           = "Quiet daydreaming — lower theta (top of head)"
+    summary         = "Rewards lowering the slow, drifting theta rhythm at the top of the head."
+    family          = "theta_down_cz"
+    description     = "THETA down-train at Cz"
+    status          = "legacy"
     evidence        = "probable"
-    citation        = "Othmer & Othmer (arousal model)"
-    goals           = ["alertness_performance", "adhd_attention"]
-    bands           = ["beta"]
-    site            = "C3"
-    direction       = "up"
+    citation        = "Lubar (theta downtraining)"
+    goals           = ["adhd_attention"]
+    bands           = ["theta"]
+    site            = "Cz"
+    direction       = "down"
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
@@ -21,15 +25,15 @@ protocol "beta_up_c3" {
 
   requires {
     sample_rate = ">= 250 Hz"
-    channels    = ["C3"]
+    channels    = ["Cz"]
   }
 
-  input "raw" { montage = referential(active: "C3", reference: amp.reference) }
+  input "raw" { montage = referential(active: "Cz", reference: amp.reference) }
 
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(1.2), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -45,7 +49,7 @@ protocol "beta_up_c3" {
   }
 
   reward {
-    event      = dwell(condition: above("env", "env_t"), duration: 250 ms)
+    event      = dwell(condition: below("env", "env_t"), duration: 250 ms)
     continuous = sigmoid("env" / "env_t", midpoint: 1.0, steepness: 3)
   }
 
@@ -61,13 +65,13 @@ protocol "beta_up_c3" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 16.4317 Hz
-      range   = (13.15 Hz, 19.72 Hz)
-      label   = "BETA band center"
+      default = 5.65685 Hz
+      range   = (4.53 Hz, 6.79 Hz)
+      label   = "THETA band center"
     }
     reward_pct = percent {
-      default      = 70
-      range        = (50, 90)
+      default      = 30
+      range        = (10, 50)
       label        = "Target reward %"
       live_tunable = true
     }

@@ -1,19 +1,25 @@
-// theta_down_cz.refrain  —  DRAFT (status=draft, untested)
-// THETA down-train at Cz.  Lubar (theta downtraining)
-protocol "theta_down_cz" {
+// theta_beta_cz.refrain  —  DRAFT (status=draft, untested)
+// BETA/THETA up-train at Cz.  Lubar (theta/beta)
+//
+// RETIRED: superseded by protocols/eeg/beta_attention.refrain — despite the
+// name/bands list, this is a single-band envelope (no theta component, no
+// ratio computed); set the site to Cz (the trained band, ~15-18 Hz, already
+// matches the template's default lo-beta band). Kept runnable for subjects
+// already assigned it; hidden from the default picker.
+protocol "theta_beta_cz" {
   meta {
     version         = "0.1.0"
-    title           = "Quiet daydreaming — lower theta (top of head)"
-    summary         = "Rewards lowering the slow, drifting theta rhythm at the top of the head."
-    family          = "theta_down_cz"
-    description     = "THETA down-train at Cz"
-    status          = "draft"
-    evidence        = "probable"
-    citation        = "Lubar (theta downtraining)"
+    title           = "Sharpen attention — beta up over theta (top of head)"
+    summary         = "Trains focused beta up relative to daydreamy theta at the top of the head."
+    family          = "theta_beta_cz"
+    description     = "BETA/THETA up-train at Cz"
+    status          = "legacy"
+    evidence        = "established"
+    citation        = "Lubar (theta/beta)"
     goals           = ["adhd_attention"]
-    bands           = ["theta"]
+    bands           = ["beta", "theta"]
     site            = "Cz"
-    direction       = "down"
+    direction       = "up"
     threshold_style = "selectable"
     feedback_style  = "discrete"
     session_shape   = "staged"
@@ -29,7 +35,7 @@ protocol "theta_down_cz" {
   derive "env" {
     from = "raw"
     pipeline = [
-      bandpass(center: env_center, bandwidth: ratio(2), order: 4),
+      bandpass(center: env_center, bandwidth: ratio(1.2), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 250 ms),
@@ -45,7 +51,7 @@ protocol "theta_down_cz" {
   }
 
   reward {
-    event      = dwell(condition: below("env", "env_t"), duration: 250 ms)
+    event      = dwell(condition: above("env", "env_t"), duration: 250 ms)
     continuous = sigmoid("env" / "env_t", midpoint: 1.0, steepness: 3)
   }
 
@@ -61,13 +67,13 @@ protocol "theta_down_cz" {
       label   = "Threshold style"
     }
     env_center = frequency {
-      default = 5.65685 Hz
-      range   = (4.53 Hz, 6.79 Hz)
-      label   = "THETA band center"
+      default = 16.4317 Hz
+      range   = (13.15 Hz, 19.72 Hz)
+      label   = "BETA/THETA band center"
     }
     reward_pct = percent {
-      default      = 30
-      range        = (10, 50)
+      default      = 70
+      range        = (50, 90)
       label        = "Target reward %"
       live_tunable = true
     }
