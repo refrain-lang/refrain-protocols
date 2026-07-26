@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 39,
+  "count": 40,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -737,6 +737,56 @@
         "threshold_style": "selectable",
         "feedback_style": "discrete",
         "session_shape": "staged"
+      }
+    },
+    {
+      "file": "protocols/eeg/smr.refrain",
+      "name": "smr",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "demo",
+        "description": "Configurable SMR (12-15 Hz) up-training template \u2014 clinician-selected site, bands, and thresholds",
+        "title": "SMR training \u2014 configurable",
+        "summary": "Rewards raising SMR while inhibiting theta and high-beta, at a clinician-chosen sensorimotor site, with adaptive or baseline-fixed thresholds.",
+        "family": "smr",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "goals": [
+          "adhd_attention",
+          "sensorimotor_sleep"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
+        "population": "children_adults",
+        "indication": "sensorimotor_regulation",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "safety_monitoring": [
+          "pre_session_check",
+          "intra_session_clinician_observation"
+        ],
+        "outcome_measures": [
+          "IVA-2_continuous_performance",
+          "Conners-3",
+          "sleep_diary",
+          "PSQI"
+        ],
+        "advanced_controls": [
+          "site",
+          "smr_lo_hz",
+          "smr_hi_hz",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "hbeta_lo_hz",
+          "hbeta_hi_hz",
+          "theta_inhibit_rate",
+          "hbeta_inhibit_rate",
+          "artifact_guard",
+          "artifact_strictness",
+          "smr_threshold_uv",
+          "theta_threshold_uv",
+          "hbeta_threshold_uv"
+        ]
       }
     },
     {

@@ -86,6 +86,14 @@ KNOWN_GAPS = {
     "placement_smr_set.refrain",
     "smr_classic_baseline_staged_cz.refrain",
     "smr_cz_modulating.refrain",
+    # Configurable SMR template (2026-07, replaces the whole SMR family): reads
+    # `amp.reference`, same amp-neutral resolve(amp=None) fail-closed gap as
+    # the group above. Also combines a `placement` site control, paired
+    # `frequency` band-edge controls in a `band: (...)` tuple, and an
+    # artifact-guard `mode` folded one level inside a call argument (not at
+    # threshold.type) — none of which catalog v1's matcher covers yet, so
+    # this would stay a gap even once amp-neutral resolution is handled.
+    "smr.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
