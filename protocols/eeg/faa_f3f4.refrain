@@ -2,9 +2,15 @@
 // Frontal alpha asymmetry (F3/F4) for mood / approach-motivation. Trains
 // RELATIVE right-frontal alpha up vs left (left-frontal activation = less left
 // alpha), the depression FAA protocol. Reward the F3/F4 alpha ratio.
+//
+// Amp-portable (2026-07): both inputs read amp.reference instead of a
+// hardcoded "linked_ears" reference, so one file resolves on both a clinical
+// amp and a consumer amp. sample_rate relaxed 256 Hz -> 250 Hz: this is
+// alpha-band (8-12 Hz) envelope extraction, nowhere near Nyquist at either
+// rate. No BrainBit fork (docs/fork-audit-2026-07.md §3).
 protocol "faa_f3f4" {
   meta {
-    version         = "0.1.0"
+    version         = "0.2.0"
     description     = "Frontal alpha asymmetry F3/F4 (mood / approach-motivation)"
     title           = "Lift mood — frontal alpha balance (forehead)"
     summary         = "Trains left-versus-right frontal alpha asymmetry, linked to approach motivation and mood."
@@ -21,12 +27,12 @@ protocol "faa_f3f4" {
   }
 
   requires {
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["F3", "F4"]
   }
 
-  input "left"  { montage = referential(active: "F3", reference: "linked_ears") }
-  input "right" { montage = referential(active: "F4", reference: "linked_ears") }
+  input "left"  { montage = referential(active: "F3", reference: amp.reference) }
+  input "right" { montage = referential(active: "F4", reference: amp.reference) }
 
   derive "alpha_l" {
     from = "left"

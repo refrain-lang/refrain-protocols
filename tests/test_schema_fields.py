@@ -40,3 +40,16 @@ def test_bad_feedback_style_rejected():
 def test_required_fields_still_enforced():
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate({"status": "draft", "goals": ["adhd_attention"]}, SCHEMA)
+
+
+def test_legacy_status_allowed():
+    # "legacy" marks a protocol superseded by a newer one: still runnable,
+    # hidden from the default picker.
+    doc = {"description": "d", "status": "legacy", "goals": ["adhd_attention"]}
+    jsonschema.validate(doc, SCHEMA)  # must not raise
+
+
+def test_unknown_status_still_rejected():
+    doc = {"description": "d", "status": "retired", "goals": ["adhd_attention"]}
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(doc, SCHEMA)

@@ -1,9 +1,9 @@
-// SMR operant training at Cz — STAGED baseline-fixed variant (BrainBit Flex).
+// SMR operant training at Cz — STAGED baseline-fixed variant.
 //
-// Identical signal chain to smr_classic_baseline_cz_brainbit.refrain (same
-// channel, derives, inhibit, reward, output, controls, and baseline-fixed
-// thresholds) — the ONLY difference is the session: instead of one 30-min
-// training block, this runs FOUR 5-minute training blocks with 2-minute rests
+// Same signal chain as the rest of the smr_cz family (channel, derives,
+// reward, output, controls, and baseline-fixed thresholds) — the
+// distinguishing feature is the session: instead of one 30-min training
+// block, this runs FOUR 5-minute training blocks with 2-minute rests
 // between, on ONE baseline taken up front.
 //
 // Rationale: nobody trains SMR up / theta down for 30 minutes straight —
@@ -21,15 +21,21 @@
 // All four blocks reference the single `block "smr_up"`, so this is the
 // homogeneous "4×5 min" case. (A heterogeneous protocol would define multiple
 // blocks and point different phases at them.)
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "device" reference, so one file resolves on both a clinical amp and a
+// consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
+// one of the four deliberately differentiated "smr_cz" family protocols,
+// none of which are duplicates of each other or of smr_theta_cz.refrain.
 
-protocol "smr_classic_baseline_staged_cz_brainbit_v1" {
+protocol "smr_classic_baseline_staged_cz" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
-    description       = "Staged SMR operant training at Cz (4×5-min blocks with 2-min rests, one baseline), baseline-fixed thresholds, BrainBit Flex monopolar"
+    description       = "Staged SMR operant training at Cz (4×5-min blocks with 2-min rests, one baseline), baseline-fixed thresholds"
     title             = "Classic SMR training — staged blocks (top of head)"
-    summary           = "BrainBit: classic SMR operant in four short blocks with rests, using fixed baseline thresholds."
+    summary           = "Classic SMR operant in four short blocks with rests, using fixed baseline thresholds."
     family            = "smr_cz"
     status            = "reviewed"
     goals             = ["adhd_attention"]
@@ -50,9 +56,9 @@ protocol "smr_classic_baseline_staged_cz_brainbit_v1" {
     markers     = "not_required"
   }
 
-  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  // Monopolar Cz — reference resolves per the connected amp's profile.
   input "raw" {
-    montage = referential(active: "Cz", reference: "device")
+    montage = referential(active: "Cz", reference: amp.reference)
   }
 
   derive "smr_envelope" {

@@ -1,5 +1,9 @@
 // smr_up_c4.refrain  —  DRAFT (status=draft, untested)
 // SMR up-train at C4.  Sterman; Hoedlmoser 2008
+//
+// RETIRED: superseded by the configurable SMR template, which reproduces this
+// by setting its site knob to C4. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
 protocol "smr_up_c4" {
   meta {
     version         = "0.1.0"
@@ -7,7 +11,7 @@ protocol "smr_up_c4" {
     summary         = "Rewards the calm sensorimotor rhythm over the right sensorimotor cortex, associated with sleep spindles and settling."
     family          = "smr_up_c4"
     description     = "SMR up-train at C4"
-    status          = "draft"
+    status          = "legacy"
     evidence        = "established"
     citation        = "Sterman; Hoedlmoser 2008"
     goals           = ["sensorimotor_sleep", "calm_anxiety"]

@@ -1,5 +1,11 @@
 // beta_up_fz.refrain  —  DRAFT (status=draft, untested)
 // BETA up-train at Fz.  frontal beta activation
+//
+// RETIRED: superseded by protocols/eeg/beta_focus_staged_fz.refrain, the
+// three-band Egner & Gruzelier (2004) recipe (beta up, theta + high-beta
+// inhibit) this single-band file was a placeholder next to — see
+// docs/fork-audit-2026-07.md §2.4/F6. Kept runnable for subjects already
+// assigned it; hidden from the default picker.
 protocol "beta_up_fz" {
   meta {
     version         = "0.1.0"
@@ -7,7 +13,7 @@ protocol "beta_up_fz" {
     summary         = "Rewards raising engaged frontal beta activity."
     family          = "beta_up_fz"
     description     = "BETA up-train at Fz"
-    status          = "draft"
+    status          = "legacy"
     evidence        = "probable"
     citation        = "frontal beta activation"
     goals           = ["alertness_performance"]

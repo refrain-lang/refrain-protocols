@@ -15,6 +15,10 @@
 //
 // Electrode placement: scalp channels at C3 (left central) and C4
 // (right central). Two of the four BrainBit channels used.
+//
+// RETIRED: superseded by protocols/eeg/alpha_coherence.refrain, which uses the real
+// coherence() primitive this file was a stand-in for. Kept runnable for subjects
+// already assigned it; hidden from the default picker.
 
 protocol "alpha_symmetry_c3c4_brainbit_v1" {
 
@@ -25,7 +29,7 @@ protocol "alpha_symmetry_c3c4_brainbit_v1" {
     title             = "Balance the hemispheres — alpha symmetry (left & right)"
     summary           = "BrainBit: rewards balanced alpha amplitude between the left and right sensorimotor areas, a coherence stand-in."
     family            = "alpha_coherence_c3c4"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["flow_connectivity"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36."

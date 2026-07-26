@@ -2,9 +2,19 @@
 // Alpha/theta crossover training at Pz (Peniston-Kulkosky). Eyes-closed, deep
 // state: reward when theta envelope rises above alpha envelope ("crossover").
 // Distinct from the operant up/down protocols — uses the deep session template.
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded reference
+// scheme, so one file resolves on both a clinical amp (linked_ears) and a
+// consumer amp (device). Carries the EMG inhibit from the retired BrainBit
+// fork (protocols/eeg/legacy/alpha_theta_pz_brainbit.refrain) — muscle
+// artifact in the eyes-closed, reclined posture is the dominant noise source
+// for this protocol on any amp, not just BrainBit. sample_rate relaxed to
+// 250 Hz: alpha/theta envelope work (4-12 Hz) is nowhere near Nyquist at
+// either rate, and the retired BrainBit fork already proved this protocol
+// runs at 250 Hz.
 protocol "alpha_theta_pz" {
   meta {
-    version         = "0.1.0"
+    version         = "0.2.0"
     description     = "Alpha/theta crossover at Pz (eyes-closed, deep state)"
     title           = "Deep meditative state — alpha/theta crossover (back of head)"
     summary         = "Eyes-closed deep-state training that rewards theta rising above alpha at the back of the head (the Peniston-Kulkosky protocol)."
@@ -21,11 +31,11 @@ protocol "alpha_theta_pz" {
   }
 
   requires {
-    sample_rate = ">= 256 Hz"
+    sample_rate = ">= 250 Hz"
     channels    = ["Pz"]
   }
 
-  input "raw" { montage = referential(active: "Pz", reference: "linked_ears") }
+  input "raw" { montage = referential(active: "Pz", reference: amp.reference) }
 
   derive "alpha_envelope" {
     from = "raw"
@@ -34,6 +44,16 @@ protocol "alpha_theta_pz" {
   derive "theta_envelope" {
     from = "raw"
     pipeline = [ bandpass(center: theta_center, bandwidth: ratio(2), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ]
+  }
+
+  // EMG inhibit (carried over from the retired BrainBit fork) — muscle
+  // artifact in the eyes-closed, reclined posture is the dominant noise
+  // source; mute audio briefly while it's present so the patient isn't
+  // rewarded for tensing up.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(target_pct: 95, window: 2 min)
+    action    = mute(release: 200 ms)
   }
 
   reward {

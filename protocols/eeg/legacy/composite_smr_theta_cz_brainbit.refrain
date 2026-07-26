@@ -10,6 +10,11 @@
 // Same bands/montage as smr_cz_brainbit.refrain, but the reward is a
 // graded composite instead of an all-or-nothing dwell over hard
 // thresholds — so the two weights are the live knobs, not percentiles.
+//
+// RETIRED: weighted composite rewarding on fixed uV midpoints rather than
+// adaptively — sits at 0% and the session coach's reward-rate advice cannot
+// address its weight knobs. Kept runnable for subjects already assigned it;
+// hidden from the default picker.
 
 protocol "composite_smr_theta_cz_brainbit_v1" {
 
@@ -20,7 +25,7 @@ protocol "composite_smr_theta_cz_brainbit_v1" {
     title             = "Steady focus — SMR up / theta down blend (top of head)"
     summary           = "BrainBit: a weighted blend rewarding more SMR and less theta together at the top of the head."
     family            = "composite_smr_theta_cz"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["adhd_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"

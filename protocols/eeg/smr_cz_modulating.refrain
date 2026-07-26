@@ -1,7 +1,7 @@
-// SMR / theta-beta operant training at Cz — BrainBit Flex,
-// continuously-modulating output variant.
+// SMR / theta-beta operant training at Cz — continuously-modulating
+// output variant.
 //
-// Same math + thresholds as `smr_cz_brainbit.refrain` — the only
+// Same math + thresholds as `smr_classic_cz.refrain` — the only
 // difference is the audio_gain output binding: ungated by event.holds
 // so the analog reward signal is a smooth function of SMR/threshold
 // ratio at all times, not just during dwell-active windows.
@@ -10,15 +10,20 @@
 // channel (system-volume modulation of patient-chosen media, screen-
 // dimming overlay, etc.) where continuous modulation IS the operant
 // signal and the discrete dwell event is informational-only.
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "device" reference, so one file resolves on both a clinical amp and a
+// consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
+// one of the four deliberately differentiated "smr_cz" family protocols.
 
-protocol "smr_cz_brainbit_modulating_v1" {
+protocol "smr_cz_modulating" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
-    description       = "SMR/theta-beta operant training at Cz, BrainBit Flex monopolar"
+    description       = "SMR/theta-beta operant training at Cz"
     title             = "Classic SMR training — ambient feedback (top of head)"
-    summary           = "BrainBit: SMR operant at the top of the head with continuous ambient (modulating) audio feedback."
+    summary           = "SMR operant at the top of the head with continuous ambient (modulating) audio feedback."
     family            = "smr_cz"
     status            = "reviewed"
     goals             = ["adhd_attention"]
@@ -39,9 +44,9 @@ protocol "smr_cz_brainbit_modulating_v1" {
     markers     = "not_required"
   }
 
-  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  // Monopolar Cz — reference resolves per the connected amp's profile.
   input "raw" {
-    montage = referential(active: "Cz", reference: "device")
+    montage = referential(active: "Cz", reference: amp.reference)
   }
 
   derive "smr_envelope" {

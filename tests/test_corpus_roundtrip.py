@@ -55,13 +55,53 @@ KNOWN_GAPS = {
     "fm_theta_up_fz.refrain",
     "alpha_down_pz.refrain",
     "theta_up_pz.refrain",
-    # BrainBit mode-folded-threshold cores — same catalog-v1 gap as the generic
-    # cores above (editor's _match_threshold doesn't recognise the mode-folded
-    # conditional). Surfaced when rglob brought protocols/brainbit/ into the test.
-    "beta_focus_staged_fz_brainbit.refrain",
-    "smr_classic_cz_brainbit.refrain",
-    "smr_graded_cz_brainbit.refrain",
+    # BrainBit-origin mode-folded-threshold cores — same catalog-v1 gap as the
+    # generic cores above (editor's _match_threshold doesn't recognise the
+    # mode-folded conditional). 2026-07: three of these four dropped their
+    # "_brainbit" filename suffix when protocols/brainbit/ was dissolved
+    # (relocated to protocols/eeg/, made amp-portable); smr_up_c4_brainbit was
+    # already retired to protocols/eeg/legacy/ under its original name.
+    "beta_focus_staged_fz.refrain",
+    "smr_classic_cz.refrain",
+    "smr_graded_cz.refrain",
     "smr_up_c4_brainbit.refrain",
+    # Amp-neutral coherence consolidation (2026-07): now reads `amp.reference`
+    # on both of its inputs, per the general amp-reader exclusion documented
+    # below — resolve(amp=None) fails closed here exactly as predicted, same
+    # bucket as the 16 amp-reading operant cores above (unrelated mode-folded-
+    # threshold reason; this file has no threshold_style control at all, it's
+    # simply an amp-reader like they are).
+    "alpha_coherence.refrain",
+    # Library amp-portability sweep (2026-07, docs/fork-audit-2026-07.md):
+    # each of these was reverted from a hardcoded "device"/"linked_ears"
+    # reference to `amp.reference` (either merged from/replacing a retired
+    # BrainBit fork, or relocated from protocols/brainbit/ with no top-level
+    # counterpart). Same amp-neutral resolve(amp=None) fail-closed gap as
+    # alpha_coherence.refrain above, unrelated to the mode-folded-threshold
+    # reason for the cores earlier in this set.
+    "alpha_theta_pz.refrain",
+    "beta_up_cz.refrain",
+    "faa_f3f4.refrain",
+    "placement_smr_active.refrain",
+    "placement_smr_set.refrain",
+    "smr_classic_baseline_staged_cz.refrain",
+    "smr_cz_modulating.refrain",
+    # Configurable SMR template (2026-07, replaces the whole SMR family): reads
+    # `amp.reference`, same amp-neutral resolve(amp=None) fail-closed gap as
+    # the group above. Also combines a `placement` site control, paired
+    # `frequency` band-edge controls in a `band: (...)` tuple, and an
+    # artifact-guard `mode` folded one level inside a call argument (not at
+    # threshold.type) — none of which catalog v1's matcher covers yet, so
+    # this would stay a gap even once amp-neutral resolution is handled.
+    "smr.refrain",
+    # The four remaining configurable goal templates (2026-07): each copies
+    # smr.refrain's shape verbatim (placement site, paired frequency
+    # band-edge controls, mode-folded artifact guard, amp.reference) — same
+    # catalog-v1 gap as smr.refrain above, for the same reasons.
+    "beta_attention.refrain",
+    "high_beta_down.refrain",
+    "alpha_up.refrain",
+    "alpha_theta.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now

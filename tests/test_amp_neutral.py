@@ -29,13 +29,29 @@ AMP_READERS = [
 ]
 
 
-def _ref_arg(ir: dict) -> str:
-    m = ir["inputs"]["raw"]["montage"]
-    return next(a for a in m["args"] if a["name"] == "reference")["value"]["value"]
+def _ref_args(ir: dict) -> list[str]:
+    """The `reference` arg of every input's montage. Most protocols have a
+    single input named "raw"; multi-input ones (e.g. coherence over a pair
+    of sites) have more than one, and each must independently agree with
+    the amp fold — so this checks all of them, not just one input's worth."""
+    out = []
+    for inp in ir["inputs"].values():
+        m = inp["montage"]
+        out.append(next(a for a in m["args"] if a["name"] == "reference")["value"]["value"])
+    return out
 
 
 def test_there_is_at_least_one_amp_reader():
     assert AMP_READERS, "no amp-reading protocol found — did the slice land?"
+
+
+def test_brainbit_folder_is_gone():
+    # 2026-07 library reorg: forking a protocol for the BrainBit meant
+    # hardcoding its montage reference (killing portability) and relaxing the
+    # sample-rate gate — undone across the library by reverting to
+    # amp.reference (AMP_READERS above picks up every one of them
+    # automatically), so the device-specific folder is no longer needed.
+    assert not (ROOT / "protocols" / "brainbit").exists()
 
 
 @pytest.mark.parametrize("path", AMP_READERS, ids=lambda p: p.name)
@@ -49,24 +65,50 @@ def test_amp_reader_resolves_on_q21(path: Path):
     # A clinical amp declares every standard site + A1/A2, so every amp-neutral
     # protocol resolves on it and folds the reference to linked_ears.
     q = ir_to_json_obj(resolve(refrain.parse(path.read_text()), amp=Q21))
-    assert _ref_arg(q) == "linked_ears"
+    refs = _ref_args(q)
+    assert refs, "no montage inputs found — did the IR shape change?"
+    assert all(r == "linked_ears" for r in refs)
 
 
 @pytest.mark.parametrize("path", AMP_READERS, ids=lambda p: p.name)
 def test_amp_reader_on_brainbit_device_or_fail_closed(path: Path):
-    # BrainBit exposes only 4 electrodes (Cz/F3/F4/Pz). A protocol whose site is
-    # among them folds the reference to `device`; one whose site is not (e.g. Fz,
-    # C3, C4) fails closed on the requires-channel check — a genuine hardware
-    # incapacity, the correct behaviour, not a defect. (Full-amp matrix: WOR-163.)
+    # BrainBit exposes only 4 electrodes (Cz/F3/F4/Pz) and a single 250 Hz
+    # sample rate. A protocol whose site is among them AND whose sample-rate
+    # floor is satisfiable (<= 250 Hz) folds the reference to `device`; one
+    # that needs a site BrainBit doesn't have (e.g. Fz, C3, C4) OR a rate it
+    # can't offer (e.g. critical_fluctuation.refrain's deliberate >= 256 Hz
+    # floor — see its header) fails closed on the requires check — a genuine
+    # hardware incapacity, the correct behaviour, not a defect. (Full-amp
+    # matrix: WOR-163.)
     src = path.read_text()
-    needed = ir_to_json_obj(resolve(refrain.parse(src), amp=Q21))["requires"]["channels"]
-    hostable = all(BRAINBIT.has_channel(c) for c in needed)
+    needed_ir = ir_to_json_obj(resolve(refrain.parse(src), amp=Q21))["requires"]
+    channels_ok = all(BRAINBIT.has_channel(c) for c in needed_ir["channels"])
+    rate_ok = BRAINBIT.best_sample_rate_at_least(needed_ir["sample_rate_min_hz"]) is not None
+    hostable = channels_ok and rate_ok
     if hostable:
         bb = ir_to_json_obj(resolve(refrain.parse(src), amp=BRAINBIT))
-        assert _ref_arg(bb) == "device"
+        refs = _ref_args(bb)
+        assert refs, "no montage inputs found — did the IR shape change?"
+        assert all(r == "device" for r in refs)
     else:
         with pytest.raises(ResolveError):
             resolve(refrain.parse(src), amp=BRAINBIT)
+
+
+def test_placement_smr_bipolar_resolves_on_both_amps():
+    # protocols/eeg/placement_smr_bipolar.refrain (relocated 2026-07, was
+    # protocols/brainbit/placement_smr_bipolar_brainbit.refrain) uses a
+    # `bipolar(pair: ...)` montage, which has no separate `reference` field to
+    # hardcode — it was already portable and needed no amp.reference edit, so
+    # it does not show up in AMP_READERS above. It is still one of the newly-
+    # relocated protocols this reorg made portable-by-location, so prove it
+    # resolves against both profiles from the one source, same as the
+    # AMP_READERS proof does for reference-folding protocols.
+    path = ROOT / "protocols" / "eeg" / "placement_smr_bipolar.refrain"
+    src = path.read_text()
+    for amp in (BRAINBIT, Q21):
+        ir = ir_to_json_obj(resolve(refrain.parse(src), amp=amp))
+        assert ir["inputs"]["raw"]["montage"]["callee"] == "bipolar"
 
 
 def test_montage_is_live_not_a_flatline_on_brainbit():

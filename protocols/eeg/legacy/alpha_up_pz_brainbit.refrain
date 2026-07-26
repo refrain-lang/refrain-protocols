@@ -10,6 +10,11 @@
 //
 // Electrode placement: scalp channel #1 at Pz (parietal midline,
 // the strongest alpha-generator site). Other channels unused.
+//
+// RETIRED: superseded by protocols/eeg/alpha_up_pz.refrain, which already
+// read a live amp-reference montage and had the mode toggle/seed/staged
+// session this file lacked. Kept runnable for subjects already assigned it;
+// hidden from the default picker.
 
 protocol "alpha_up_pz_brainbit_v1" {
 
@@ -20,7 +25,7 @@ protocol "alpha_up_pz_brainbit_v1" {
     title             = "Calm the mind — boost alpha (back of head)"
     summary           = "BrainBit: rewards raising relaxed alpha at the back of the head, for calm and lowered anxiety."
     family            = "alpha_up_pz"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["calm_anxiety"]
     author            = "Peak Mind"
     citation          = "Hardt J.V. & Kamiya J. (1978). Anxiety change through electroencephalographic alpha feedback. Science, 201(4350), 79-81."

@@ -1,11 +1,11 @@
-// SMR operant training at Cz — CLASSIC Sterman/Lubar design (BrainBit Flex).
+// SMR operant training at Cz — CLASSIC Sterman/Lubar design.
 //
 // The faithful operant model: ONE reward target (SMR up) with theta as a
 // LOOSE inhibit and muscle (EMG) handled as artifact rejection — NOT three
 // co-equal strict thresholds AND-ed together (which makes reward nearly
 // unreachable, as the retired 3-condition demo did with its fixed 8 uV
-// high-beta gate). Its modern counterpart is smr_graded_cz_brainbit.refrain
-// (the graded continuous proposal).
+// high-beta gate). Its modern counterpart is smr_graded_cz.refrain (the
+// graded continuous proposal).
 //
 // Design choices:
 //   - SMR threshold is an ADAPTIVE percentile of the trainee's own signal,
@@ -18,15 +18,20 @@
 //     of a fixed absolute high-beta gate in the reward condition.
 //
 // Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "device" reference, so one file resolves on both a clinical amp and a
+// consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
+// one of the four deliberately differentiated "smr_cz" family protocols.
 
-protocol "smr_classic_cz_brainbit_v1" {
+protocol "smr_classic_cz" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
-    description       = "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection), BrainBit Flex monopolar"
+    description       = "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection)"
     title             = "Classic SMR training (top of head)"
-    summary           = "BrainBit: the faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds."
+    summary           = "The faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds."
     family            = "smr_cz"
     threshold_style   = "selectable"
     status            = "reviewed"
@@ -48,9 +53,9 @@ protocol "smr_classic_cz_brainbit_v1" {
     markers     = "not_required"
   }
 
-  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  // Monopolar Cz — reference resolves per the connected amp's profile.
   input "raw" {
-    montage = referential(active: "Cz", reference: "device")
+    montage = referential(active: "Cz", reference: amp.reference)
   }
 
   derive "smr_envelope" {

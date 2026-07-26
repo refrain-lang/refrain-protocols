@@ -20,8 +20,8 @@
     },
 
     "status": {
-      "description": "OUR file maturity / test status (distinct from clinical `evidence`).",
-      "enum": ["draft", "roadmap", "reviewed", "stable"]
+      "description": "OUR file maturity / test status (distinct from clinical `evidence`). 'legacy' marks a protocol superseded by a newer one: still runnable, hidden from the default picker.",
+      "enum": ["draft", "roadmap", "reviewed", "stable", "legacy"]
     },
     "evidence": {
       "description": "Clinical-literature support tier (distinct from `status`).",

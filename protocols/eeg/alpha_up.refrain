@@ -1,0 +1,257 @@
+// Alpha up-training — CONFIGURABLE canonical template.
+//
+// Fourth of the four goal templates that copy protocols/eeg/smr.refrain's
+// shape (docs/superpowers/specs/2026-07-25-configurable-eeg-protocol-
+// templates-design.md, recorder repo). Supersedes alpha_up_pz.refrain: the
+// same posterior alpha up-train, now with a high-beta artifact/arousal
+// inhibit added (per the template design table) and site, bands, and
+// thresholds clinician-tunable instead of frozen at Pz/8-12 Hz.
+//
+// Canonical defaults (relaxation menu) reproduce the alpha_up_pz recipe at
+// Pz: reward alpha (8-12 Hz) up, inhibit high-beta (22-30 Hz), with an EMG
+// artifact guard — one click, every knob there for the clinician who wants
+// to deviate.
+//
+// Design choices carried verbatim from smr.refrain (see that file's header
+// for the full rationale):
+//   - `site` is a `placement` control (kind = "active") over a named
+//     `posterior` group — device-generic. Pz is the alpha_up_pz default;
+//     P3/P4 are clinician alternates on the same parietal strip.
+//   - `threshold_style` folds both thresholds between adaptive percentile
+//     and baseline-fixed absolute (seeded from the live signal).
+//   - Band edges are PAIRED `frequency` controls, referenced directly in
+//     `bandpass(band: (...))`, and `live_tunable = false`.
+//   - The EMG artifact guard is a `mode` control (on/off), not `boolean`,
+//     folded one level down inside `percentile(...)`'s `target_pct`
+//     argument. "Off" pins `target_pct` to 100.
+//   - `alpha_reward_pct` is named so the recorder's manifest flags it
+//     `display_as_reward_rate`. `hbeta_inhibit_rate` feeds a `below(...)`
+//     condition and is deliberately NOT `*_reward_pct`.
+//
+// Amp-portable: reads amp.reference instead of a hardcoded reference.
+//
+// meta.advanced_controls collapses everything except `threshold_style` and
+// `alpha_reward_pct` behind "Advanced".
+
+protocol "alpha_up" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Configurable alpha (8-12 Hz) up-training template — clinician-selected site, bands, and thresholds"
+    title             = "Calm the mind — configurable alpha training"
+    summary           = "Rewards raising relaxed alpha waves at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds."
+    family            = "alpha_up"
+    threshold_style   = "selectable"
+    status            = "draft"
+    goals             = ["calm_anxiety", "deep_meditative"]
+    author            = "Peak Mind"
+    citation          = "Hardt & Kamiya 1978"
+    population        = "adults_18_plus"
+    indication        = "relaxation_calm"
+    control_ref       = "library/operant/alpha_up_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["subjective_state_report"]
+    advanced_controls = [
+      "site",
+      "alpha_lo_hz", "alpha_hi_hz",
+      "hbeta_lo_hz", "hbeta_hi_hz",
+      "hbeta_inhibit_rate",
+      "artifact_guard", "artifact_strictness",
+      "alpha_threshold_uv", "hbeta_threshold_uv",
+    ]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  groups {
+    posterior = ["P3", "Pz", "P4"]
+  }
+
+  input "raw" {
+    montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "alpha_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (alpha_lo_hz, alpha_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // High-beta artifact/arousal guard — alpha uptrain is vulnerable to EMG
+  // contamination bleeding into 20-30 Hz, and to reward for hyperarousal.
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (hbeta_lo_hz, hbeta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  threshold "alpha_t" {
+    signal       = "alpha_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: alpha_threshold_uv)
+                     : percentile(target_pct: alpha_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: hbeta_threshold_uv)
+                     : percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  // EMG artifact guard — same idiom as smr.refrain: on/off folded inside the
+  // target_pct argument. "Off" pins target_pct to 100 (the window's own
+  // historical ceiling), which in practice never trips.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(
+      target_pct: artifact_guard == "on" ? artifact_strictness : 100,
+      window: 2 min
+    )
+    action    = mute(release: 200 ms)
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("alpha_envelope",     "alpha_t"),
+        below("high_beta_envelope", "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("alpha_envelope" / "alpha_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    // --- Basic ---
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
+    alpha_reward_pct = percent {
+      default      = 70
+      range        = (50, 90)
+      label        = "Alpha reward rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: site ---
+    site = placement {
+      kind    = "active"
+      default = "Pz"
+      allowed = posterior
+      label   = "Training site"
+    }
+
+    // --- Advanced: band edges (resolve-time only) ---
+    alpha_lo_hz = frequency {
+      default      = 8 Hz
+      range        = (6 Hz, 9 Hz)
+      label        = "Alpha band low edge"
+      live_tunable = false
+    }
+    alpha_hi_hz = frequency {
+      default      = 12 Hz
+      range        = (10 Hz, 14 Hz)
+      label        = "Alpha band high edge"
+      live_tunable = false
+    }
+    hbeta_lo_hz = frequency {
+      default      = 22 Hz
+      range        = (20 Hz, 24 Hz)
+      label        = "High-beta inhibit band low edge"
+      live_tunable = false
+    }
+    hbeta_hi_hz = frequency {
+      default      = 30 Hz
+      range        = (26 Hz, 35 Hz)
+      label        = "High-beta inhibit band high edge"
+      live_tunable = false
+    }
+
+    // --- Advanced: inhibit rate ---
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: artifact guard ---
+    artifact_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Artifact guard (EMG)"
+    }
+    artifact_strictness = percent {
+      default      = 95
+      range        = (50, 99)
+      label        = "Artifact guard strictness"
+      live_tunable = true
+    }
+
+    // --- Advanced: baseline-mode absolute thresholds (seeded) ---
+    alpha_threshold_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 30.0 uV)
+      label        = "Alpha threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "alpha_envelope"
+        window     = 60 s
+        target_pct = alpha_reward_pct
+      }
+    }
+    hbeta_threshold_uv = voltage {
+      default      = 6.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "High-beta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "high_beta_envelope"
+        window     = 60 s
+        target_pct = hbeta_inhibit_rate
+      }
+    }
+  }
+
+  // Full staged session — same shape as smr.refrain. Warmup matches the
+  // percentile window (2 min) so the adaptive threshold buffer is fully
+  // baseline-trained at run start.
+  session {
+    phases = [
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "block1";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min; output_muted = true },
+      phase { name = "block2";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest2";    duration = 2 min; output_muted = true },
+      phase { name = "block3";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest3";    duration = 2 min; output_muted = true },
+      phase { name = "block4";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

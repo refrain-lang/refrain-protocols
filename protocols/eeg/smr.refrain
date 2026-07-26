@@ -1,0 +1,351 @@
+// SMR up-training — the CONFIGURABLE canonical template.
+//
+// Replaces the whole SMR family (smr_up_c4, smr_classic_cz, smr_theta_cz,
+// smr_graded_cz, and their retired BrainBit forks): instead of one file per
+// site/threshold-style/band-edge combination, this is ONE Brain-Trainer-
+// style template the clinician tunes — site, bands, thresholds — rather
+// than a rigid recipe. Canonical defaults (the standard clinical menu)
+// reproduce the classic Sterman/Lubar recipe with no bindings beyond the
+// site: reward SMR (12-15 Hz) up at Cz, inhibit theta (4-7 Hz) and
+// high-beta (20-30 Hz), with an EMG artifact guard — so it runs in one
+// click, and every knob is there for the clinician who wants to deviate.
+//
+// Design choices:
+//   - `site` is a `placement` control (kind = "active") over a named
+//     `sensorimotor` group — this is what makes the template DEVICE-
+//     GENERIC: it resolves against whatever channels the connected amp
+//     exposes, rather than baking in one scalp position. Setting it to C4
+//     reproduces the retired smr_up_c4 family member; C3/Cz cover the rest.
+//   - `threshold_style` is a `mode` control (adaptive/baseline) folding
+//     EVERY one of the three thresholds below at resolve time — same
+//     ternary idiom as smr_classic_cz.refrain, extended one more band
+//     (that file has no high-beta component; beta_up_cz.refrain has the
+//     three-band shape but no baseline toggle). Baseline mode is backed by
+//     seeded voltage controls so switching to it isn't a cold start.
+//   - Band edges are PAIRED `frequency` controls (`smr_lo_hz`/`smr_hi_hz`,
+//     etc.), referenced directly in `bandpass(band: (...))` rather than a
+//     center+ratio pair. They are `live_tunable = false` — deliberately.
+//     They bake into the filter at resolve time; the recorder's envelope
+//     classifier reads the declared DEFAULT to render the filter caption,
+//     and refuses to do so for a `live_tunable` edge (a caption that could
+//     disagree with the running filter is worse than no caption). Refrain's
+//     BandpassImpl also has no `update_control` hook, so a tunable edge
+//     would be silently ignored by the engine regardless.
+//   - The EMG artifact guard is a `mode` control (`artifact_guard`,
+//     on/off) — NOT a `boolean`: `boolean` is a nominal control kind with
+//     no dedicated resolver path and zero uses in this library, while
+//     `mode` is fully implemented and already rendered by the recorder's
+//     shipped ModeSelector. Refrain's `inhibit` resolver requires its
+//     `threshold` and `action` fields to each be a literal constructor
+//     call — unlike `threshold.type`, it does NOT fold a top-level mode
+//     ternary there. So on/off is expressed one level down, inside the
+//     `percentile(...)` call's `target_pct` ARGUMENT (every call argument
+//     resolves through the same stream-expression path that folds mode
+//     conditionals). "Off" pins `target_pct` to 100 — the window's own
+//     historical ceiling, which in practice never trips — rather than
+//     removing the inhibit outright, which the engine has no mechanism for
+//     within a single protocol file.
+//   - `smr_reward_pct` is named so the recorder's manifest flags it
+//     `display_as_reward_rate` (rendered as an inverted slider matching the
+//     session coach's advice, same as every other reward-rate control in
+//     this library). `theta_inhibit_rate` / `hbeta_inhibit_rate` feed
+//     `below(...)` conditions and are deliberately NOT named `*_reward_pct`
+//     — they are down-train vetoes, not reward rates.
+//
+// Amp-portable: reads amp.reference instead of a hardcoded reference, so
+// one file resolves on both a clinical amp (linked_ears) and a consumer amp
+// (device) — same convention as the rest of protocols/eeg/ post the 2026-07
+// reorg (docs/fork-audit-2026-07.md).
+//
+// meta.advanced_controls collapses everything except `threshold_style` and
+// `smr_reward_pct` behind an "Advanced" disclosure, so the default click-
+// through surface is exactly those two controls; the seeded voltage
+// thresholds are Advanced too (they auto-seed from the live percent
+// controls and are not something a first-run clinician needs to touch).
+
+protocol "smr" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Configurable SMR (12-15 Hz) up-training template — clinician-selected site, bands, and thresholds"
+    title             = "SMR training — configurable"
+    summary           = "Rewards raising SMR while inhibiting theta and high-beta, at a clinician-chosen sensorimotor site, with adaptive or baseline-fixed thresholds."
+    family            = "smr"
+    threshold_style   = "selectable"
+    status            = "draft"
+    goals             = ["adhd_attention", "sensorimotor_sleep"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    population        = "children_adults"
+    indication        = "sensorimotor_regulation"
+    control_ref       = "library/operant/smr_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3", "sleep_diary", "PSQI"]
+    advanced_controls = [
+      "site",
+      "smr_lo_hz", "smr_hi_hz",
+      "theta_lo_hz", "theta_hi_hz",
+      "hbeta_lo_hz", "hbeta_hi_hz",
+      "theta_inhibit_rate", "hbeta_inhibit_rate",
+      "artifact_guard", "artifact_strictness",
+      "smr_threshold_uv", "theta_threshold_uv", "hbeta_threshold_uv",
+    ]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  groups {
+    sensorimotor = ["C3", "Cz", "C4"]
+  }
+
+  // The chosen site substitutes here; reference resolves per the connected
+  // amp's profile, not a hardcoded scheme.
+  input "raw" {
+    montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (smr_lo_hz, smr_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (theta_lo_hz, theta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // High-beta artifact/arousal guard — SMR uptrain is vulnerable to EMG
+  // contamination bleeding into 20-30 Hz, and to reward for hyperarousal.
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (hbeta_lo_hz, hbeta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  // SMR reward threshold — an adaptive percentile of the trainee's own
+  // signal by default; a baseline-fixed absolute µV value when
+  // `threshold_style` is switched to "baseline" (seeded from the live
+  // signal so the switch isn't a cold start).
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: smr_threshold_uv)
+                     : percentile(target_pct: smr_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  // Theta INHIBIT threshold — loose veto by default (80th pct): blocks
+  // reward only during genuine drowsiness, not as a constant co-target.
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: theta_threshold_uv)
+                     : percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  // High-beta INHIBIT threshold — same idea, guards against EMG/arousal
+  // bleed rewarding the trainee for jaw clench or anxious activation.
+  threshold "hbeta_t" {
+    signal       = "high_beta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: hbeta_threshold_uv)
+                     : percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  // EMG artifact guard — muscle (jaw/neck) shows up 50-100 Hz. `artifact_guard`
+  // toggles the guard on/off; refrain's inhibit resolver requires `threshold`
+  // to be a literal constructor call (no top-level mode fold there, unlike
+  // threshold.type above), so on/off is folded one level down, inside the
+  // `target_pct` ARGUMENT: "on" uses the tunable `artifact_strictness`
+  // percentile floor a burst must cross before muting; "off" pins it to 100
+  // (the window's own historical max), which in practice never trips.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(
+      target_pct: artifact_guard == "on" ? artifact_strictness : 100,
+      window: 2 min
+    )
+    action    = mute(release: 200 ms)
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("smr_envelope",       "smr_t"),
+        below("theta_envelope",     "theta_t"),
+        below("high_beta_envelope", "hbeta_t"),
+      ]),
+      duration: 250 ms
+    )
+    continuous = sigmoid("smr_envelope" / "smr_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    // --- Basic: the only two controls NOT listed in advanced_controls ---
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
+    smr_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "SMR reward rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: site ---
+    site = placement {
+      kind    = "active"
+      default = "Cz"
+      allowed = sensorimotor
+      label   = "Training site"
+    }
+
+    // --- Advanced: band edges (resolve-time only — see header) ---
+    smr_lo_hz = frequency {
+      default      = 12 Hz
+      range        = (10 Hz, 13 Hz)
+      label        = "SMR band low edge"
+      live_tunable = false
+    }
+    smr_hi_hz = frequency {
+      default      = 15 Hz
+      range        = (14 Hz, 18 Hz)
+      label        = "SMR band high edge"
+      live_tunable = false
+    }
+    theta_lo_hz = frequency {
+      default      = 4 Hz
+      range        = (3 Hz, 5 Hz)
+      label        = "Theta inhibit band low edge"
+      live_tunable = false
+    }
+    theta_hi_hz = frequency {
+      default      = 7 Hz
+      range        = (6 Hz, 8 Hz)
+      label        = "Theta inhibit band high edge"
+      live_tunable = false
+    }
+    hbeta_lo_hz = frequency {
+      default      = 20 Hz
+      range        = (18 Hz, 22 Hz)
+      label        = "High-beta inhibit band low edge"
+      live_tunable = false
+    }
+    hbeta_hi_hz = frequency {
+      default      = 30 Hz
+      range        = (25 Hz, 35 Hz)
+      label        = "High-beta inhibit band high edge"
+      live_tunable = false
+    }
+
+    // --- Advanced: inhibit rates ---
+    theta_inhibit_rate = percent {
+      default      = 80
+      range        = (50, 95)
+      label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: artifact guard ---
+    artifact_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Artifact guard (EMG)"
+    }
+    artifact_strictness = percent {
+      default      = 95
+      range        = (50, 99)
+      label        = "Artifact guard strictness"
+      live_tunable = true
+    }
+
+    // --- Advanced: baseline-mode absolute thresholds (seeded) ---
+    smr_threshold_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 10.0 uV)
+      label        = "SMR threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "smr_envelope"
+        window     = 60 s
+        target_pct = smr_reward_pct
+      }
+    }
+    theta_threshold_uv = voltage {
+      default      = 8.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "Theta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "theta_envelope"
+        window     = 60 s
+        target_pct = theta_inhibit_rate
+      }
+    }
+    hbeta_threshold_uv = voltage {
+      default      = 6.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "High-beta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "high_beta_envelope"
+        window     = 60 s
+        target_pct = hbeta_inhibit_rate
+      }
+    }
+  }
+
+  // Full staged session: the canonical shape per docs/fork-audit-2026-07.md
+  // (top-level's mode-toggle + seed + staged session beats a single
+  // continuous block). Warmup matches the percentile window (2 min) so the
+  // adaptive threshold buffer is fully baseline-trained at run start.
+  session {
+    phases = [
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "block1";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min; output_muted = true },
+      phase { name = "block2";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest2";    duration = 2 min; output_muted = true },
+      phase { name = "block3";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest3";    duration = 2 min; output_muted = true },
+      phase { name = "block4";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}

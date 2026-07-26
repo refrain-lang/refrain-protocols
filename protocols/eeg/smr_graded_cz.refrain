@@ -1,6 +1,6 @@
-// SMR training at Cz — GRADED ADAPTIVE proposal (BrainBit Flex).
+// SMR training at Cz — GRADED ADAPTIVE proposal.
 //
-// The modern counterpart to smr_classic_cz_brainbit.refrain. Instead of an
+// The modern counterpart to smr_classic_cz.refrain. Instead of an
 // all-or-nothing dwell over hard thresholds, feedback is a CONTINUOUS weighted
 // score (SMR up + theta down), so the trainee always sees "how close" they are
 // — no demoralizing 0% cliff — and the score is BASELINE-ADAPTIVE: each band is
@@ -17,15 +17,20 @@
 //   - EMG handled as artifact rejection, same as the classic protocol.
 //
 // Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
+//
+// Amp-portable (2026-07): reads amp.reference instead of a hardcoded
+// "device" reference, so one file resolves on both a clinical amp and a
+// consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
+// one of the four deliberately differentiated "smr_cz" family protocols.
 
-protocol "smr_graded_cz_brainbit_v1" {
+protocol "smr_graded_cz" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
-    description       = "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback), BrainBit Flex monopolar"
+    description       = "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback)"
     title             = "Graded SMR training (top of head)"
-    summary           = "BrainBit: always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors."
+    summary           = "Always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors."
     family            = "smr_cz"
     threshold_style   = "selectable"
     status            = "reviewed"
@@ -47,9 +52,9 @@ protocol "smr_graded_cz_brainbit_v1" {
     markers     = "not_required"
   }
 
-  // Monopolar Cz — uses the BrainBit's dedicated hardware reference.
+  // Monopolar Cz — reference resolves per the connected amp's profile.
   input "raw" {
-    montage = referential(active: "Cz", reference: "device")
+    montage = referential(active: "Cz", reference: amp.reference)
   }
 
   derive "smr_envelope" {

@@ -21,16 +21,35 @@ _COLLAPSED = [
     "theta_down_cz", "theta_down_fz", "theta_up_pz",
 ]
 
+# smr_up_c4 and beta_up_fz were both retired (git mv'd to protocols/eeg/legacy/,
+# status=legacy; dropped from tools/gen_seed_protocols.py's TABLE so neither is
+# regenerated at a stale path) — smr_up_c4 superseded by the configurable SMR
+# template (2026-07), beta_up_fz superseded by the fuller three-band
+# protocols/eeg/beta_focus_staged_fz.refrain (2026-07, ex-BrainBit fork). Both
+# are still runnable/tested here, just relocated.
+#
+# 2026-07 library reorg: the flat protocols/ top level was dissolved into
+# protocols/eeg/ (amp-portable, no device-specific folder) — the other 14
+# cores now live there instead of at their original protocols/ path.
+_RELOCATED = {
+    "smr_up_c4": ROOT / "protocols" / "eeg" / "legacy",
+    "beta_up_fz": ROOT / "protocols" / "eeg" / "legacy",
+}
+
+
+def _path_for(name):
+    return _RELOCATED.get(name, ROOT / "protocols" / "eeg") / f"{name}.refrain"
+
 
 @pytest.mark.parametrize("name", _COLLAPSED)
 def test_default_resolves_adaptive_percentile(name):
-    src = (ROOT / "protocols" / f"{name}.refrain").read_text()
+    src = _path_for(name).read_text()
     ir = resolve(parse(src), amp=_AMP)  # default threshold_style="adaptive"
     assert ir.thresholds["env_t"].threshold_call.callee == "percentile"
 
 
 @pytest.mark.parametrize("name", _COLLAPSED)
 def test_baseline_binding_resolves_absolute(name):
-    src = (ROOT / "protocols" / f"{name}.refrain").read_text()
+    src = _path_for(name).read_text()
     ir = resolve(parse(src), amp=_AMP, bindings={"threshold_style": "baseline"})
     assert ir.thresholds["env_t"].threshold_call.callee == "absolute"

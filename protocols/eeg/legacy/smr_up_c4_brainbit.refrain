@@ -11,6 +11,10 @@
 // conventional; C3 substitutes cleanly for left-hand-dominant users.
 //
 // Electrode placement: scalp channel #1 at C4. Other channels unused.
+//
+// RETIRED: superseded by the configurable SMR template, which reproduces this
+// by setting its site knob to C4. Kept runnable for subjects already assigned
+// it; hidden from the default picker.
 
 protocol "smr_up_c4_brainbit_v1" {
 
@@ -22,7 +26,7 @@ protocol "smr_up_c4_brainbit_v1" {
     summary           = "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling, with adaptive or baseline-fixed thresholds."
     family            = "smr_up_c4"
     threshold_style   = "selectable"
-    status            = "reviewed"
+    status            = "legacy"
     goals             = ["sensorimotor_sleep"]
     author            = "Peak Mind"
     citation          = "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416."

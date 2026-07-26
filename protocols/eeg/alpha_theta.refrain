@@ -1,0 +1,264 @@
+// Alpha/theta crossover — CONFIGURABLE canonical template (Peniston-Kulkosky).
+//
+// Last of the four goal templates that copy protocols/eeg/smr.refrain's
+// shape (docs/superpowers/specs/2026-07-25-configurable-eeg-protocol-
+// templates-design.md, recorder repo). Supersedes alpha_theta_pz.refrain,
+// with one necessary shape deviation from both that file and from the other
+// three configurable templates — see below.
+//
+// Eyes-closed, deep-state training: reward when the theta envelope rises
+// both above its own adaptive/baseline bar AND above the alpha envelope
+// (the crossover). No inhibit band — the alpha/theta relationship IS the
+// trained signal, not a band vetoed against a co-target. Longer,
+// eyes-closed session; continuous (ungated) audio feedback rather than a
+// discrete on/off chime gate.
+//
+// ## Deviation from the reference, and why
+//
+// smr.refrain's `threshold.signal` (and every sibling template's) is always
+// a plain string naming ONE derive — refrain's resolver requires this
+// (`resolver.py._resolve_threshold`: "threshold signal must be a stream
+// reference", a `StringLit` only). A ratio/formula derive (`derive "ratio" {
+// formula = "theta_envelope" / "alpha_envelope" }`, the idiom used by e.g.
+// faa_f3f4.refrain's `faa` derive) would satisfy that, BUT it is a THIRD
+// derive that does not match the recorder's envelope-classifier chain
+// (`smooth(magnitude(hilbert(bandpass(...))))`) — it would render as a
+// captionless `generic` card and emit a "derive not classified as envelope"
+// warning, which this template (like its siblings) must not.
+//
+// So the crossover is expressed as a second `above(...)` clause comparing
+// the two envelope derives DIRECTLY (`above("theta_envelope",
+// "alpha_envelope")`) inside the same `all_of([...])` as the adaptive/
+// baseline threshold clause — no third derive, no ratio signal. This keeps
+// exactly two derives (both real envelope cards, zero warnings) while still
+// giving every up-train template in this batch a genuine, percentile-driven
+// `*_reward_pct` control (`theta_reward_pct`, gated by an `above(...)`
+// reward condition — same detection path `manifest._is_reward_rate_control`
+// already uses for the other three). The result is clinically at least as
+// strict as a bare crossover: reward requires theta to be adaptively
+// elevated (or above its baseline bar) AND above alpha, not just the ratio
+// crossing 1.0.
+//
+// (alpha_theta_pz.refrain's own bandpass shape — `bandpass(center:
+// alpha_center, bandwidth: ratio(1.5))` — also predates the band-tuple
+// convention this batch requires; it does not expose a `band` argument, so
+// the classifier would not recognise it either way. All four templates in
+// this batch use the paired `_lo_hz`/`_hi_hz` `bandpass(band: (...))` form.)
+//
+// Design choices carried verbatim from smr.refrain (see that file's header
+// for the full rationale):
+//   - `site` is a `placement` control (kind = "active") over a named
+//     `posterior` group — device-generic. Pz is the alpha_theta_pz default;
+//     P3/P4 are clinician alternates on the same parietal strip.
+//   - `threshold_style` folds the threshold between adaptive percentile and
+//     baseline-fixed absolute (seeded from the live signal).
+//   - Band edges are PAIRED `frequency` controls, `live_tunable = false`.
+//   - The EMG artifact guard is a `mode` control (on/off) — carried over
+//     from the retired BrainBit fork of alpha_theta_pz.refrain: muscle
+//     artifact in the eyes-closed, reclined posture is the dominant noise
+//     source for THIS protocol on any amp, not just BrainBit.
+//
+// Amp-portable: reads amp.reference instead of a hardcoded reference.
+//
+// meta.advanced_controls collapses everything except `threshold_style` and
+// `theta_reward_pct` behind "Advanced".
+
+protocol "alpha_theta" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "demo"
+    description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — clinician-selected site, bands, and thresholds"
+    title             = "Deep meditative state — configurable alpha/theta crossover"
+    summary           = "Eyes-closed deep-state training that rewards theta rising above alpha at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds."
+    family            = "alpha_theta"
+    threshold_style   = "selectable"
+    status            = "draft"
+    goals             = ["deep_meditative", "trauma_recovery"]
+    author            = "Peak Mind"
+    citation          = "Peniston & Kulkosky 1989, 1991"
+    population        = "adults_18_plus"
+    indication        = "deep_meditative_trauma_recovery"
+    control_ref       = "library/operant/alpha_theta_sham@1.0"
+    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
+    outcome_measures  = ["subjective_state_report"]
+    advanced_controls = [
+      "site",
+      "alpha_lo_hz", "alpha_hi_hz",
+      "theta_lo_hz", "theta_hi_hz",
+      "artifact_guard", "artifact_strictness",
+      "theta_threshold_uv",
+    ]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  groups {
+    posterior = ["P3", "Pz", "P4"]
+  }
+
+  input "raw" {
+    montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "alpha_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (alpha_lo_hz, alpha_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (theta_lo_hz, theta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  // Adaptive/baseline bar on theta itself — gives this template the same
+  // genuine, percentile-driven reward-rate control every up-train sibling
+  // has. The crossover-vs-alpha requirement below is layered on TOP of this,
+  // not instead of it (see header).
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: theta_threshold_uv)
+                     : percentile(target_pct: theta_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  // EMG artifact guard — muscle artifact in the eyes-closed, reclined
+  // posture is the dominant noise source for this protocol. Same idiom as
+  // smr.refrain: on/off folded inside the target_pct argument. "Off" pins
+  // target_pct to 100 (the window's own historical ceiling), which in
+  // practice never trips.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(
+      target_pct: artifact_guard == "on" ? artifact_strictness : 100,
+      window: 2 min
+    )
+    action    = mute(release: 200 ms)
+  }
+
+  reward {
+    // Crossover: theta must be BOTH above its own adaptive/baseline bar AND
+    // above the alpha envelope (the rewarded deep state) — see header.
+    event = dwell(
+      condition: all_of([
+        above("theta_envelope", "theta_t"),
+        above("theta_envelope", "alpha_envelope"),
+      ]),
+      duration: 1000 ms
+    )
+    // Continuous (ungated) feedback — no `reward.event.holds ? ... : 0`
+    // gate, unlike the discrete-chime siblings — tracks the live
+    // theta/alpha ratio at all times, matching alpha_theta_pz.refrain's own
+    // established convention for this protocol family.
+    continuous = sigmoid("theta_envelope" / "alpha_envelope",
+                         midpoint: 1.0, steepness: 2)
+  }
+
+  output {
+    audio_gain  = reward.continuous
+    audio_chime = reward.event
+  }
+
+  controls {
+    // --- Basic ---
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
+    theta_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "Theta reward rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: site ---
+    site = placement {
+      kind    = "active"
+      default = "Pz"
+      allowed = posterior
+      label   = "Training site"
+    }
+
+    // --- Advanced: band edges (resolve-time only) ---
+    alpha_lo_hz = frequency {
+      default      = 8 Hz
+      range        = (6 Hz, 9 Hz)
+      label        = "Alpha band low edge"
+      live_tunable = false
+    }
+    alpha_hi_hz = frequency {
+      default      = 12 Hz
+      range        = (10 Hz, 14 Hz)
+      label        = "Alpha band high edge"
+      live_tunable = false
+    }
+    theta_lo_hz = frequency {
+      default      = 4 Hz
+      range        = (3 Hz, 5 Hz)
+      label        = "Theta band low edge"
+      live_tunable = false
+    }
+    theta_hi_hz = frequency {
+      default      = 8 Hz
+      range        = (6 Hz, 9 Hz)
+      label        = "Theta band high edge"
+      live_tunable = false
+    }
+
+    // --- Advanced: artifact guard ---
+    artifact_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Artifact guard (EMG)"
+    }
+    artifact_strictness = percent {
+      default      = 95
+      range        = (50, 99)
+      label        = "Artifact guard strictness"
+      live_tunable = true
+    }
+
+    // --- Advanced: baseline-mode absolute threshold (seeded) ---
+    theta_threshold_uv = voltage {
+      default      = 8.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "Theta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "theta_envelope"
+        window     = 60 s
+        target_pct = theta_reward_pct
+      }
+    }
+  }
+
+  // Deep-state session: long eyes-closed blocks (the legitimate exception
+  // to the <=5-min rule) — same shape as alpha_theta_pz.refrain.
+  session {
+    phases = [
+      phase { name = "settle";   duration = 2 min;  output_muted = true },
+      phase { name = "deep1";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min;  output_muted = true },
+      phase { name = "deep2";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 2 min;  output_muted = true },
+    ]
+  }
+}
