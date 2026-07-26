@@ -22,7 +22,7 @@ _COLLAPSED = [
 ]
 
 # smr_up_c4 and beta_up_fz were both retired (git mv'd to protocols/eeg/legacy/,
-# status=legacy; dropped from tools/gen_seed_protocols.py's TABLE so neither is
+# status=legacy; dropped from the (since-deleted) seed generator so neither is
 # regenerated at a stale path) — smr_up_c4 superseded by the configurable SMR
 # template (2026-07), beta_up_fz superseded by the fuller three-band
 # protocols/eeg/beta_focus_staged_fz.refrain (2026-07, ex-BrainBit fork). Both
@@ -34,7 +34,7 @@ _COLLAPSED = [
 #
 # Retire-the-absorbed-duplicates sweep (2026-07): 10 more of these were git
 # mv'd to protocols/eeg/legacy/ (status=legacy, dropped from
-# tools/gen_seed_protocols.py's TABLE) once a configurable goal template
+# the since-deleted seed generator) once a configurable goal template
 # reproduced each by configuration alone — smr_theta_cz/alpha_up_pz/
 # theta_up_pz/hibeta_down_cz/theta_down_cz/theta_down_fz/slow_down_cz/
 # slow_down_fz/beta_up_c3/theta_beta_cz. Still runnable/tested here, just
