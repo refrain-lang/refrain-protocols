@@ -31,7 +31,7 @@
       "name": "alpha_theta",
       "draft": true,
       "meta": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "evidence": "demo",
         "description": "Configurable alpha/theta crossover template (Peniston-Kulkosky) \u2014 clinician-selected site, bands, and thresholds",
         "title": "Deep meditative state \u2014 configurable alpha/theta crossover",
@@ -57,10 +57,14 @@
         ],
         "advanced_controls": [
           "site",
+          "delta_lo_hz",
+          "delta_hi_hz",
           "alpha_lo_hz",
           "alpha_hi_hz",
           "theta_lo_hz",
           "theta_hi_hz",
+          "delta_guard",
+          "delta_inhibit_rate",
           "artifact_guard",
           "artifact_strictness",
           "theta_threshold_uv"

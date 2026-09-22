@@ -237,19 +237,25 @@ def test_alpha_up_site_binds_to_every_posterior_group_member():
 # ---------------------------------------------------------------------------
 
 _ALPHA_THETA_BAND_EDGES = {
+    "delta_lo_hz": 2.0,
+    "delta_hi_hz": 4.0,
     "alpha_lo_hz": 8.0,
     "alpha_hi_hz": 12.0,
     "theta_lo_hz": 4.0,
     "theta_hi_hz": 8.0,
 }
-_ALPHA_THETA_RATE_CONTROLS = ("theta_reward_pct", "artifact_strictness")
+_ALPHA_THETA_RATE_CONTROLS = (
+    "theta_reward_pct",
+    "delta_inhibit_rate",
+    "artifact_strictness",
+)
 
 
 @pytest.mark.parametrize("amp", [Q21, BRAINBIT], ids=["q21", "brainbit"])
 def test_alpha_theta_resolves_with_no_bindings_beyond_default(amp):
     ir = _resolve("alpha_theta", amp)
-    assert set(ir.thresholds) == {"theta_t"}
-    assert "emg" in ir.inhibits
+    assert set(ir.thresholds) == {"theta_t", "delta_t"}
+    assert set(ir.inhibits) == {"delta", "emg"}
 
 
 def test_alpha_theta_canonical_band_edges_are_hardcoded():
@@ -283,6 +289,24 @@ def test_alpha_theta_reward_rate_default():
     assert ir.controls["theta_reward_pct"].default.value == 40
 
 
+def test_alpha_theta_delta_guard_is_loose_and_on_by_default():
+    ir = _resolve("alpha_theta", Q21)
+    assert ir.controls["delta_guard"].default_mode == "on"
+    assert ir.controls["delta_inhibit_rate"].default.value == 95
+
+    delta = ir.inhibits["delta"]
+    target_pct = next(a for a in delta.threshold.args if a.name == "target_pct")
+    assert target_pct.value.target == "control/delta_inhibit_rate"
+    assert delta.action_kind == "mute"
+
+
+def test_alpha_theta_delta_guard_can_be_disabled():
+    ir = _resolve("alpha_theta", Q21, bindings={"delta_guard": "off"})
+    delta = ir.inhibits["delta"]
+    target_pct = next(a for a in delta.threshold.args if a.name == "target_pct")
+    assert target_pct.value.value == 100
+
+
 def test_alpha_theta_site_binds_to_every_posterior_group_member():
     for site in ("P3", "Pz", "P4"):
         ir = _resolve("alpha_theta", Q21, bindings={"site": site})
@@ -308,10 +332,10 @@ def test_alpha_theta_crossover_gate_present_alongside_adaptive_bar():
 
 
 def test_alpha_theta_no_third_derive():
-    # The deviation from the reference: exactly two derives (both real
-    # envelope chains), not a third ratio/formula derive.
+    # Alpha, theta, and the visible delta/sleep guard are all real envelope
+    # chains. There is still no generic ratio/formula derive.
     ir = _resolve("alpha_theta", Q21)
-    assert set(ir.derives) == {"alpha_envelope", "theta_envelope"}
+    assert set(ir.derives) == {"delta_envelope", "alpha_envelope", "theta_envelope"}
 
 
 # ---------------------------------------------------------------------------
