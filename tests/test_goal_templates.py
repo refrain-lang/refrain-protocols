@@ -286,13 +286,13 @@ def test_alpha_theta_canonical_site_default_is_pz():
 
 def test_alpha_theta_reward_rate_default():
     ir = _resolve("alpha_theta", Q21)
-    assert ir.controls["theta_reward_pct"].default.value == 40
+    assert ir.controls["theta_reward_pct"].default.value == 15
 
 
 def test_alpha_theta_delta_guard_is_loose_and_on_by_default():
     ir = _resolve("alpha_theta", Q21)
     assert ir.controls["delta_guard"].default_mode == "on"
-    assert ir.controls["delta_inhibit_rate"].default.value == 95
+    assert ir.controls["delta_inhibit_rate"].default.value == 99
 
     delta = ir.inhibits["delta"]
     target_pct = next(a for a in delta.threshold.args if a.name == "target_pct")
@@ -338,10 +338,13 @@ def test_alpha_theta_crossover_target_is_live_and_graded():
         "theta_alpha_ratio",
     }
     target = ir.controls["crossover_target"]
-    assert target.default.value == 0.75
+    assert target.default.value == 0.60
     assert target.range_low.value == 0.5
     assert target.range_high.value == 1.0
     assert target.live_tunable is True
+    assert target.seed.from_entity == "derive/theta_alpha_ratio"
+    assert target.seed.window_ms == 90_000
+    assert target.seed.target_pct.value == 65
 
 
 # ---------------------------------------------------------------------------

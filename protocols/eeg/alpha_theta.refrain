@@ -42,7 +42,7 @@
 //     baseline-fixed absolute (seeded from the live signal).
 //   - Band edges are PAIRED `frequency` controls, `live_tunable = false`.
 //   - The delta/sleep and EMG artifact guards are `mode` controls (on/off).
-//     Delta defaults to a loose 95th-percentile veto so normal hypnagogic
+//     Delta defaults to a loose 99th-percentile veto so normal hypnagogic
 //     descent is not treated as a failure.
 //   - The EMG guard is carried over
 //     from the retired BrainBit fork of alpha_theta_pz.refrain: muscle
@@ -57,9 +57,9 @@
 protocol "alpha_theta" {
 
   meta {
-    version           = "1.2.0"
+    version           = "1.3.0"
     evidence          = "demo"
-    description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — clinician-selected site, bands, and thresholds"
+    description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — warmup-seeded crossover with clinician-selected site, bands, and thresholds"
     title             = "Deep meditative state — configurable alpha/theta crossover"
     summary           = "Eyes-closed deep-state training that rewards theta rising above alpha at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds."
     family            = "alpha_theta"
@@ -215,16 +215,21 @@ protocol "alpha_theta" {
       label   = "Threshold style"
     }
     theta_reward_pct = percent {
-      default      = 40
+      default      = 15
       range        = (15, 70)
       label        = "Theta reward rate"
       live_tunable = true
     }
     crossover_target = number {
-      default      = 0.75
+      default      = 0.60
       range        = (0.5, 1.0)
       label        = "Theta/alpha crossover target"
       live_tunable = true
+      seed = percentile {
+        from       = "theta_alpha_ratio"
+        window     = 90 s
+        target_pct = 65
+      }
     }
 
     delta_guard = mode {
@@ -233,7 +238,7 @@ protocol "alpha_theta" {
       label   = "Delta/sleep guard"
     }
     delta_inhibit_rate = percent {
-      default      = 95
+      default      = 99
       range        = (75, 99)
       label        = "Delta inhibit threshold"
       live_tunable = true
