@@ -17,28 +17,15 @@
 // ## Deviation from the reference, and why
 //
 // smr.refrain's `threshold.signal` (and every sibling template's) is always
-// a plain string naming ONE derive — refrain's resolver requires this
-// (`resolver.py._resolve_threshold`: "threshold signal must be a stream
-// reference", a `StringLit` only). A ratio/formula derive (`derive "ratio" {
-// formula = "theta_envelope" / "alpha_envelope" }`, the idiom used by e.g.
-// faa_f3f4.refrain's `faa` derive) would satisfy that, BUT it is a THIRD
-// derive that does not match the recorder's envelope-classifier chain
-// (`smooth(magnitude(hilbert(bandpass(...))))`) — it would render as a
-// captionless `generic` card and emit a "derive not classified as envelope"
-// warning, which this template (like its siblings) must not.
-//
-// So the crossover is expressed as a second `above(...)` clause comparing
-// the two envelope derives DIRECTLY (`above("theta_envelope",
-// "alpha_envelope")`) inside the same `all_of([...])` as the adaptive/
-// baseline threshold clause — no third derive, no ratio signal. This keeps
-// exactly two derives (both real envelope cards, zero warnings) while still
-// giving every up-train template in this batch a genuine, percentile-driven
+// The crossover is expressed as a theta/alpha ratio derive plus a live target.
+// A target of 1.0 is strict crossover; lower values provide graded shaping for
+// clients who are approaching it. Recorder intentionally renders the source
+// alpha and theta envelopes rather than a redundant generic ratio card.
+// This still gives every up-train template in this batch a percentile-driven
 // `*_reward_pct` control (`theta_reward_pct`, gated by an `above(...)`
 // reward condition — same detection path `manifest._is_reward_rate_control`
-// already uses for the other three). The result is clinically at least as
-// strict as a bare crossover: reward requires theta to be adaptively
-// elevated (or above its baseline bar) AND above alpha, not just the ratio
-// crossing 1.0.
+// already uses for the other three). Reward requires theta to be adaptively
+// elevated (or above its baseline bar) AND meet the selected ratio target.
 //
 // (alpha_theta_pz.refrain's own bandpass shape — `bandpass(center:
 // alpha_center, bandwidth: ratio(1.5))` — also predates the band-tuple
@@ -64,13 +51,13 @@
 //
 // Amp-portable: reads amp.reference instead of a hardcoded reference.
 //
-// meta.advanced_controls collapses everything except `threshold_style` and
-// `theta_reward_pct` behind "Advanced".
+// meta.advanced_controls keeps threshold style, theta reward rate, and the
+// crossover target visible; everything else is behind "Advanced".
 
 protocol "alpha_theta" {
 
   meta {
-    version           = "1.1.0"
+    version           = "1.2.0"
     evidence          = "demo"
     description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — clinician-selected site, bands, and thresholds"
     title             = "Deep meditative state — configurable alpha/theta crossover"
@@ -139,6 +126,12 @@ protocol "alpha_theta" {
     ]
   }
 
+  // Graded crossover signal. A target below 1.0 rewards approaching the
+  // classic theta-over-alpha crossover; 1.0 preserves the strict definition.
+  derive "theta_alpha_ratio" {
+    formula = "theta_envelope" / "alpha_envelope"
+  }
+
   // Adaptive/baseline bar on theta itself — gives this template the same
   // genuine, percentile-driven reward-rate control every up-train sibling
   // has. The crossover-vs-alpha requirement below is layered on TOP of this,
@@ -197,7 +190,7 @@ protocol "alpha_theta" {
     event = dwell(
       condition: all_of([
         above("theta_envelope", "theta_t"),
-        above("theta_envelope", "alpha_envelope"),
+        above("theta_alpha_ratio", crossover_target),
       ]),
       duration: 1000 ms
     )
@@ -205,7 +198,7 @@ protocol "alpha_theta" {
     // gate, unlike the discrete-chime siblings — tracks the live
     // theta/alpha ratio at all times, matching alpha_theta_pz.refrain's own
     // established convention for this protocol family.
-    continuous = sigmoid("theta_envelope" / "alpha_envelope",
+    continuous = sigmoid("theta_alpha_ratio",
                          midpoint: 1.0, steepness: 2)
   }
 
@@ -225,6 +218,12 @@ protocol "alpha_theta" {
       default      = 40
       range        = (15, 70)
       label        = "Theta reward rate"
+      live_tunable = true
+    }
+    crossover_target = number {
+      default      = 0.75
+      range        = (0.5, 1.0)
+      label        = "Theta/alpha crossover target"
       live_tunable = true
     }
 

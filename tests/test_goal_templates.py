@@ -316,10 +316,8 @@ def test_alpha_theta_site_binds_to_every_posterior_group_member():
 
 
 def test_alpha_theta_crossover_gate_present_alongside_adaptive_bar():
-    # Reward requires BOTH the adaptive/baseline bar on theta AND theta above
-    # alpha (the actual crossover) — see the .refrain file's header for why
-    # this replaces a bare ratio-derive crossover (a third derive would break
-    # the recorder's envelope classifier / zero-warnings requirement).
+    # Reward requires BOTH the adaptive/baseline bar on theta AND the graded
+    # theta/alpha ratio target.
     ir = _resolve("alpha_theta", Q21)
     event = ir.reward.event
     assert event.callee == "dwell"
@@ -328,14 +326,22 @@ def test_alpha_theta_crossover_gate_present_alongside_adaptive_bar():
     elements = condition_arg.value.args[0].value.elements
     targets = {getattr(el.args[1].value, "target", None) for el in elements}
     assert "threshold/theta_t" in targets
-    assert "derive/alpha_envelope" in targets
+    assert "control/crossover_target" in targets
 
 
-def test_alpha_theta_no_third_derive():
-    # Alpha, theta, and the visible delta/sleep guard are all real envelope
-    # chains. There is still no generic ratio/formula derive.
+def test_alpha_theta_crossover_target_is_live_and_graded():
     ir = _resolve("alpha_theta", Q21)
-    assert set(ir.derives) == {"delta_envelope", "alpha_envelope", "theta_envelope"}
+    assert set(ir.derives) == {
+        "delta_envelope",
+        "alpha_envelope",
+        "theta_envelope",
+        "theta_alpha_ratio",
+    }
+    target = ir.controls["crossover_target"]
+    assert target.default.value == 0.75
+    assert target.range_low.value == 0.5
+    assert target.range_high.value == 1.0
+    assert target.live_tunable is True
 
 
 # ---------------------------------------------------------------------------
@@ -344,21 +350,21 @@ def test_alpha_theta_no_third_derive():
 
 
 @pytest.mark.parametrize(
-    "name,basic_rate_control",
+    "name,basic_controls",
     [
-        ("beta_attention", "lobeta_reward_pct"),
-        ("high_beta_down", "hbeta_inhibit_rate"),
-        ("alpha_up", "alpha_reward_pct"),
-        ("alpha_theta", "theta_reward_pct"),
+        ("beta_attention", {"lobeta_reward_pct"}),
+        ("high_beta_down", {"hbeta_inhibit_rate"}),
+        ("alpha_up", {"alpha_reward_pct"}),
+        ("alpha_theta", {"theta_reward_pct", "crossover_target"}),
     ],
 )
-def test_advanced_controls_meta_matches_the_basic_surface(name, basic_rate_control):
+def test_advanced_controls_meta_matches_the_basic_surface(name, basic_controls):
     ir = _resolve(name, Q21)
     fields = ir.meta.fields
     advanced = {e.value for e in fields["advanced_controls"].elements}
     all_controls = set(ir.controls)
     basic = all_controls - advanced
-    assert basic == {"threshold_style", basic_rate_control}, (
-        f"{name}: basic surface drifted, expected only threshold_style + "
-        f"{basic_rate_control}, got {basic}"
+    assert basic == {"threshold_style", *basic_controls}, (
+        f"{name}: basic surface drifted, expected threshold_style + "
+        f"{basic_controls}, got {basic}"
     )
