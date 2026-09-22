@@ -8,10 +8,11 @@
 //
 // Eyes-closed, deep-state training: reward when the theta envelope rises
 // both above its own adaptive/baseline bar AND above the alpha envelope
-// (the crossover). No inhibit band — the alpha/theta relationship IS the
-// trained signal, not a band vetoed against a co-target. Longer,
-// eyes-closed session; continuous (ungated) audio feedback rather than a
-// discrete on/off chime gate.
+// (the crossover). A deliberately loose 2-4 Hz delta/sleep guard prevents
+// reward during sleep-like slowing or gross slow artifact without making
+// delta a training target. Longer, eyes-closed session; continuous audio
+// feedback follows the ratio and falls to its quiet floor while an inhibit
+// is active.
 //
 // ## Deviation from the reference, and why
 //
@@ -53,7 +54,10 @@
 //   - `threshold_style` folds the threshold between adaptive percentile and
 //     baseline-fixed absolute (seeded from the live signal).
 //   - Band edges are PAIRED `frequency` controls, `live_tunable = false`.
-//   - The EMG artifact guard is a `mode` control (on/off) — carried over
+//   - The delta/sleep and EMG artifact guards are `mode` controls (on/off).
+//     Delta defaults to a loose 95th-percentile veto so normal hypnagogic
+//     descent is not treated as a failure.
+//   - The EMG guard is carried over
 //     from the retired BrainBit fork of alpha_theta_pz.refrain: muscle
 //     artifact in the eyes-closed, reclined posture is the dominant noise
 //     source for THIS protocol on any amp, not just BrainBit.
@@ -66,7 +70,7 @@
 protocol "alpha_theta" {
 
   meta {
-    version           = "1.0.0"
+    version           = "1.1.0"
     evidence          = "demo"
     description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — clinician-selected site, bands, and thresholds"
     title             = "Deep meditative state — configurable alpha/theta crossover"
@@ -84,8 +88,10 @@ protocol "alpha_theta" {
     outcome_measures  = ["subjective_state_report"]
     advanced_controls = [
       "site",
+      "delta_lo_hz", "delta_hi_hz",
       "alpha_lo_hz", "alpha_hi_hz",
       "theta_lo_hz", "theta_hi_hz",
+      "delta_guard", "delta_inhibit_rate",
       "artifact_guard", "artifact_strictness",
       "theta_threshold_uv",
     ]
@@ -101,6 +107,16 @@ protocol "alpha_theta" {
 
   input "raw" {
     montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "delta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (delta_lo_hz, delta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
   }
 
   derive "alpha_envelope" {
@@ -133,6 +149,32 @@ protocol "alpha_theta" {
                      ? absolute(value: theta_threshold_uv)
                      : percentile(target_pct: theta_reward_pct, window: 2 min)
     live_tunable = true
+  }
+
+  // Visible reference line for the delta envelope card. The named inhibit
+  // below computes its own bandpower metric, while this equivalent adaptive
+  // percentile lets the clinician see when slow activity approaches the
+  // guard. Turning the guard off moves both thresholds to the rolling ceiling.
+  threshold "delta_t" {
+    signal = "delta_envelope"
+    type = percentile(
+      target_pct: delta_guard == "on" ? delta_inhibit_rate : 100,
+      window: 2 min
+    )
+    live_tunable = true
+  }
+
+  // Loose sleep/slow-artifact guard. Two-second bandpower stabilizes the
+  // 2-4 Hz estimate; the long percentile history prevents brief hypnagogic
+  // slowing from repeatedly interrupting feedback. Inhibits gate both the
+  // gong and audio_gain, which leaves external music at its configured floor.
+  inhibit "delta" {
+    metric    = bandpower(input: "raw", band: (delta_lo_hz, delta_hi_hz), window: 2 s)
+    threshold = percentile(
+      target_pct: delta_guard == "on" ? delta_inhibit_rate : 100,
+      window: 2 min
+    )
+    action    = mute(release: 1 s)
   }
 
   // EMG artifact guard — muscle artifact in the eyes-closed, reclined
@@ -186,6 +228,18 @@ protocol "alpha_theta" {
       live_tunable = true
     }
 
+    delta_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Delta/sleep guard"
+    }
+    delta_inhibit_rate = percent {
+      default      = 95
+      range        = (75, 99)
+      label        = "Delta inhibit threshold"
+      live_tunable = true
+    }
+
     // --- Advanced: site ---
     site = placement {
       kind    = "active"
@@ -194,6 +248,18 @@ protocol "alpha_theta" {
     }
 
     // --- Advanced: band edges (resolve-time only) ---
+    delta_lo_hz = frequency {
+      default      = 2 Hz
+      range        = (1 Hz, 4 Hz)
+      label        = "Delta band low edge"
+      live_tunable = false
+    }
+    delta_hi_hz = frequency {
+      default      = 4 Hz
+      range        = (2 Hz, 8 Hz)
+      label        = "Delta band high edge"
+      live_tunable = false
+    }
     alpha_lo_hz = frequency {
       default      = 8 Hz
       range        = (1 Hz, 45 Hz)
