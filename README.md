@@ -39,6 +39,17 @@ tools/          # build_catalog.py
 catalog.json    # derived cache (CI rebuilds it)
 ```
 
+## Protocol companion guides
+
+Every protocol has a neighboring Markdown guide with the same base name
+(`foo.refrain` → `foo.md`). The guide explains the signal rule, session flow,
+controls, feedback, recorded measures, provenance, evidence limits, and full
+references. See [`docs/protocol-guide-template.md`](docs/protocol-guide-template.md)
+and the first complete example,
+[`protocols/eeg/alpha_theta.md`](protocols/eeg/alpha_theta.md). Existing files
+are being backfilled; new or materially changed protocols must include their
+guide in the same PR.
+
 ## Naming
 `<target>_<site>[_baseline].refrain` — adaptive is the bare name, `_baseline` is the only suffix. No `_classic`/`_staged`/`_brainbit`/`_v1`. Hardware/session/goals live in `meta`.
 

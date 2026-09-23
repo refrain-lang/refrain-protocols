@@ -31,9 +31,9 @@
       "name": "alpha_theta",
       "draft": true,
       "meta": {
-        "version": "1.1.0",
+        "version": "1.3.0",
         "evidence": "demo",
-        "description": "Configurable alpha/theta crossover template (Peniston-Kulkosky) \u2014 clinician-selected site, bands, and thresholds",
+        "description": "Configurable alpha/theta crossover template (Peniston-Kulkosky) \u2014 warmup-seeded crossover with clinician-selected site, bands, and thresholds",
         "title": "Deep meditative state \u2014 configurable alpha/theta crossover",
         "summary": "Eyes-closed deep-state training that rewards theta rising above alpha at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds.",
         "family": "alpha_theta",
