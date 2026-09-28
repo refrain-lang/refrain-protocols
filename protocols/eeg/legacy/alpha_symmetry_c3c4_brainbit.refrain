@@ -33,11 +33,7 @@ protocol "alpha_symmetry_c3c4_brainbit_v1" {
     goals             = ["flow_connectivity"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36."
-    population        = "adults_18_plus"
-    indication        = "flow_integration_balance"
     control_ref       = "library/alpha_symmetry/sham@1.0"
-    safety_monitoring = ["pre_session_check"]
-    outcome_measures  = ["subjective_state_report"]
   }
 
   requires {

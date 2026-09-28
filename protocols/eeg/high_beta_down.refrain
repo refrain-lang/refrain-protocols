@@ -52,11 +52,7 @@ protocol "high_beta_down" {
     goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137."
-    population        = "adults_18_plus"
-    indication        = "anxiety_arousal_regulation"
     control_ref       = "library/operant/hibeta_down_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["subjective_state_report"]
     advanced_controls = [
       "site",
       "hbeta_lo_hz", "hbeta_hi_hz",

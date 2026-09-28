@@ -34,11 +34,7 @@ protocol "alpha_theta_pz_brainbit_v1" {
     goals             = ["deep_meditative"]
     author            = "Peak Mind"
     citation          = "Peniston E.G. & Kulkosky P.J. (1989). Alpha-Theta Brainwave Training and Beta-Endorphin Levels in Alcoholics. Alcoholism: Clinical & Experimental Research, 13(2), 271-279."
-    population        = "adults_18_plus"
-    indication        = "deep_meditative_state_creative_recovery"
     control_ref       = "library/alpha_theta/sham@1.0"
-    safety_monitoring = ["pre_session_check", "post_session_debrief"]
-    outcome_measures  = ["subjective_state_report"]
   }
 
   requires {

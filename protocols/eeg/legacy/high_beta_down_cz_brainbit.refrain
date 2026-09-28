@@ -28,11 +28,7 @@ protocol "high_beta_down_cz_brainbit_v1" {
     goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137."
-    population        = "adults_18_plus"
-    indication        = "anxiety_rumination_overarousal"
     control_ref       = "library/high_beta_down/sham@1.0"
-    safety_monitoring = ["pre_session_check"]
-    outcome_measures  = ["subjective_state_report", "STAI"]
   }
 
   requires {

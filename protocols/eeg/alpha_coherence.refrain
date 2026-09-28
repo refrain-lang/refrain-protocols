@@ -35,8 +35,6 @@ protocol "alpha_coherence" {
     goals             = ["flow_connectivity"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36."
-    indication        = "connectivity_regulation"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
   }
 
   requires {

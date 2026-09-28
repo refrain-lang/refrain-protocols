@@ -39,11 +39,7 @@ protocol "beta_up_cz" {
     goals             = ["alertness_performance"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."
-    population        = "adults_18_plus"
-    indication        = "attention_alertness_performance"
     control_ref       = "library/beta_up/sham@1.0"
-    safety_monitoring = ["pre_session_check"]
-    outcome_measures  = ["subjective_state_report"]
   }
 
   requires {

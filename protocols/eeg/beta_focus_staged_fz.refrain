@@ -41,11 +41,7 @@ protocol "beta_focus_staged_fz" {
     goals             = ["alertness_performance"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components. Clinical Neurophysiology, 115(1), 131-139."
-    population        = "adults_18_plus"
-    indication        = "attention_alertness_performance"
     control_ref       = "library/beta_up/sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["subjective_state_report"]
   }
 
   requires {

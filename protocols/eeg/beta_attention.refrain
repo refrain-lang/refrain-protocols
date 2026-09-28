@@ -53,11 +53,7 @@ protocol "beta_attention" {
     goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."
-    population        = "children_adults"
-    indication        = "attention_regulation"
     control_ref       = "library/operant/beta_attention_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
     advanced_controls = [
       "site",
       "lobeta_lo_hz", "lobeta_hi_hz",

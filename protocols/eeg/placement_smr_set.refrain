@@ -30,8 +30,6 @@ protocol "placement_smr_set" {
     status            = "draft"
     goals             = ["sleep_quality"]
     author            = "Peak Mind"
-    indication        = "sensorimotor_regulation"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
   }
 
   requires {

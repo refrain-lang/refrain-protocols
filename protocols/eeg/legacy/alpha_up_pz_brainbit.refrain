@@ -29,11 +29,7 @@ protocol "alpha_up_pz_brainbit_v1" {
     goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "Hardt J.V. & Kamiya J. (1978). Anxiety change through electroencephalographic alpha feedback. Science, 201(4350), 79-81."
-    population        = "children_adults"
-    indication        = "calm_anxiety_relaxation"
     control_ref       = "library/alpha_up/sham@1.0"
-    safety_monitoring = ["pre_session_check"]
-    outcome_measures  = ["subjective_state_report", "STAI"]
   }
 
   requires {

@@ -30,8 +30,6 @@ protocol "placement_smr_active" {
     goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
-    indication        = "ADHD_attention_regulation"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
   }
 
   requires {

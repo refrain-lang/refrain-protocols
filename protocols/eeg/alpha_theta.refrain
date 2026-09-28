@@ -81,11 +81,7 @@ protocol "alpha_theta" {
     goals             = ["deep_meditative"]
     author            = "Peak Mind"
     citation          = "Peniston & Kulkosky 1989, 1991"
-    population        = "adults_18_plus"
-    indication        = "deep_meditative_trauma_recovery"
     control_ref       = "library/operant/alpha_theta_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["subjective_state_report"]
     advanced_controls = [
       "site",
       "delta_lo_hz", "delta_hi_hz",
