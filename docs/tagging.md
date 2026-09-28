@@ -33,7 +33,7 @@ A protocol can be `evidence = "established"` (long track record for the approach
 - **`site`** — channel / source label: an EEG scalp site (`Cz`, `F3/F4`) or a non-EEG source label (`tachogram`, `gsr`, `temp`).
 - **`direction`** — `up`/`down`/`composite`/`crossover`/`asymmetry`.
 - **`hardware`** + **`requires_features`** — `generic` / `brainbit_flex` / `research_amp`; features like `dc_coupling`, `trials` → grey-out logic.
-- **`modality`** — `eeg` (default) / `ecg` / `hrv` / `gsr` / `emg` / `temp` / `resp`. Every EEG protocol in this library declares it explicitly; a user's own file may rely on the default.
+- **`modality`** — `eeg` (default) / `ecg` / `hrv` / `gsr` / `emg` / `temp` / `resp`. Every EEG protocol in this library declares it explicitly; a user's own file may rely on the default, so **a reader must apply that default** — an absent `modality` means `eeg`. JSON Schema declares defaults but does not fill them in.
 
 ## Not in the distributed contract
 

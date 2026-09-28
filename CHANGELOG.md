@@ -24,7 +24,10 @@ was touched, and the fuzzer result is byte-identical to `main`
 - `evidence` and `citation` describe how established a **technique** is and
   where it comes from — provenance, not efficacy. The tiers are unchanged.
 - 21 files carried an `evidence` value that was never in the enum (19 `demo`,
-  2 `clinical`); each now has the tier its protocol family already used.
+  2 `clinical`). Each now carries the tier a same-technique file in the
+  library already claimed — from its own protocol family where one existed
+  (6 files), otherwise from the nearest family training the same thing. No
+  file's tier was raised past a claim already in the library.
 - Comments, titles, and summaries describe the signal training rather than a
   condition. Citations keep their real paper titles.
 

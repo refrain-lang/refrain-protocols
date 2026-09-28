@@ -6,7 +6,7 @@ protocol "theta_beta_fz" {
   meta {
     version         = "0.1.0"
     title           = "Sharpen attention — beta up over theta (forehead)"
-    summary         = "Trains focused beta up relative to theta at the forehead, where theta excess is common in inattention."
+    summary         = "Trains focused beta up relative to theta at the forehead."
     family          = "theta_beta_fz"
     description     = "BETA/THETA up-train at Fz"
     status          = "legacy"

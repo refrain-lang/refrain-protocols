@@ -2,7 +2,7 @@
 //
 // Reward when high-beta (22-30 Hz) amplitude is BELOW the adaptive
 // percentile — i.e., the user is rewarded for quieting the band
-// associated with rumination, worry, and over-arousal.
+// associated with over-arousal.
 //
 // Calm-goal protocol. Pairs naturally with alpha-up at Pz: alpha-up
 // trains positive presence of a calm rhythm, high-beta-down trains

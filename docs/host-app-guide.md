@@ -3,7 +3,7 @@
 Recommended best practice for apps (like a recorder) that present these protocols to a practitioner. The guiding principle: **the protocol files are the source of truth; a catalog is a derived cache.** Someone dropping their own `.refrain` into a folder must see it appear, correctly organized, with no rebuild.
 
 ## 1. Discovery
-- Scan one or more directories — the **bundled reference set** *plus* the **user's folder(s)** — and run `refrain.read_meta(file)` on each. Build the index in memory.
+- Scan one or more directories — the **bundled reference set** *plus* the **user's folder(s)** — and extract each file's `meta` block by **parse only**. `tools/build_catalog.py:read_meta` in this repo is the reference implementation, ~20 lines; copy it. (There is no `refrain.read_meta` helper in the language package — parse and walk the `meta` block yourself.) Build the index in memory.
 - **List by parse, resolve on select.** Parsing is fast and tolerant; it lets you *show* every protocol (even ones that won't run on the attached amp). Full `resolve()` happens only when the user picks one — that's where "needs DC amp / missing channel" errors surface.
 - Treat `catalog.json` as a **cache keyed by file mtime**, rebuilt on change — never the authority.
 
@@ -38,5 +38,6 @@ The distributed library ships **no** `indication`, `population`, `safety_monitor
 
 ## 6. Extensibility & performance
 - Unknown `goals`/`bands`/`modality` → an **"Other"** bucket, never dropped. Closing the schema enum did not make the picker strict: a user's own goal string must still list.
+- **Apply the schema's defaults when you read.** `modality` defaults to `eeg`, and only the bundled reference set declares it explicitly — a user's own EEG protocol will omit the line. If you filter with `meta['modality'] == 'eeg'` against a raw parse you will drop every user file. Fill the default in at read time (`read_meta` in this repo does); JSON Schema declares defaults but never applies them.
 - Validate user files against `schema/protocol-meta.schema.json`; **warn** on unknown tags but still list them.
 - Cache the index; virtualize long lists; lazy-`resolve()` on selection.

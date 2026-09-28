@@ -87,12 +87,58 @@ def test_eeg_protocols_declare_modality(path):
     )
 
 
-def test_missing_modality_still_defaults_to_eeg():
-    # Review Focus 2: a user's own file may omit it. The default must survive
-    # in the schema so hosts can rely on it.
+def _load_build_catalog():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "build_catalog", ROOT / "tools" / "build_catalog.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_missing_modality_still_defaults_to_eeg(tmp_path):
+    """Review Focus 2: a user's own EEG file omits `modality`.
+
+    Declaring a default in the schema is not enough -- jsonschema does not
+    apply defaults, so a host that filters on meta["modality"] would drop
+    every user-authored EEG protocol. The READ PATH has to supply it.
+    """
     assert SCHEMA["properties"]["modality"]["default"] == "eeg"
     doc = {"description": "d", "status": "draft", "goals": ["focus_attention"]}
     jsonschema.validate(doc, SCHEMA)  # valid without modality
+
+    f = tmp_path / "mine.refrain"
+    f.write_text(
+        'protocol "mine" {\n'
+        '  meta {\n'
+        '    description = "my own thing"\n'
+        '    status      = "draft"\n'
+        '    goals       = ["focus_attention"]\n'
+        '  }\n'
+        '}\n'
+    )
+    meta = _load_build_catalog().read_meta(f)
+    assert meta["modality"] == "eeg", (
+        "a file with no modality line must read back as eeg, or a host "
+        "filtering by modality drops every user-authored EEG protocol"
+    )
+
+
+def test_declared_modality_is_not_overwritten(tmp_path):
+    f = tmp_path / "hrv.refrain"
+    f.write_text(
+        'protocol "hrv" {\n'
+        '  meta {\n'
+        '    description = "mine"\n'
+        '    status      = "draft"\n'
+        '    goals       = ["interoception"]\n'
+        '    modality    = "hrv"\n'
+        '  }\n'
+        '}\n'
+    )
+    assert _load_build_catalog().read_meta(f)["modality"] == "hrv"
 
 
 def test_no_clinical_amp_hardware():

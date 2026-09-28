@@ -47,9 +47,14 @@ catalog.json    # derived cache (CI rebuilds it)
 
 ## Use from a host
 ```python
-import refrain
-meta = refrain.read_meta("protocols/smr_theta_cz.refrain")  # parse-only tags
+# Parse-only tag extraction; see tools/build_catalog.py:read_meta for the
+# ~20-line reference implementation (there is no refrain.read_meta helper).
+from tools.build_catalog import read_meta
+
+meta = read_meta(Path("protocols/eeg/smr.refrain"))
 # ... bucket by meta['goals'], filter by meta['modality'] / meta['threshold_style'], etc.
+# read_meta applies schema defaults, so meta['modality'] is 'eeg' even when
+# the file omits the line.
 ```
 
 ## License

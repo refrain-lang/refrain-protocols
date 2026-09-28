@@ -19,9 +19,21 @@ from refrain.parser import parse
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# Schema defaults the read path must APPLY. jsonschema validates against a
+# default but never fills one in, so a host that filters on meta["modality"]
+# would drop every user-authored EEG protocol -- they omit the line, since
+# only the reference set was backfilled. Supply it here instead.
+SCHEMA_DEFAULTS = {"modality": "eeg"}
+
+
 def read_meta(path: Path) -> dict:
     """Parse-only meta extraction (no resolve, no amp). Returns {} + an
-    _error marker if the file won't even parse, so the picker can show it."""
+    _error marker if the file won't even parse, so the picker can show it.
+
+    Schema defaults (see SCHEMA_DEFAULTS) are applied to the result, so a
+    file that omits an optional-with-default tag still reads back with it.
+    Unknown values are passed through untouched -- bucketing them into
+    "Other" is the host's job, not this function's."""
     try:
         f = parse(path.read_text())
     except Exception as e:  # malformed user file: list it, flagged
@@ -35,6 +47,8 @@ def read_meta(path: Path) -> dict:
                     out[a.target] = [getattr(e, "value", None) for e in v.elements]
                 else:
                     out[a.target] = getattr(v, "value", None)
+    for key, default in SCHEMA_DEFAULTS.items():
+        out.setdefault(key, default)
     return out
 
 

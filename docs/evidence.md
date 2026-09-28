@@ -22,7 +22,7 @@ outcome.
 A protocol leaves `draft` only after:
 1. it **resolves** against a real amp profile (not just parses),
 2. its **bands/sites/thresholds** are reviewed,
-3. it carries a real **`citation`** (required by CI once `status` > `draft`, and CI rejects placeholders),
+3. it carries a real **`citation`** (required by CI once `status` > `draft`; CI rejects empty values and the known placeholder strings, but it cannot tell a thin reference from a good one — that is review's job),
 4. (ideally) bench/oracle validation of its feedback behavior.
 
 Until then, host apps must badge it "untested." Nothing here is a medical device or a substitute for professional judgement, and whoever runs a protocol owns the decision to run it.
