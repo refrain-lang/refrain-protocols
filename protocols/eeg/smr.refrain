@@ -3,12 +3,12 @@
 // Replaces the whole SMR family (smr_up_c4, smr_classic_cz, smr_theta_cz,
 // smr_graded_cz, and their retired BrainBit forks): instead of one file per
 // site/threshold-style/band-edge combination, this is ONE Brain-Trainer-
-// style template the clinician tunes — site, bands, thresholds — rather
-// than a rigid recipe. Canonical defaults (the standard clinical menu)
+// style template the practitioner tunes — site, bands, thresholds — rather
+// than a rigid recipe. Canonical defaults (the standard menu)
 // reproduce the classic Sterman/Lubar recipe with no bindings beyond the
 // site: reward SMR (12-15 Hz) up at Cz, inhibit theta (4-7 Hz) and
 // high-beta (20-30 Hz), with an EMG artifact guard — so it runs in one
-// click, and every knob is there for the clinician who wants to deviate.
+// click, and every knob is there for the practitioner who wants to deviate.
 //
 // Design choices:
 //   - `site` is a `placement` control (kind = "active") over a named
@@ -53,7 +53,7 @@
 //     — they are down-train vetoes, not reward rates.
 //
 // Amp-portable: reads amp.reference instead of a hardcoded reference, so
-// one file resolves on both a clinical amp (linked_ears) and a consumer amp
+// one file resolves on both a research amp (linked_ears) and a consumer amp
 // (device) — same convention as the rest of protocols/eeg/ post the 2026-07
 // reorg (docs/fork-audit-2026-07.md).
 //
@@ -61,16 +61,16 @@
 // `smr_reward_pct` behind an "Advanced" disclosure, so the default click-
 // through surface is exactly those two controls; the seeded voltage
 // thresholds are Advanced too (they auto-seed from the live percent
-// controls and are not something a first-run clinician needs to touch).
+// controls and are not something a first-run practitioner needs to touch).
 
 protocol "smr" {
 
   meta {
     version           = "1.0.0"
     evidence          = "established"
-    description       = "Configurable SMR (12-15 Hz) up-training template — clinician-selected site, bands, and thresholds"
+    description       = "Configurable SMR (12-15 Hz) up-training template — practitioner-selected site, bands, and thresholds"
     title             = "SMR training — configurable"
-    summary           = "Rewards raising SMR while inhibiting theta and high-beta, at a clinician-chosen sensorimotor site, with adaptive or baseline-fixed thresholds."
+    summary           = "Rewards raising SMR while inhibiting theta and high-beta, at a chosen sensorimotor site, with adaptive or baseline-fixed thresholds."
     family            = "smr"
     threshold_style   = "selectable"
     status            = "draft"
@@ -158,7 +158,7 @@ protocol "smr" {
   }
 
   // High-beta INHIBIT threshold — same idea, guards against EMG/arousal
-  // bleed rewarding the trainee for jaw clench or anxious activation.
+  // bleed rewarding the trainee for jaw clench or muscular bracing.
   threshold "hbeta_t" {
     signal       = "high_beta_envelope"
     type         = threshold_style == "baseline"

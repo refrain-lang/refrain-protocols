@@ -5,18 +5,18 @@
 // templates-design.md, recorder repo). Supersedes alpha_up_pz.refrain: the
 // same posterior alpha up-train, now with a high-beta artifact/arousal
 // inhibit added (per the template design table) and site, bands, and
-// thresholds clinician-tunable instead of frozen at Pz/8-12 Hz.
+// thresholds practitioner-tunable instead of frozen at Pz/8-12 Hz.
 //
 // Canonical defaults (relaxation menu) reproduce the alpha_up_pz recipe at
 // Pz: reward alpha (8-12 Hz) up, inhibit high-beta (22-30 Hz), with an EMG
-// artifact guard — one click, every knob there for the clinician who wants
+// artifact guard — one click, every knob there for the practitioner who wants
 // to deviate.
 //
 // Design choices carried verbatim from smr.refrain (see that file's header
 // for the full rationale):
 //   - `site` is a `placement` control (kind = "active") over a named
 //     `posterior` group — device-generic. Pz is the alpha_up_pz default;
-//     P3/P4 are clinician alternates on the same parietal strip.
+//     P3/P4 are practitioner alternates on the same parietal strip.
 //   - `threshold_style` folds both thresholds between adaptive percentile
 //     and baseline-fixed absolute (seeded from the live signal).
 //   - Band edges are PAIRED `frequency` controls, referenced directly in
@@ -38,9 +38,9 @@ protocol "alpha_up" {
   meta {
     version           = "1.0.0"
     evidence          = "probable"
-    description       = "Configurable alpha (8-12 Hz) up-training template — clinician-selected site, bands, and thresholds"
+    description       = "Configurable alpha (8-12 Hz) up-training template — practitioner-selected site, bands, and thresholds"
     title             = "Calm the mind — configurable alpha training"
-    summary           = "Rewards raising relaxed alpha waves at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds."
+    summary           = "Rewards raising relaxed alpha waves at a chosen posterior site, with adaptive or baseline-fixed thresholds."
     family            = "alpha_up"
     threshold_style   = "selectable"
     status            = "draft"

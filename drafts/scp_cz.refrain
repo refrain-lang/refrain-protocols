@@ -7,22 +7,22 @@
 //   1. Unary minus / signed literals      — SCP thresholds are negative
 //      (`default = -5.0 uV` currently fails to parse: DESIGN-NOTES §6).
 //   2. A `trials` construct               — SCP is discrete cued trials
-//      (produce-negativity / produce-positivity / transfer), not clinician-
+//      (produce-negativity / produce-positivity / transfer), not practitioner-
 //      paced blocks. The phase machine can't express it.
 //   3. Per-trial baseline correction      — feedback is relative to a pre-trial
 //      baseline; no primitive for "subtract the last N ms".
 //   4. Robust near-DC / DC extraction     — a 0.05 Hz bandpass is numerically
 //      fragile (same near-DC issue as the HRV envelope); SCP wants the true DC
-//      signal. Gated to a DC-coupled clinical amp via `coupling = "dc"`.
+//      signal. Gated to a DC-coupled research amp via `coupling = "dc"`.
 //
 // The signal/feedback half below parses (so the picker can list it); the trial
 // sequencing + signed thresholds are the missing engine work.
 protocol "scp_cz" {
   meta {
     version         = "0.1.0"
-    description     = "Slow cortical potential self-regulation at Cz (clinical DC amp; trial sequencing required)"
+    description     = "Slow cortical potential self-regulation at Cz (research-grade DC amp; trial sequencing required)"
     title           = "Slow cortical potential self-regulation (top of head)"
-    summary         = "Trains voluntary shifts of slow cortical potentials at the top of the head; needs a DC-coupled clinical amp."
+    summary         = "Trains voluntary shifts of slow cortical potentials at the top of the head; needs a DC-coupled research amp."
     family          = "scp_cz"
     status          = "roadmap"
     evidence        = "established"
@@ -31,7 +31,7 @@ protocol "scp_cz" {
     bands           = ["scp"]
     site            = "Cz"
     threshold_style = "baseline"
-    hardware        = "clinical_amp"
+    hardware        = "research_amp"
     requires_features = ["dc_coupling", "trials"]
   }
 

@@ -6,7 +6,7 @@ protocol "alpha_down_pz" {
   meta {
     version         = "0.1.0"
     title           = "Down-regulate alpha (back of head)"
-    summary         = "Rewards lowering alpha at the back of the head, used in trauma-oriented desensitization work."
+    summary         = "Rewards lowering alpha at the back of the head."
     family          = "alpha_down_pz"
     description     = "ALPHA down-train at Pz"
     status          = "legacy"

@@ -35,7 +35,7 @@
 // giving every up-train template in this batch a genuine, percentile-driven
 // `*_reward_pct` control (`theta_reward_pct`, gated by an `above(...)`
 // reward condition — same detection path `manifest._is_reward_rate_control`
-// already uses for the other three). The result is clinically at least as
+// already uses for the other three). The result is at least as
 // strict as a bare crossover: reward requires theta to be adaptively
 // elevated (or above its baseline bar) AND above alpha, not just the ratio
 // crossing 1.0.
@@ -50,7 +50,7 @@
 // for the full rationale):
 //   - `site` is a `placement` control (kind = "active") over a named
 //     `posterior` group — device-generic. Pz is the alpha_theta_pz default;
-//     P3/P4 are clinician alternates on the same parietal strip.
+//     P3/P4 are practitioner alternates on the same parietal strip.
 //   - `threshold_style` folds the threshold between adaptive percentile and
 //     baseline-fixed absolute (seeded from the live signal).
 //   - Band edges are PAIRED `frequency` controls, `live_tunable = false`.
@@ -72,9 +72,9 @@ protocol "alpha_theta" {
   meta {
     version           = "1.1.0"
     evidence          = "established"
-    description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — clinician-selected site, bands, and thresholds"
+    description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — practitioner-selected site, bands, and thresholds"
     title             = "Deep meditative state — configurable alpha/theta crossover"
-    summary           = "Eyes-closed deep-state training that rewards theta rising above alpha at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds."
+    summary           = "Eyes-closed deep-state training that rewards theta rising above alpha at a chosen posterior site, with adaptive or baseline-fixed thresholds."
     family            = "alpha_theta"
     threshold_style   = "selectable"
     status            = "draft"
@@ -149,7 +149,7 @@ protocol "alpha_theta" {
 
   // Visible reference line for the delta envelope card. The named inhibit
   // below computes its own bandpower metric, while this equivalent adaptive
-  // percentile lets the clinician see when slow activity approaches the
+  // percentile lets the practitioner see when slow activity approaches the
   // guard. Turning the guard off moves both thresholds to the rolling ceiling.
   threshold "delta_t" {
     signal = "delta_envelope"

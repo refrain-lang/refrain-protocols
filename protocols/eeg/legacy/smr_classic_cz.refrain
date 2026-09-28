@@ -9,7 +9,7 @@
 //
 // Design choices:
 //   - SMR threshold is an ADAPTIVE percentile of the trainee's own signal,
-//     defaulting LOW (40th pct) so reward fires often at first; the clinician
+//     defaulting LOW (40th pct) so reward fires often at first; the practitioner
 //     tightens it over the session (operant shaping).
 //   - Theta is a LOOSE veto: theta-below-its-80th-percentile is true ~80% of
 //     the time, so it only blocks reward during genuine drowsiness, not as a
@@ -20,7 +20,7 @@
 // Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
 // one of the four deliberately differentiated "smr_cz" family protocols.
 //

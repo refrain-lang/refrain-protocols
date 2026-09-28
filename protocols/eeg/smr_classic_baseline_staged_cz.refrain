@@ -8,22 +8,22 @@
 //
 // Rationale: nobody trains SMR up / theta down for 30 minutes straight —
 // it's tiring even for a healthy brain. Short blocks with rests keep the
-// patient fresh. One baseline (seeded at warmup→run) anchors all four blocks;
-// the rests are muted (no feedback) so the patient can settle / sip water
+// person fresh. One baseline (seeded at warmup→run) anchors all four blocks;
+// the rests are muted (no feedback) so the person can settle / sip water
 // without artifact mattering.
 //
 // Phase modes (Refrain v0.7.0 staged protocols):
-//   - blocks are `timed_with_floor`: auto-advance at 5 min, but the clinician
-//     can end a block early (patient's clearly done) or hold past it ("Extend").
+//   - blocks are `timed_with_floor`: auto-advance at 5 min, but the practitioner
+//     can end a block early (person's clearly done) or hold past it ("Extend").
 //   - rests are `timed` (2 min). Swap any rest to `mode = open` (drop its
-//     duration) to make it clinician-paced — advance when the patient's ready.
+//     duration) to make it practitioner-paced — advance when the person's ready.
 //
 // All four blocks reference the single `block "smr_up"`, so this is the
 // homogeneous "4×5 min" case. (A heterogeneous protocol would define multiple
 // blocks and point different phases at them.)
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
 // one of the four deliberately differentiated "smr_cz" family protocols,
 // none of which are duplicates of each other or of smr_theta_cz.refrain.
@@ -105,7 +105,7 @@ protocol "smr_classic_baseline_staged_cz" {
   // even on a still, clean signal — while telling you nothing about real
   // muscle artifact. So it's omitted here rather than fighting the hardware.
   //
-  // On a clinical-grade amp with a clean HF floor, re-add the adaptive guard:
+  // On a research-grade amp with a clean HF floor, re-add the adaptive guard:
   //   inhibit "emg" {
   //     metric    = bandpower(input: "raw", band: (65 Hz, 100 Hz), window: 100 ms)
   //     threshold = percentile(target_pct: 99, window: 2 min)

@@ -1,5 +1,5 @@
 // Canonical alpha inter-site coherence protocol — true phase coherence over
-// a CLINICIAN-CHOSEN pair (parameterized placement, kind = "pair").
+// a CHOSEN pair (parameterized placement, kind = "pair").
 //
 // This supersedes two retired forks: the amplitude-symmetry stand-in
 // (protocols/eeg/legacy/alpha_symmetry_c3c4_brainbit.refrain — its own
@@ -15,7 +15,7 @@
 // resolve time (bindings={"coh": ("F3","F4")}); its legs feed two
 // referential inputs via `coh.a` / `coh.b`, and the `coherence()` derive
 // rewards phase-locked alpha between them. `allowed` is an inline list of
-// permitted pairs — the site pair is clinician-selectable, not fixed to
+// permitted pairs — the site pair is practitioner-selectable, not fixed to
 // any one pair (including C3/C4, one of the allowed choices).
 //
 // Requires refrain >= 0.6.1 — live/push-mode coherence() runs on both the
@@ -27,9 +27,9 @@ protocol "alpha_coherence" {
   meta {
     version           = "1.0.0"
     evidence          = "exploratory"
-    description       = "Alpha inter-hemispheric coherence up-training, clinician-selected pair (pair placement)"
-    title             = "Alpha coherence — clinician-chosen pair"
-    summary           = "BrainBit: alpha inter-hemispheric coherence up-training over an electrode pair the clinician selects."
+    description       = "Alpha inter-hemispheric coherence up-training, practitioner-selected pair (pair placement)"
+    title             = "Alpha coherence — chosen pair"
+    summary           = "BrainBit: alpha inter-hemispheric coherence up-training over an electrode pair the practitioner selects."
     family            = "placement_alpha_coherence"
     status            = "reviewed"
     goals             = ["flow_connectivity"]

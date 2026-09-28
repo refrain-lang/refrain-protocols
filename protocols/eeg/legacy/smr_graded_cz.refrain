@@ -25,7 +25,7 @@
 // Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
 // one of the four deliberately differentiated "smr_cz" family protocols.
 
@@ -122,7 +122,7 @@ protocol "smr_graded_cz" {
   }
 
   output {
-    // Always-on graded feedback — the patient hears how close they are even
+    // Always-on graded feedback — the person hears how close they are even
     // when not yet "in zone"; the chime marks sustained good performance.
     audio_gain  = reward.composite
     audio_chime = reward.event

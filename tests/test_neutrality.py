@@ -52,3 +52,46 @@ def test_no_indication_fields(path):
         f"{path.name}: {present} dropped from the distributed contract — "
         f"a neutral library ships no indications. Keep them host-side."
     )
+
+
+# Words that name a condition or a medical role. A distributed file may cite a
+# paper whose TITLE contains them -- provenance is honest -- but must not use
+# them in its own prose.
+INDICATION_WORDS = (
+    "depression", "depressive", "trauma", "ptsd", "anxiety", "anxious",
+    "adhd", "patient", "diagnos", "clinician", "clinical",
+)
+
+PROSE_FIELDS = ("description", "title", "summary")
+
+
+def _citation_spans(text: str) -> list[str]:
+    """Lines that ARE a citation -- exempt: a reference keeps its real title."""
+    return [ln for ln in text.splitlines() if ln.lstrip().startswith("citation")]
+
+
+@pytest.mark.parametrize("path", ALL, ids=lambda p: p.name)
+def test_no_indication_language_in_prose(path):
+    text = path.read_text(encoding="utf-8")
+    exempt = set(_citation_spans(text))
+    offenders = []
+    for i, line in enumerate(text.splitlines(), 1):
+        if line in exempt:
+            continue
+        low = line.lower()
+        for w in INDICATION_WORDS:
+            if w in low:
+                offenders.append(f"{i}: {w!r} in {line.strip()[:80]}")
+    assert not offenders, (
+        f"{path.name}: indication language in distributed prose:\n  "
+        + "\n  ".join(offenders)
+    )
+
+
+@pytest.mark.parametrize("path", ALL, ids=lambda p: p.name)
+def test_prose_fields_present(path):
+    # The scrub must not leave a file with an empty label.
+    m = _meta(path)
+    for field in PROSE_FIELDS:
+        if field in m:
+            assert (m[field] or "").strip(), f"{path.name}: {field} emptied by the scrub"

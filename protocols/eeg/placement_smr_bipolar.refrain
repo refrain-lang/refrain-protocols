@@ -1,4 +1,4 @@
-// SMR up-training over a CLINICIAN-CHOSEN bipolar pair (parameterized
+// SMR up-training over a CHOSEN bipolar pair (parameterized
 // placement, kind = "bipolar").
 //
 // The `motor` placement control binds to a 2-tuple (active, reference)
@@ -15,9 +15,9 @@ protocol "placement_smr_bipolar" {
   meta {
     version           = "1.1.0"
     evidence          = "established"
-    description       = "SMR up-training over a clinician-selected bipolar pair (bipolar placement)"
-    title             = "SMR training — clinician-chosen bipolar pair"
-    summary           = "SMR up-training across a bipolar electrode pair the clinician selects."
+    description       = "SMR up-training over a practitioner-selected bipolar pair (bipolar placement)"
+    title             = "SMR training — chosen bipolar pair"
+    summary           = "SMR up-training across a bipolar electrode pair the practitioner selects."
     family            = "placement_smr"
     status            = "draft"
     goals             = ["sleep_quality"]

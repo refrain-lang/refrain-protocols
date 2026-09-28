@@ -4,7 +4,7 @@
 // shape (docs/superpowers/specs/2026-07-25-configurable-eeg-protocol-
 // templates-design.md, recorder repo). Supersedes hibeta_down_cz.refrain:
 // same single-band down-train shape (reward fires when high-beta DROPS
-// below its own bar) with site, bands, and thresholds now clinician-tunable
+// below its own bar) with site, bands, and thresholds now practitioner-tunable
 // instead of frozen at Cz/20-30 Hz.
 //
 // This is a PURE down-train — there is no reward band and no separate
@@ -23,8 +23,8 @@
 // for the full rationale):
 //   - `site` is a `placement` control (kind = "active") over a named
 //     `frontal` group — device-generic. Cz is the hibeta_down_cz default;
-//     Fz/F3/F4 are clinician alternates for frontal-midline placement,
-//     the conventional alternative site for over-arousal/anxiety work.
+//     Fz/F3/F4 are practitioner alternates for frontal-midline placement,
+//     the conventional alternative site for over-arousal work.
 //   - `threshold_style` folds the threshold between adaptive percentile and
 //     baseline-fixed absolute (seeded from the live signal).
 //   - Band edges are PAIRED `frequency` controls, referenced directly in
@@ -43,9 +43,9 @@ protocol "high_beta_down" {
   meta {
     version           = "1.0.0"
     evidence          = "probable"
-    description       = "Configurable high-beta (22-30 Hz) down-training template — clinician-selected site and thresholds"
+    description       = "Configurable high-beta (22-30 Hz) down-training template — practitioner-selected site and thresholds"
     title             = "Ease over-arousal — configurable"
-    summary           = "Rewards lowering fast high-beta activity associated with anxiety and rumination, at a clinician-chosen site, with adaptive or baseline-fixed thresholds."
+    summary           = "Rewards lowering fast high-beta activity at a chosen site, with adaptive or baseline-fixed thresholds."
     family            = "high_beta_down"
     threshold_style   = "selectable"
     status            = "draft"

@@ -18,7 +18,7 @@
 // configuration, at which point it can be retired.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp.
 //
 // RETIRED: superseded by protocols/eeg/beta_attention.refrain — the

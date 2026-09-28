@@ -13,7 +13,7 @@
 //   - AC-coupled (no DC).
 //
 // Electrode placement: scalp channel #1 at Pz. The other three may be
-// placed wherever the clinician wishes or left as artifact references.
+// placed wherever the practitioner wishes or left as artifact references.
 // Only the Pz channel is used by this protocol.
 //
 // RETIRED: superseded by protocols/eeg/alpha_theta_pz.refrain, which is now
@@ -73,7 +73,7 @@ protocol "alpha_theta_pz_brainbit_v1" {
   // Crossover signal: positive when theta dominates (the target state),
   // negative when alpha dominates. The sigmoid below maps this to a
   // smoothly-rising audio gain that begins to climb even before full
-  // crossover, so the patient hears the approach.
+  // crossover, so the person hears the approach.
   derive "theta_minus_alpha" {
     formula = "theta_envelope" - "alpha_envelope"
   }
@@ -81,7 +81,7 @@ protocol "alpha_theta_pz_brainbit_v1" {
   // EMG inhibit — muscle artifact in the eyes-closed, reclined posture
   // is the dominant noise source. 50-100 Hz band catches jaw clench,
   // neck tension. Mute audio briefly while artifact is present so the
-  // patient isn't rewarded for tensing up.
+  // person isn't rewarded for tensing up.
   inhibit "emg" {
     metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
     threshold = percentile(target_pct: 95, window: 2 min)
@@ -110,7 +110,7 @@ protocol "alpha_theta_pz_brainbit_v1" {
 
   session {
     phases = [
-      // Eyes-closed protocol — patient needs longer to settle than the
+      // Eyes-closed protocol — person needs longer to settle than the
       // standard 90 s warmup. 3 min lets baseline alpha stabilise.
       phase { name = "settle";   duration = 3 min;  output_muted = true },
       phase { name = "training"; duration = 30 min },

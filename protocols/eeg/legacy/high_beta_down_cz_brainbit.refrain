@@ -22,7 +22,7 @@ protocol "high_beta_down_cz_brainbit_v1" {
     evidence          = "probable"
     description       = "High-beta (22-30 Hz) downtraining at Cz, BrainBit Flex monopolar"
     title             = "Ease over-arousal — quiet high-beta (top of head)"
-    summary           = "BrainBit: rewards lowering fast high-beta activity linked to anxiety and rumination."
+    summary           = "BrainBit: rewards lowering fast high-beta activity."
     family            = "hibeta_down_cz"
     status            = "legacy"
     goals             = ["calm_stress"]

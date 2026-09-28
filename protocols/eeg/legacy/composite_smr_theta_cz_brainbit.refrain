@@ -2,9 +2,9 @@
 //
 // Demonstrates Refrain v0.6.0's weighted multi-component reward engine:
 // one reward component (SMR up) and one suppress band (theta down), each
-// with its own clinician-tunable weight control, combined into
+// with its own practitioner-tunable weight control, combined into
 // `reward.composite` (a weighted average of per-component success in
-// [0,1]). The patient feedback is bound directly to the composite. This
+// [0,1]). The person feedback is bound directly to the composite. This
 // is the classic z-score / summary-score model.
 //
 // Same bands/montage as smr_cz_brainbit.refrain, but the reward is a

@@ -1,4 +1,4 @@
-// SMR up-training replicated across a CLINICIAN-CHOSEN SET of sites
+// SMR up-training replicated across a CHOSEN SET of sites
 // (parameterized placement, kind = "set" — "Mode 2a" per-site replication).
 //
 // The `sites` placement binds to a list of channels at resolve time
@@ -15,7 +15,7 @@
 // dwell and leaves the analog gain to single-site protocols.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3).
 
 protocol "placement_smr_set" {
@@ -23,9 +23,9 @@ protocol "placement_smr_set" {
   meta {
     version           = "1.1.0"
     evidence          = "established"
-    description       = "SMR up-training replicated across a clinician-selected site set (set placement, Mode 2a)"
-    title             = "SMR training — clinician-chosen site set"
-    summary           = "SMR up-training replicated across a set of sites the clinician selects."
+    description       = "SMR up-training replicated across a practitioner-selected site set (set placement, Mode 2a)"
+    title             = "SMR training — chosen site set"
+    summary           = "SMR up-training replicated across a set of sites the practitioner selects."
     family            = "placement_smr"
     status            = "draft"
     goals             = ["sleep_quality"]

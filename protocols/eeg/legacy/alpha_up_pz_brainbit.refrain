@@ -23,7 +23,7 @@ protocol "alpha_up_pz_brainbit_v1" {
     evidence          = "probable"
     description       = "Alpha uptraining at Pz, BrainBit Flex monopolar — Calm-goal lead protocol"
     title             = "Calm the mind — boost alpha (back of head)"
-    summary           = "BrainBit: rewards raising relaxed alpha at the back of the head, for calm and lowered anxiety."
+    summary           = "BrainBit: rewards raising relaxed alpha at the back of the head, for a calm, settled state."
     family            = "alpha_up_pz"
     status            = "legacy"
     goals             = ["calm_stress"]

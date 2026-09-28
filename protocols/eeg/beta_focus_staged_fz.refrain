@@ -22,7 +22,7 @@
 // theta 4-8 Hz; high-beta 22-30 Hz. Electrode placement: channel #1 at Fz.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. Supersedes protocols/eeg/legacy/beta_up_fz.refrain, a
 // single-band placeholder next to this fuller three-band recipe — see
 // docs/fork-audit-2026-07.md §2.4/F6.
