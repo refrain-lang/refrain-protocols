@@ -28,6 +28,7 @@ protocol "placement_smr_set" {
     summary           = "SMR up-training replicated across a set of sites the practitioner selects."
     family            = "placement_smr"
     status            = "draft"
+    modality          = "eeg"
     goals             = ["sleep_quality"]
     author            = "Peak Mind"
   }

@@ -38,6 +38,7 @@ protocol "beta_focus_staged_fz" {
     family            = "beta_focus_fz"
     threshold_style   = "selectable"
     status            = "reviewed"
+    modality          = "eeg"
     goals             = ["alertness_performance"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components. Clinical Neurophysiology, 115(1), 131-139."

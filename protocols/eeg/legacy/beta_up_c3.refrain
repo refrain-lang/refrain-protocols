@@ -13,6 +13,7 @@ protocol "beta_up_c3" {
     family          = "beta_up_c3"
     description     = "BETA up-train at C3"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "probable"
     citation        = "Othmer & Othmer (arousal model)"
     goals           = ["alertness_performance", "focus_attention"]

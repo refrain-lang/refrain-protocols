@@ -27,6 +27,7 @@ protocol "placement_smr_active" {
     summary           = "SMR up-training at a single sensorimotor site the practitioner selects at session start."
     family            = "placement_smr"
     status            = "legacy"
+    modality          = "eeg"
     goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"

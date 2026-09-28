@@ -50,6 +50,7 @@ protocol "beta_attention" {
     family            = "beta_attention"
     threshold_style   = "selectable"
     status            = "draft"
+    modality          = "eeg"
     goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."

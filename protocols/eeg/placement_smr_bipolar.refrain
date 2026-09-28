@@ -20,6 +20,7 @@ protocol "placement_smr_bipolar" {
     summary           = "SMR up-training across a bipolar electrode pair the practitioner selects."
     family            = "placement_smr"
     status            = "draft"
+    modality          = "eeg"
     goals             = ["sleep_quality"]
     author            = "Peak Mind"
   }

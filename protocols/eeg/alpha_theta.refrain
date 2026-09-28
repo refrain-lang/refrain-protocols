@@ -78,6 +78,7 @@ protocol "alpha_theta" {
     family            = "alpha_theta"
     threshold_style   = "selectable"
     status            = "draft"
+    modality          = "eeg"
     goals             = ["deep_meditative"]
     author            = "Peak Mind"
     citation          = "Peniston & Kulkosky 1989, 1991"

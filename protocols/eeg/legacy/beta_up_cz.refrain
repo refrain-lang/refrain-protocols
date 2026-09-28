@@ -36,6 +36,7 @@ protocol "beta_up_cz" {
     summary           = "Rewards raising engaged beta with a theta inhibit at the top of the head."
     family            = "beta_up_cz"
     status            = "legacy"
+    modality          = "eeg"
     goals             = ["alertness_performance"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."

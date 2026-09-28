@@ -16,6 +16,7 @@ protocol "faa_f3f4" {
     summary         = "Trains left-versus-right frontal alpha asymmetry, linked to approach motivation and mood."
     family          = "faa_f3f4"
     status          = "draft"
+    modality        = "eeg"
     evidence        = "probable"
     citation        = "Rosenfeld; Baehr & Rosenfeld"
     goals           = ["mood_balance"]

@@ -72,3 +72,31 @@ def test_citation_is_a_real_reference(path):
         assert "clinical convention" not in cite.lower(), (
             f"{path.name}: citation {cite!r} still frames provenance clinically"
         )
+
+
+EEG_DIR = ROOT / "protocols" / "eeg"
+EEG_FILES = sorted(EEG_DIR.rglob("*.refrain")) + [ROOT / "drafts" / "scp_cz.refrain"]
+
+
+@pytest.mark.parametrize("path", EEG_FILES, ids=lambda p: p.name)
+def test_eeg_protocols_declare_modality(path):
+    # Explicit beats implicit: a host app filtering by modality should not have
+    # to know the default to find every EEG protocol.
+    assert _meta(path).get("modality") == "eeg", (
+        f"{path.name}: EEG protocols declare modality = \"eeg\" explicitly"
+    )
+
+
+def test_missing_modality_still_defaults_to_eeg():
+    # Review Focus 2: a user's own file may omit it. The default must survive
+    # in the schema so hosts can rely on it.
+    assert SCHEMA["properties"]["modality"]["default"] == "eeg"
+    doc = {"description": "d", "status": "draft", "goals": ["focus_attention"]}
+    jsonschema.validate(doc, SCHEMA)  # valid without modality
+
+
+def test_no_clinical_amp_hardware():
+    for path in ALL:
+        assert _meta(path).get("hardware") != "clinical_amp", (
+            f"{path.name}: hardware 'clinical_amp' renamed to 'research_amp'"
+        )

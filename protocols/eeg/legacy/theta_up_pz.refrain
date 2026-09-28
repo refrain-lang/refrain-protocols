@@ -12,6 +12,7 @@ protocol "theta_up_pz" {
     family          = "theta_up_pz"
     description     = "THETA up-train at Pz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "exploratory"
     citation        = "Gruzelier (creativity/deep states)"
     goals           = ["deep_meditative"]

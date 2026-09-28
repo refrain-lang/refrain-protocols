@@ -26,6 +26,7 @@ protocol "alpha_up_pz_brainbit_v1" {
     summary           = "BrainBit: rewards raising relaxed alpha at the back of the head, for a calm, settled state."
     family            = "alpha_up_pz"
     status            = "legacy"
+    modality          = "eeg"
     goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "Hardt J.V. & Kamiya J. (1978). Anxiety change through electroencephalographic alpha feedback. Science, 201(4350), 79-81."

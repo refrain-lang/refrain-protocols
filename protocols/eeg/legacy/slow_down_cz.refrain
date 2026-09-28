@@ -12,6 +12,7 @@ protocol "slow_down_cz" {
     family          = "slow_down_cz"
     description     = "DELTA/THETA down-train at Cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "exploratory"
     citation        = "Thatcher; Walker (qEEG-guided slowing)"
     goals           = ["alertness_performance", "focus_attention"]

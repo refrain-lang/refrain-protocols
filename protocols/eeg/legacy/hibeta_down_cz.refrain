@@ -13,6 +13,7 @@ protocol "hibeta_down_cz" {
     family          = "hibeta_down_cz"
     description     = "HIGH-BETA down-train at Cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "probable"
     citation        = "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137."
     goals           = ["calm_stress"]

@@ -25,6 +25,7 @@ protocol "alpha_theta_pz" {
     summary         = "Eyes-closed deep-state training that rewards theta rising above alpha at the back of the head (the Peniston-Kulkosky protocol)."
     family          = "alpha_theta_pz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "established"
     citation        = "Peniston & Kulkosky 1989, 1991"
     goals           = ["deep_meditative"]

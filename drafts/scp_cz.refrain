@@ -25,6 +25,7 @@ protocol "scp_cz" {
     summary         = "Trains voluntary shifts of slow cortical potentials at the top of the head; needs a DC-coupled research amp."
     family          = "scp_cz"
     status          = "roadmap"
+    modality        = "eeg"
     evidence        = "established"
     citation        = "Strehl et al. 2006; Kotchoubey & Birbaumer 2001"
     goals           = ["focus_attention"]

@@ -17,6 +17,7 @@ protocol "composite_smr_theta_cz" {
     summary         = "A weighted blend rewarding more SMR and less theta together at the top of the head."
     family          = "composite_smr_theta_cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "established"
     citation        = "Sterman; Lubar; Arns 2009"
     goals           = ["focus_attention", "sleep_quality"]

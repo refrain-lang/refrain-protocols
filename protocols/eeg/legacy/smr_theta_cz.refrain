@@ -13,6 +13,7 @@ protocol "smr_theta_cz" {
     family          = "smr_theta_cz"
     description     = "SMR/THETA up-train at Cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "established"
     citation        = "Sterman; Lubar; Arns 2009"
     goals           = ["focus_attention", "sleep_quality"]

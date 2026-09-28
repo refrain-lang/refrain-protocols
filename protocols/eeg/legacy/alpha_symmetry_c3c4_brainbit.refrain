@@ -30,6 +30,7 @@ protocol "alpha_symmetry_c3c4_brainbit_v1" {
     summary           = "BrainBit: rewards balanced alpha amplitude between the left and right sensorimotor areas, a coherence stand-in."
     family            = "alpha_coherence_c3c4"
     status            = "legacy"
+    modality          = "eeg"
     goals             = ["flow_connectivity"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2007). What is neurofeedback? Journal of Neurotherapy, 10(4), 25-36."

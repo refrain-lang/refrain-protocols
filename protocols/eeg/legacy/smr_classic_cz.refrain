@@ -40,6 +40,7 @@ protocol "smr_classic_cz" {
     family            = "smr_cz"
     threshold_style   = "selectable"
     status            = "legacy"
+    modality          = "eeg"
     goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"

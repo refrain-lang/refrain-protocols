@@ -49,6 +49,7 @@ protocol "high_beta_down" {
     family            = "high_beta_down"
     threshold_style   = "selectable"
     status            = "draft"
+    modality          = "eeg"
     goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137."

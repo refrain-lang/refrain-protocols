@@ -44,6 +44,7 @@ protocol "alpha_up" {
     family            = "alpha_up"
     threshold_style   = "selectable"
     status            = "draft"
+    modality          = "eeg"
     goals             = ["calm_stress", "deep_meditative"]
     author            = "Peak Mind"
     citation          = "Hardt & Kamiya 1978"

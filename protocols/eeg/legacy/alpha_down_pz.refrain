@@ -10,6 +10,7 @@ protocol "alpha_down_pz" {
     family          = "alpha_down_pz"
     description     = "ALPHA down-train at Pz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "probable"
     citation        = "Kluetsch/Ros/Lanius 2014; Nicholson 2016"
     goals           = ["deep_meditative"]
