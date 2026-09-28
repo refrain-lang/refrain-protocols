@@ -1,8 +1,10 @@
 # refrain-protocols
 
-Reference neurofeedback & HRV protocol library for [Refrain](https://github.com/refrain-lang/refrain) — **vendor-neutral, citation-backed, and organized by metadata, not folders.**
+Reference biosignal training-protocol library for [Refrain](https://github.com/refrain-lang/refrain) — **vendor-neutral, provenance-backed, and organized by metadata, not folders.**
 
-> ⚠️ **Every protocol here is `status = "draft"` (untested).** The clinical parameters are curated; the files are generated/seeded and have *not* been clinically validated in this system. Treat them as starting points, not turnkey clinical tools. See `docs/evidence.md`.
+General-wellness building blocks for signal training — EEG neurofeedback, HRV coherence, and the other modalities the schema now names. Nothing here makes a diagnostic or therapeutic claim.
+
+> ⚠️ **Most protocols here are untested.** The parameters are curated; the files are generated/seeded and have *not* been validated in this system. This is not a medical device and makes no health claims. Treat these as starting points, not turnkey tools. See `docs/evidence.md`.
 
 ## How it's organized — by tags, not directories
 
@@ -12,16 +14,17 @@ Reference neurofeedback & HRV protocol library for [Refrain](https://github.com/
 meta {
   description     = "SMR/THETA up-train at Cz (adaptive)"
   status          = "draft"            // our maturity: draft | roadmap | reviewed | stable
-  evidence        = "established"      // clinical support: established | probable | exploratory
-  citation        = "Sterman; Lubar; Arns 2009"
-  goals           = ["adhd_attention", "sensorimotor_sleep"]   // multi-membership!
+  evidence        = "established"      // how established the APPROACH is: established | probable | exploratory
+  citation        = "Sterman; Lubar; Arns 2009"   // origin / prior art, not proof of outcome
+  modality        = "eeg"              // eeg | ecg | hrv | gsr | emg | temp | resp
+  goals           = ["focus_attention", "sleep_quality"]   // multi-membership!
   bands           = ["smr", "theta"]
   site            = "Cz"
   threshold_style = "adaptive"         // drives the Adaptive/Baseline filter
 }
 ```
 
-The same protocol legitimately appears under **both** ADHD/Attention and Sensorimotor/Sleep — folders can't do that; tags can. The controlled vocabulary is in `schema/protocol-meta.schema.json`; see `docs/tagging.md`.
+The same protocol legitimately appears under **both** Focus & attention and Sleep quality — folders can't do that; tags can. The controlled vocabulary is in `schema/protocol-meta.schema.json`; see `docs/tagging.md`.
 
 ## Files are the source of truth; the catalog is a cache
 
@@ -46,7 +49,7 @@ catalog.json    # derived cache (CI rebuilds it)
 ```python
 import refrain
 meta = refrain.read_meta("protocols/smr_theta_cz.refrain")  # parse-only tags
-# ... bucket by meta['goals'], filter by meta['threshold_style'], etc.
+# ... bucket by meta['goals'], filter by meta['modality'] / meta['threshold_style'], etc.
 ```
 
 ## License

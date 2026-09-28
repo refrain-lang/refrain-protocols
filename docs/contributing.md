@@ -9,4 +9,4 @@
 For the generated operant set, edit the `TABLE` in `tools/gen_seed_protocols.py` and re-run it rather than hand-editing the generated files.
 
 ## Bar for leaving `draft`
-See `docs/evidence.md`. In short: must `resolve()` against a real amp profile, clinically reviewed bands/sites/thresholds, and a real citation.
+See `docs/evidence.md`. In short: must `resolve()` against a real amp profile, reviewed bands/sites/thresholds, and a real citation (CI rejects placeholders).
