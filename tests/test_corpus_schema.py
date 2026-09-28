@@ -100,3 +100,32 @@ def test_no_clinical_amp_hardware():
         assert _meta(path).get("hardware") != "clinical_amp", (
             f"{path.name}: hardware 'clinical_amp' renamed to 'research_amp'"
         )
+
+
+def test_catalog_lists_a_protocol_with_an_unknown_goal(tmp_path):
+    """A user's own file with a goal outside the eight buckets still LISTS.
+
+    Closing the schema enum must not make the picker strict: the host buckets
+    an unknown value into "Other" rather than dropping the protocol.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "build_catalog", ROOT / "tools" / "build_catalog.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    f = tmp_path / "mine.refrain"
+    f.write_text(
+        'protocol "mine" {\n'
+        '  meta {\n'
+        '    description = "my own thing"\n'
+        '    status      = "draft"\n'
+        '    goals       = ["my_own_goal"]\n'
+        '  }\n'
+        '}\n'
+    )
+    meta = mod.read_meta(f)
+    assert meta["goals"] == ["my_own_goal"], "the builder must not filter goals"
+    assert "_error" not in meta, "an unknown goal is not a parse failure"
