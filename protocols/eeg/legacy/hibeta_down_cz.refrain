@@ -15,7 +15,7 @@ protocol "hibeta_down_cz" {
     status          = "legacy"
     evidence        = "probable"
     citation        = "clinical convention (anxiety/rumination)"
-    goals           = ["calm_anxiety"]
+    goals           = ["calm_stress"]
     bands           = ["high-beta"]
     site            = "Cz"
     direction       = "down"

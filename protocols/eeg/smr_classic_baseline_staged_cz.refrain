@@ -38,7 +38,7 @@ protocol "smr_classic_baseline_staged_cz" {
     summary           = "Classic SMR operant in four short blocks with rests, using fixed baseline thresholds."
     family            = "smr_cz"
     status            = "reviewed"
-    goals             = ["adhd_attention"]
+    goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
     population        = "children_adults"

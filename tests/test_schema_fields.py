@@ -53,3 +53,10 @@ def test_unknown_status_still_rejected():
     doc = {"description": "d", "status": "retired", "goals": ["focus_attention"]}
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(doc, SCHEMA)
+
+
+def test_empty_goals_rejected():
+    # The trauma_recovery drop must never leave a file with no goal at all.
+    doc = {"description": "d", "status": "draft", "goals": []}
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(doc, SCHEMA)

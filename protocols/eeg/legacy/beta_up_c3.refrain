@@ -15,7 +15,7 @@ protocol "beta_up_c3" {
     status          = "legacy"
     evidence        = "probable"
     citation        = "Othmer & Othmer (arousal model)"
-    goals           = ["alertness_performance", "adhd_attention"]
+    goals           = ["alertness_performance", "focus_attention"]
     bands           = ["beta"]
     site            = "C3"
     direction       = "up"

@@ -18,7 +18,7 @@ protocol "faa_f3f4" {
     status          = "draft"
     evidence        = "probable"
     citation        = "Rosenfeld; Baehr & Rosenfeld"
-    goals           = ["mood_regulation", "trauma_recovery"]
+    goals           = ["mood_balance"]
     bands           = ["alpha"]
     site            = "F3/F4"
     direction       = "asymmetry"

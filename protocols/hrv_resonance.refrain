@@ -12,7 +12,7 @@ protocol "hrv_resonance" {
     status          = "draft"
     evidence        = "established"
     citation        = "Lehrer & Gevirtz 2014 (resonance-frequency HRV biofeedback)"
-    goals           = ["calm_anxiety", "flow_connectivity"]
+    goals           = ["calm_stress", "flow_connectivity", "interoception"]
     bands           = ["hrv-lf"]
     site            = "tachogram"
     direction       = "up"

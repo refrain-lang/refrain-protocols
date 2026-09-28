@@ -27,7 +27,7 @@ protocol "alpha_theta_pz" {
     status          = "legacy"
     evidence        = "established"
     citation        = "Peniston & Kulkosky 1989, 1991"
-    goals           = ["deep_meditative", "trauma_recovery"]
+    goals           = ["deep_meditative"]
     bands           = ["alpha", "theta"]
     site            = "Pz"
     direction       = "crossover"

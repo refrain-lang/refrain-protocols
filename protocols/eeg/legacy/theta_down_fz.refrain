@@ -14,7 +14,7 @@ protocol "theta_down_fz" {
     status          = "legacy"
     evidence        = "probable"
     citation        = "Lubar; frontal-theta excess"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["theta"]
     site            = "Fz"
     direction       = "down"

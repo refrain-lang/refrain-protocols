@@ -12,7 +12,7 @@ protocol "alpha_down_pz" {
     status          = "legacy"
     evidence        = "probable"
     citation        = "Kluetsch/Ros/Lanius 2014; Nicholson 2016"
-    goals           = ["trauma_recovery", "deep_meditative"]
+    goals           = ["deep_meditative"]
     bands           = ["alpha"]
     site            = "Pz"
     direction       = "down"

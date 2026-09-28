@@ -27,7 +27,7 @@ protocol "placement_smr_active" {
     summary           = "SMR up-training at a single sensorimotor site the clinician selects at session start."
     family            = "placement_smr"
     status            = "legacy"
-    goals             = ["adhd_attention"]
+    goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
     indication        = "ADHD_attention_regulation"

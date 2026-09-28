@@ -49,7 +49,7 @@ protocol "high_beta_down" {
     family            = "high_beta_down"
     threshold_style   = "selectable"
     status            = "draft"
-    goals             = ["calm_anxiety"]
+    goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "clinical convention (anxiety/rumination)"
     population        = "adults_18_plus"

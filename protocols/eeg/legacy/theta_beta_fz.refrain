@@ -12,7 +12,7 @@ protocol "theta_beta_fz" {
     status          = "legacy"
     evidence        = "established"
     citation        = "Lubar (theta/beta); frontal-theta excess"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["beta", "theta"]
     site            = "Fz"
     direction       = "up"

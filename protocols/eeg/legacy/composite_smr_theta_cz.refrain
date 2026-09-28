@@ -19,7 +19,7 @@ protocol "composite_smr_theta_cz" {
     status          = "legacy"
     evidence        = "established"
     citation        = "Sterman; Lubar; Arns 2009"
-    goals           = ["adhd_attention", "sensorimotor_sleep"]
+    goals           = ["focus_attention", "sleep_quality"]
     bands           = ["smr", "theta"]
     site            = "Cz"
     direction       = "composite"

@@ -78,7 +78,7 @@ protocol "alpha_theta" {
     family            = "alpha_theta"
     threshold_style   = "selectable"
     status            = "draft"
-    goals             = ["deep_meditative", "trauma_recovery"]
+    goals             = ["deep_meditative"]
     author            = "Peak Mind"
     citation          = "Peniston & Kulkosky 1989, 1991"
     population        = "adults_18_plus"

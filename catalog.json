@@ -40,8 +40,7 @@
         "threshold_style": "selectable",
         "status": "draft",
         "goals": [
-          "deep_meditative",
-          "trauma_recovery"
+          "deep_meditative"
         ],
         "author": "Peak Mind",
         "citation": "Peniston & Kulkosky 1989, 1991",
@@ -85,7 +84,7 @@
         "threshold_style": "selectable",
         "status": "draft",
         "goals": [
-          "calm_anxiety",
+          "calm_stress",
           "deep_meditative"
         ],
         "author": "Peak Mind",
@@ -128,7 +127,7 @@
         "threshold_style": "selectable",
         "status": "draft",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "author": "Peak Mind",
         "citation": "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139.",
@@ -239,8 +238,7 @@
         "evidence": "probable",
         "citation": "Rosenfeld; Baehr & Rosenfeld",
         "goals": [
-          "mood_regulation",
-          "trauma_recovery"
+          "mood_balance"
         ],
         "bands": [
           "alpha"
@@ -265,7 +263,7 @@
         "threshold_style": "selectable",
         "status": "draft",
         "goals": [
-          "calm_anxiety"
+          "calm_stress"
         ],
         "author": "Peak Mind",
         "citation": "clinical convention (anxiety/rumination)",
@@ -328,7 +326,6 @@
         "evidence": "probable",
         "citation": "Kluetsch/Ros/Lanius 2014; Nicholson 2016",
         "goals": [
-          "trauma_recovery",
           "deep_meditative"
         ],
         "bands": [
@@ -383,8 +380,7 @@
         "evidence": "established",
         "citation": "Peniston & Kulkosky 1989, 1991",
         "goals": [
-          "deep_meditative",
-          "trauma_recovery"
+          "deep_meditative"
         ],
         "bands": [
           "alpha",
@@ -439,7 +435,7 @@
         "evidence": "probable",
         "citation": "Hardt & Kamiya 1978",
         "goals": [
-          "calm_anxiety",
+          "calm_stress",
           "deep_meditative"
         ],
         "bands": [
@@ -465,7 +461,7 @@
         "family": "alpha_up_pz",
         "status": "legacy",
         "goals": [
-          "calm_anxiety"
+          "calm_stress"
         ],
         "author": "Peak Mind",
         "citation": "Hardt J.V. & Kamiya J. (1978). Anxiety change through electroencephalographic alpha feedback. Science, 201(4350), 79-81.",
@@ -496,7 +492,7 @@
         "citation": "Othmer & Othmer (arousal model)",
         "goals": [
           "alertness_performance",
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "beta"
@@ -576,8 +572,8 @@
         "evidence": "established",
         "citation": "Sterman; Lubar; Arns 2009",
         "goals": [
-          "adhd_attention",
-          "sensorimotor_sleep"
+          "focus_attention",
+          "sleep_quality"
         ],
         "bands": [
           "smr",
@@ -603,7 +599,7 @@
         "family": "composite_smr_theta_cz",
         "status": "legacy",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
@@ -661,7 +657,7 @@
         "evidence": "probable",
         "citation": "clinical convention (anxiety/rumination)",
         "goals": [
-          "calm_anxiety"
+          "calm_stress"
         ],
         "bands": [
           "high-beta"
@@ -686,7 +682,7 @@
         "family": "hibeta_down_cz",
         "status": "legacy",
         "goals": [
-          "calm_anxiety"
+          "calm_stress"
         ],
         "author": "Peak Mind",
         "citation": "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137.",
@@ -742,7 +738,7 @@
         "family": "placement_smr",
         "status": "legacy",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
@@ -768,7 +764,7 @@
         "citation": "Thatcher; Walker (qEEG-guided slowing)",
         "goals": [
           "alertness_performance",
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "delta",
@@ -796,7 +792,7 @@
         "citation": "Thatcher; Walker (frontal slowing)",
         "goals": [
           "alertness_performance",
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "delta",
@@ -823,7 +819,7 @@
         "threshold_style": "selectable",
         "status": "legacy",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
@@ -853,7 +849,7 @@
         "family": "smr_cz",
         "status": "legacy",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
@@ -884,7 +880,7 @@
         "threshold_style": "selectable",
         "status": "legacy",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
@@ -915,8 +911,8 @@
         "evidence": "established",
         "citation": "Sterman; Lubar; Arns 2009",
         "goals": [
-          "adhd_attention",
-          "sensorimotor_sleep"
+          "focus_attention",
+          "sleep_quality"
         ],
         "bands": [
           "smr",
@@ -943,8 +939,8 @@
         "evidence": "established",
         "citation": "Sterman; Hoedlmoser 2008",
         "goals": [
-          "sensorimotor_sleep",
-          "calm_anxiety"
+          "sleep_quality",
+          "calm_stress"
         ],
         "bands": [
           "smr"
@@ -970,7 +966,7 @@
         "threshold_style": "selectable",
         "status": "legacy",
         "goals": [
-          "sensorimotor_sleep"
+          "sleep_quality"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416.",
@@ -1001,7 +997,7 @@
         "evidence": "established",
         "citation": "Lubar (theta/beta)",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "beta",
@@ -1028,7 +1024,7 @@
         "evidence": "established",
         "citation": "Lubar (theta/beta); frontal-theta excess",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "beta",
@@ -1055,7 +1051,7 @@
         "evidence": "probable",
         "citation": "Lubar (theta downtraining)",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "theta"
@@ -1081,7 +1077,7 @@
         "evidence": "probable",
         "citation": "Lubar; frontal-theta excess",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "theta"
@@ -1132,7 +1128,7 @@
         "family": "placement_smr",
         "status": "draft",
         "goals": [
-          "sensorimotor_sleep"
+          "sleep_quality"
         ],
         "author": "Peak Mind",
         "indication": "sensorimotor_regulation",
@@ -1155,7 +1151,7 @@
         "family": "placement_smr",
         "status": "draft",
         "goals": [
-          "sensorimotor_sleep"
+          "sleep_quality"
         ],
         "author": "Peak Mind",
         "indication": "sensorimotor_regulation",
@@ -1179,8 +1175,8 @@
         "threshold_style": "selectable",
         "status": "draft",
         "goals": [
-          "adhd_attention",
-          "sensorimotor_sleep"
+          "focus_attention",
+          "sleep_quality"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
@@ -1228,7 +1224,7 @@
         "family": "smr_cz",
         "status": "reviewed",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
@@ -1259,8 +1255,9 @@
         "evidence": "established",
         "citation": "Lehrer & Gevirtz 2014 (resonance-frequency HRV biofeedback)",
         "goals": [
-          "calm_anxiety",
-          "flow_connectivity"
+          "calm_stress",
+          "flow_connectivity",
+          "interoception"
         ],
         "bands": [
           "hrv-lf"
@@ -1286,7 +1283,7 @@
         "evidence": "established",
         "citation": "Strehl et al. 2006; Kotchoubey & Birbaumer 2001",
         "goals": [
-          "adhd_attention"
+          "focus_attention"
         ],
         "bands": [
           "scp"

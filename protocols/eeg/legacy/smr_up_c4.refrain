@@ -14,7 +14,7 @@ protocol "smr_up_c4" {
     status          = "legacy"
     evidence        = "established"
     citation        = "Sterman; Hoedlmoser 2008"
-    goals           = ["sensorimotor_sleep", "calm_anxiety"]
+    goals           = ["sleep_quality", "calm_stress"]
     bands           = ["smr"]
     site            = "C4"
     direction       = "up"

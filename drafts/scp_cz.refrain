@@ -27,7 +27,7 @@ protocol "scp_cz" {
     status          = "roadmap"
     evidence        = "established"
     citation        = "Strehl et al. 2006; Kotchoubey & Birbaumer 2001"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["scp"]
     site            = "Cz"
     threshold_style = "baseline"

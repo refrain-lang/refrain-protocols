@@ -27,7 +27,7 @@ protocol "smr_up_c4_brainbit_v1" {
     family            = "smr_up_c4"
     threshold_style   = "selectable"
     status            = "legacy"
-    goals             = ["sensorimotor_sleep"]
+    goals             = ["sleep_quality"]
     author            = "Peak Mind"
     citation          = "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416."
     population        = "adults_18_plus"

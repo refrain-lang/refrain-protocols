@@ -14,7 +14,7 @@ protocol "slow_down_cz" {
     status          = "legacy"
     evidence        = "exploratory"
     citation        = "Thatcher; Walker (qEEG-guided slowing)"
-    goals           = ["alertness_performance", "adhd_attention"]
+    goals           = ["alertness_performance", "focus_attention"]
     bands           = ["delta", "theta"]
     site            = "Cz"
     direction       = "down"

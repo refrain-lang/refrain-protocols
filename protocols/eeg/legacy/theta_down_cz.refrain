@@ -14,7 +14,7 @@ protocol "theta_down_cz" {
     status          = "legacy"
     evidence        = "probable"
     citation        = "Lubar (theta downtraining)"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["theta"]
     site            = "Cz"
     direction       = "down"

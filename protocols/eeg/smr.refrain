@@ -74,7 +74,7 @@ protocol "smr" {
     family            = "smr"
     threshold_style   = "selectable"
     status            = "draft"
-    goals             = ["adhd_attention", "sensorimotor_sleep"]
+    goals             = ["focus_attention", "sleep_quality"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
     population        = "children_adults"

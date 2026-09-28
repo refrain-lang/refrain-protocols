@@ -16,7 +16,7 @@ protocol "theta_beta_cz" {
     status          = "legacy"
     evidence        = "established"
     citation        = "Lubar (theta/beta)"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["beta", "theta"]
     site            = "Cz"
     direction       = "up"
