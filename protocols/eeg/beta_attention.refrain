@@ -5,20 +5,20 @@
 // templates-design.md, recorder repo). Supersedes beta_up_cz.refrain: same
 // three-band operant shape (lo-beta reward, theta + high-beta inhibit) that
 // file's own header predicted would be reproduced "by configuration" once
-// this template existed — site, bands, and thresholds are clinician-tunable
+// this template existed — site, bands, and thresholds are practitioner-tunable
 // instead of frozen at Cz/15-20/4-8/22-30.
 //
-// Canonical defaults (the standard ADHD/attention menu) reproduce the
+// Canonical defaults (the standard attention menu) reproduce the
 // beta_up_cz recipe at Cz: reward lo-beta (15-18 Hz) up, inhibit theta
 // (4-8 Hz) and high-beta (22-30 Hz), with an EMG artifact guard — one click,
-// every knob there for the clinician who wants to deviate.
+// every knob there for the practitioner who wants to deviate.
 //
 // Design choices carried verbatim from smr.refrain (see that file's header
 // for the full rationale):
 //   - `site` is a `placement` control (kind = "active") over a named
 //     `sensorimotor` group — device-generic, resolves against whatever
 //     channels the connected amp exposes. Cz is the beta_up_cz default;
-//     C3/C4 are clinician alternates on the same strip.
+//     C3/C4 are practitioner alternates on the same strip.
 //   - `threshold_style` folds all three thresholds between adaptive
 //     percentile and baseline-fixed absolute (seeded from the live signal).
 //   - Band edges are PAIRED `frequency` controls, referenced directly in
@@ -43,21 +43,18 @@ protocol "beta_attention" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
-    description       = "Configurable lo-beta (15-18 Hz) up-training template — clinician-selected site, bands, and thresholds"
+    evidence          = "probable"
+    description       = "Configurable lo-beta (15-18 Hz) up-training template — practitioner-selected site, bands, and thresholds"
     title             = "Beta attention training — configurable"
-    summary           = "Rewards raising engaged lo-beta while inhibiting theta and high-beta, at a clinician-chosen site, with adaptive or baseline-fixed thresholds."
+    summary           = "Rewards raising engaged lo-beta while inhibiting theta and high-beta, at a chosen site, with adaptive or baseline-fixed thresholds."
     family            = "beta_attention"
     threshold_style   = "selectable"
     status            = "draft"
-    goals             = ["adhd_attention"]
+    modality          = "eeg"
+    goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Egner T. & Gruzelier J.H. (2004). EEG biofeedback of low beta band components: frequency-specific effects on variables of attention and event-related brain potentials. Clinical Neurophysiology, 115(1), 131-139."
-    population        = "children_adults"
-    indication        = "attention_regulation"
     control_ref       = "library/operant/beta_attention_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
     advanced_controls = [
       "site",
       "lobeta_lo_hz", "lobeta_hi_hz",

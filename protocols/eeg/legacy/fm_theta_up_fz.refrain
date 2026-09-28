@@ -10,6 +10,7 @@ protocol "fm_theta_up_fz" {
     family          = "fm_theta_up_fz"
     description     = "THETA up-train at Fz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "exploratory"
     citation        = "Ishihara & Yoshii; Gruzelier"
     goals           = ["deep_meditative", "alertness_performance"]

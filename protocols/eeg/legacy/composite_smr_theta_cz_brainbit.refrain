@@ -2,9 +2,9 @@
 //
 // Demonstrates Refrain v0.6.0's weighted multi-component reward engine:
 // one reward component (SMR up) and one suppress band (theta down), each
-// with its own clinician-tunable weight control, combined into
+// with its own practitioner-tunable weight control, combined into
 // `reward.composite` (a weighted average of per-component success in
-// [0,1]). The patient feedback is bound directly to the composite. This
+// [0,1]). The person feedback is bound directly to the composite. This
 // is the classic z-score / summary-score model.
 //
 // Same bands/montage as smr_cz_brainbit.refrain, but the reward is a
@@ -20,20 +20,17 @@ protocol "composite_smr_theta_cz_brainbit_v1" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "SMR-up / theta-down weighted composite at Cz, BrainBit Flex monopolar"
     title             = "Steady focus — SMR up / theta down blend (top of head)"
     summary           = "BrainBit: a weighted blend rewarding more SMR and less theta together at the top of the head."
     family            = "composite_smr_theta_cz"
     status            = "legacy"
-    goals             = ["adhd_attention"]
+    modality          = "eeg"
+    goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
-    population        = "children_adults"
-    indication        = "ADHD_attention_regulation"
     control_ref       = "library/operant/smr_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
   }
 
   requires {

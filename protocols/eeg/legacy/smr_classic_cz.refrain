@@ -9,7 +9,7 @@
 //
 // Design choices:
 //   - SMR threshold is an ADAPTIVE percentile of the trainee's own signal,
-//     defaulting LOW (40th pct) so reward fires often at first; the clinician
+//     defaulting LOW (40th pct) so reward fires often at first; the practitioner
 //     tightens it over the session (operant shaping).
 //   - Theta is a LOOSE veto: theta-below-its-80th-percentile is true ~80% of
 //     the time, so it only blocks reward during genuine drowsiness, not as a
@@ -20,7 +20,7 @@
 // Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
 // one of the four deliberately differentiated "smr_cz" family protocols.
 //
@@ -33,21 +33,18 @@ protocol "smr_classic_cz" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection)"
     title             = "Classic SMR training (top of head)"
     summary           = "The faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds."
     family            = "smr_cz"
     threshold_style   = "selectable"
     status            = "legacy"
-    goals             = ["adhd_attention"]
+    modality          = "eeg"
+    goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
-    population        = "children_adults"
-    indication        = "ADHD_attention_regulation"
     control_ref       = "library/operant/smr_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
   }
 
   requires {

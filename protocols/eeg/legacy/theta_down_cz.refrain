@@ -12,9 +12,10 @@ protocol "theta_down_cz" {
     family          = "theta_down_cz"
     description     = "THETA down-train at Cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "probable"
     citation        = "Lubar (theta downtraining)"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["theta"]
     site            = "Cz"
     direction       = "down"

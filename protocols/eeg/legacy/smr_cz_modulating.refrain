@@ -1,6 +1,6 @@
 // RETIRED: uses continuous ambient audio_gain modulation as the operant
 // signal itself, rather than a discrete chime — a feedback mode the
-// clinical library no longer differentiates as a separate protocol.
+// reference library no longer differentiates as a separate protocol.
 // Kept runnable for subjects already assigned it; hidden from the default picker.
 // SMR / theta-beta operant training at Cz — continuously-modulating
 // output variant.
@@ -11,12 +11,12 @@
 // ratio at all times, not just during dwell-active windows.
 //
 // Intended for hosts that map audio_gain onto an ambient feedback
-// channel (system-volume modulation of patient-chosen media, screen-
+// channel (system-volume modulation of person-chosen media, screen-
 // dimming overlay, etc.) where continuous modulation IS the operant
 // signal and the discrete dwell event is informational-only.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
 // one of the four deliberately differentiated "smr_cz" family protocols.
 
@@ -24,20 +24,17 @@ protocol "smr_cz_modulating" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "SMR/theta-beta operant training at Cz"
     title             = "Classic SMR training — ambient feedback (top of head)"
     summary           = "SMR operant at the top of the head with continuous ambient (modulating) audio feedback."
     family            = "smr_cz"
     status            = "legacy"
-    goals             = ["adhd_attention"]
+    modality          = "eeg"
+    goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
-    population        = "children_adults"
-    indication        = "ADHD_attention_regulation"
     control_ref       = "library/operant/smr_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
   }
 
   requires {

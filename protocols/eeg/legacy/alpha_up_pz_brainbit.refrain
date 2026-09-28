@@ -20,20 +20,17 @@ protocol "alpha_up_pz_brainbit_v1" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "Alpha uptraining at Pz, BrainBit Flex monopolar — Calm-goal lead protocol"
     title             = "Calm the mind — boost alpha (back of head)"
-    summary           = "BrainBit: rewards raising relaxed alpha at the back of the head, for calm and lowered anxiety."
+    summary           = "BrainBit: rewards raising relaxed alpha at the back of the head, for a calm, settled state."
     family            = "alpha_up_pz"
     status            = "legacy"
-    goals             = ["calm_anxiety"]
+    modality          = "eeg"
+    goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "Hardt J.V. & Kamiya J. (1978). Anxiety change through electroencephalographic alpha feedback. Science, 201(4350), 79-81."
-    population        = "children_adults"
-    indication        = "calm_anxiety_relaxation"
     control_ref       = "library/alpha_up/sham@1.0"
-    safety_monitoring = ["pre_session_check"]
-    outcome_measures  = ["subjective_state_report", "STAI"]
   }
 
   requires {

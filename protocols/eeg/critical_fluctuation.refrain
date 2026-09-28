@@ -23,7 +23,7 @@
 //   Maturana et al. 2020 (Nat. Commun. 11:2172); Yang et al. 2012 (J. Neurosci. 32:1061).
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "linked_ears" reference, so one file resolves on both a clinical amp and a
+// "linked_ears" reference, so one file resolves on both a research amp and a
 // consumer amp.
 //
 // sample_rate deliberately LEFT at >= 256 Hz (not relaxed to 250 Hz like the

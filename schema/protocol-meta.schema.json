@@ -20,33 +20,33 @@
     },
 
     "status": {
-      "description": "OUR file maturity / test status (distinct from clinical `evidence`). 'legacy' marks a protocol superseded by a newer one: still runnable, hidden from the default picker.",
+      "description": "OUR file maturity / test status (distinct from `evidence`, which describes the technique's prior art). 'legacy' marks a protocol superseded by a newer one: still runnable, hidden from the default picker.",
       "enum": ["draft", "roadmap", "reviewed", "stable", "legacy"]
     },
     "evidence": {
-      "description": "Clinical-literature support tier (distinct from `status`).",
+      "description": "How established the signal-training APPROACH is in prior art (distinct from `status`, which is our file's maturity). This is provenance about the technique, not a claim about outcomes for any person.",
       "enum": ["established", "probable", "exploratory"]
     },
-    "citation": { "type": "string", "description": "Author-anchored reference; required once status > draft." },
+    "citation": { "type": "string", "description": "Author-anchored reference for where the approach comes from — origin and prior art, not proof of outcome. Required once status > draft." },
 
     "goals": {
-      "description": "Clinical-goal categories (MULTI-membership). Drives the picker's groups. Controlled vocab; unknown values land in 'Other'.",
+      "description": "Wellness-framed training goal categories (MULTI-membership). Drives the picker's groups. Controlled vocab; a host app buckets an unknown value into 'Other' rather than dropping the protocol. These are training goals, not indications: no diagnostic or therapeutic claim is made or implied.",
       "type": "array",
       "items": {
         "enum": [
-          "adhd_attention", "sensorimotor_sleep", "alertness_performance",
-          "calm_anxiety", "flow_connectivity", "deep_meditative",
-          "mood_regulation", "trauma_recovery"
+          "focus_attention", "calm_stress", "sleep_quality",
+          "alertness_performance", "mood_balance", "flow_connectivity",
+          "deep_meditative", "interoception"
         ]
       },
       "minItems": 1
     },
     "bands": {
-      "description": "Band chips shown on the row.",
+      "description": "Band chips shown on the row. Modality-scoped and optional: EEG bands like 'alpha'/'smr', HRV bands like 'hrv-lf'. Omit for modalities with no band concept, e.g. a raw skin-conductance level.",
       "type": "array",
       "items": { "type": "string" }
     },
-    "site": { "type": "string", "description": "Scalp site(s), e.g. 'Cz', 'F3/F4', 'tachogram'." },
+    "site": { "type": "string", "description": "Channel / source label — an EEG scalp site such as 'Cz' or 'F3/F4', or a non-EEG source label such as 'tachogram', 'gsr', 'temp'." },
     "direction": {
       "description": "Training direction.",
       "enum": ["up", "down", "composite", "crossover", "asymmetry"]
@@ -56,10 +56,14 @@
       "enum": ["adaptive", "baseline", "crossover", "selectable"]
     },
     "reward_style": { "enum": ["operant", "graded", "weighted"] },
-    "modality": { "enum": ["eeg", "hrv"], "default": "eeg" },
+    "modality": {
+      "description": "Signal family the protocol trains.",
+      "enum": ["eeg", "ecg", "hrv", "gsr", "emg", "temp", "resp"],
+      "default": "eeg"
+    },
     "hardware": {
-      "description": "Amp class the protocol targets. 'clinical_amp' = greyed out on a consumer amp.",
-      "enum": ["generic", "brainbit_flex", "clinical_amp"]
+      "description": "Capability class the protocol targets. 'research_amp' = greyed out on a consumer device.",
+      "enum": ["generic", "brainbit_flex", "research_amp"]
     },
     "requires_features": {
       "description": "Engine/hardware features the protocol needs (e.g. dc_coupling, trials). Used to grey-out unrunnable protocols.",

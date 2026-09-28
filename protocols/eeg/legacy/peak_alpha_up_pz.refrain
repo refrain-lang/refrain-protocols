@@ -10,6 +10,7 @@ protocol "peak_alpha_up_pz" {
     family          = "peak_alpha_up_pz"
     description     = "ALPHA up-train at Pz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "exploratory"
     citation        = "Hanslmayr; Gruzelier 2014"
     goals           = ["alertness_performance", "deep_meditative"]

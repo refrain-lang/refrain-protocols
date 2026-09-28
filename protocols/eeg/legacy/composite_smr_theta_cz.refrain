@@ -1,6 +1,6 @@
 // composite_smr_theta_cz.refrain  —  DRAFT (status=draft, untested)
 // SMR-up / theta-down as a WEIGHTED COMPOSITE reward. The two weights are the
-// live clinician knobs (unitless relative weights — `number`, not `percent`:
+// live practitioner knobs (unitless relative weights — `number`, not `percent`:
 // the composite is Sum(w*success)/Sum(w), so only the RATIO matters).
 // NOTE: requires refrain >= the release that adds the `number` control kind;
 // it parses today but won't resolve until then.
@@ -17,9 +17,10 @@ protocol "composite_smr_theta_cz" {
     summary         = "A weighted blend rewarding more SMR and less theta together at the top of the head."
     family          = "composite_smr_theta_cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "established"
     citation        = "Sterman; Lubar; Arns 2009"
-    goals           = ["adhd_attention", "sensorimotor_sleep"]
+    goals           = ["focus_attention", "sleep_quality"]
     bands           = ["smr", "theta"]
     site            = "Cz"
     direction       = "composite"

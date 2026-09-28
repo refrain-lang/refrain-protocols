@@ -12,9 +12,10 @@ protocol "theta_down_fz" {
     family          = "theta_down_fz"
     description     = "THETA down-train at Fz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "probable"
     citation        = "Lubar; frontal-theta excess"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["theta"]
     site            = "Fz"
     direction       = "down"

@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased — biosignal reframe (BREAKING)
+
+The library is now a general-purpose **biosignal** training-protocol library:
+modality-neutral, and general-wellness rather than clinical in what it ships.
+No protocol's behaviour changed — no pipeline, threshold, reward, or inhibit
+was touched, and the fuzzer result is byte-identical to `main`
+(4/4 and 22/22 pass, 0 violations, 0 errors).
+
+### Breaking
+- **`goals` vocabulary replaced.** `adhd_attention`→`focus_attention`,
+  `calm_anxiety`→`calm_stress`, `sensorimotor_sleep`→`sleep_quality`,
+  `mood_regulation`→`mood_balance`. `trauma_recovery` is removed;
+  `interoception` is new. Hosts bucket unknown values into "Other" as before.
+- **`modality` widened** to `eeg`, `ecg`, `hrv`, `gsr`, `emg`, `temp`, `resp`;
+  default stays `eeg`. Every EEG protocol now declares it explicitly.
+- **`hardware`**: `clinical_amp` → `research_amp`.
+- **Dropped from distributed files:** `indication`, `population`,
+  `safety_monitoring`, `outcome_measures`. A host that needs them keeps them
+  host-side. `control_ref` is kept.
+
+### Changed
+- `evidence` and `citation` describe how established a **technique** is and
+  where it comes from — provenance, not efficacy. The tiers are unchanged.
+- 21 files carried an `evidence` value that was never in the enum (19 `demo`,
+  2 `clinical`). Each now carries the tier a same-technique file in the
+  library already claimed — from its own protocol family where one existed
+  (6 files), otherwise from the nearest family training the same thing. No
+  file's tier was raised past a claim already in the library.
+- Comments, titles, and summaries describe the signal training rather than a
+  condition. Citations keep their real paper titles.
+
+### Added
+- `tests/test_corpus_schema.py` — validates every protocol against the whole
+  schema. Its absence is why the `evidence` drift went unnoticed.
+- `tests/test_neutrality.py` — forbids the dropped fields and indication
+  language in distributed prose.
+
 ## [0.1.0] — unreleased
 Initial seed of the reference protocol library. **All protocols `status = "draft"` (untested).**
 

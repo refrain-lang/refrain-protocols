@@ -20,21 +20,18 @@ protocol "smr_up_c4_brainbit_v1" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "clinical"
+    evidence          = "established"
     description       = "SMR (12-15 Hz) uptraining at C4, BrainBit Flex monopolar — Sleep-goal protocol"
     title             = "Wind down for sleep — boost SMR (right side)"
     summary           = "BrainBit: SMR uptraining over the right sensorimotor cortex, associated with sleep spindles and settling, with adaptive or baseline-fixed thresholds."
     family            = "smr_up_c4"
     threshold_style   = "selectable"
     status            = "legacy"
-    goals             = ["sensorimotor_sleep"]
+    modality          = "eeg"
+    goals             = ["sleep_quality"]
     author            = "Peak Mind"
     citation          = "Sterman M.B., Macdonald L.R., Stone R.K. (1974). Biofeedback training of the sensorimotor electroencephalogram rhythm in man: effects on epilepsy. Epilepsia, 15(3), 395-416."
-    population        = "adults_18_plus"
-    indication        = "sleep_onset_sensorimotor_stability"
     control_ref       = "library/smr_up/sham@1.0"
-    safety_monitoring = ["pre_session_check"]
-    outcome_measures  = ["sleep_diary", "PSQI", "subjective_state_report"]
   }
 
   requires {

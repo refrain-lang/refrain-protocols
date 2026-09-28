@@ -14,6 +14,7 @@ protocol "beta_up_fz" {
     family          = "beta_up_fz"
     description     = "BETA up-train at Fz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "probable"
     citation        = "frontal beta activation"
     goals           = ["alertness_performance"]

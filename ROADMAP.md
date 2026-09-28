@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Status of the seed library
-Everything in `protocols/` + `drafts/` is **`status = "draft"`** — parse-valid and tag-complete, but **not clinically validated in this system**. The path forward is to graduate protocols `draft → reviewed → stable` one at a time, which flips on the stricter CI gates (must `resolve()`, must have a citation).
+Most of `protocols/` + `drafts/` is **`status = "draft"`** — parse-valid and tag-complete, but **not validated in this system**. The path forward is to graduate protocols `draft → reviewed → stable` one at a time, which flips on the stricter CI gates (must `resolve()`, must have a citation).
 
 ## Known dependencies / engine work
 1. **`number` control kind** (in `refrain-lang/refrain`). `composite_smr_theta_cz.refrain` uses `number` weights (unitless relative weights, replacing the misleading `percent`). It **parses today but won't `resolve()` until** refrain ships the `number` kind. → small additive refrain PR + release, then pin it here.
@@ -15,6 +15,6 @@ Everything in `protocols/` + `drafts/` is **`status = "draft"`** — parse-valid
 - **Roadmap**: SCP.
 
 ## Wanted next
-- Hardware overlays (`brainbit_flex`, `clinical_amp`) via `extends`, once the multi-parent `extends` story is confirmed in `refrain/compose.py`.
+- Hardware overlays (`brainbit_flex`, `research_amp`) via `extends`, once the multi-parent `extends` story is confirmed in `refrain/compose.py`.
 - A `refrain catalog <dir>` CLI so host apps don't ship their own scanner.
-- Per-protocol clinical review + citation firming as each leaves `draft`.
+- Per-protocol review + citation firming as each leaves `draft`.

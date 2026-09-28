@@ -14,9 +14,10 @@ protocol "theta_beta_cz" {
     family          = "theta_beta_cz"
     description     = "BETA/THETA up-train at Cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "established"
     citation        = "Lubar (theta/beta)"
-    goals           = ["adhd_attention"]
+    goals           = ["focus_attention"]
     bands           = ["beta", "theta"]
     site            = "Cz"
     direction       = "up"

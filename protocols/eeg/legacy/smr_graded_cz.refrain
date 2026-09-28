@@ -25,7 +25,7 @@
 // Electrode placement: scalp channel #1 at Cz; others unused by this protocol.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded
-// "device" reference, so one file resolves on both a clinical amp and a
+// "device" reference, so one file resolves on both a research amp and a
 // consumer amp. No top-level counterpart (docs/fork-audit-2026-07.md §3) —
 // one of the four deliberately differentiated "smr_cz" family protocols.
 
@@ -33,21 +33,18 @@ protocol "smr_graded_cz" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "Graded adaptive SMR/theta composite at Cz (baseline-anchored, continuous feedback)"
     title             = "Graded SMR training (top of head)"
     summary           = "Always-on graded SMR/theta feedback showing how close you are, with adaptive or baseline-fixed anchors."
     family            = "smr_cz"
     threshold_style   = "selectable"
     status            = "legacy"
-    goals             = ["adhd_attention"]
+    modality          = "eeg"
+    goals             = ["focus_attention"]
     author            = "Peak Mind"
     citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
-    population        = "children_adults"
-    indication        = "ADHD_attention_regulation"
     control_ref       = "library/operant/smr_sham@1.0"
-    safety_monitoring = ["pre_session_check", "intra_session_clinician_observation"]
-    outcome_measures  = ["IVA-2_continuous_performance", "Conners-3"]
   }
 
   requires {
@@ -126,7 +123,7 @@ protocol "smr_graded_cz" {
   }
 
   output {
-    // Always-on graded feedback — the patient hears how close they are even
+    // Always-on graded feedback — the person hears how close they are even
     // when not yet "in zone"; the chime marks sustained good performance.
     audio_gain  = reward.composite
     audio_chime = reward.event

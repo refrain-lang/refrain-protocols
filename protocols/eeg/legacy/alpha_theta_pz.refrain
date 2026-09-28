@@ -4,7 +4,7 @@
 // Distinct from the operant up/down protocols — uses the deep session template.
 //
 // Amp-portable (2026-07): reads amp.reference instead of a hardcoded reference
-// scheme, so one file resolves on both a clinical amp (linked_ears) and a
+// scheme, so one file resolves on both a research amp (linked_ears) and a
 // consumer amp (device). Carries the EMG inhibit from the retired BrainBit
 // fork (protocols/eeg/legacy/alpha_theta_pz_brainbit.refrain) — muscle
 // artifact in the eyes-closed, reclined posture is the dominant noise source
@@ -25,9 +25,10 @@ protocol "alpha_theta_pz" {
     summary         = "Eyes-closed deep-state training that rewards theta rising above alpha at the back of the head (the Peniston-Kulkosky protocol)."
     family          = "alpha_theta_pz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "established"
     citation        = "Peniston & Kulkosky 1989, 1991"
-    goals           = ["deep_meditative", "trauma_recovery"]
+    goals           = ["deep_meditative"]
     bands           = ["alpha", "theta"]
     site            = "Pz"
     direction       = "crossover"
@@ -53,7 +54,7 @@ protocol "alpha_theta_pz" {
 
   // EMG inhibit (carried over from the retired BrainBit fork) — muscle
   // artifact in the eyes-closed, reclined posture is the dominant noise
-  // source; mute audio briefly while it's present so the patient isn't
+  // source; mute audio briefly while it's present so the person isn't
   // rewarded for tensing up.
   inhibit "emg" {
     metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)

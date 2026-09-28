@@ -12,9 +12,10 @@ protocol "slow_down_fz" {
     family          = "slow_down_fz"
     description     = "DELTA/THETA down-train at Fz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "exploratory"
     citation        = "Thatcher; Walker (frontal slowing)"
-    goals           = ["alertness_performance", "adhd_attention"]
+    goals           = ["alertness_performance", "focus_attention"]
     bands           = ["delta", "theta"]
     site            = "Fz"
     direction       = "down"

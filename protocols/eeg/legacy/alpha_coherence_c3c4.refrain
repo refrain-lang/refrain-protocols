@@ -3,7 +3,7 @@
 // the alpha band between hemispheres. Needs two channels.
 //
 // RETIRED: superseded by protocols/eeg/alpha_coherence.refrain, which uses the same
-// coherence() primitive over a clinician-selectable pair (C3/C4 is one of the
+// coherence() primitive over a practitioner-selectable pair (C3/C4 is one of the
 // allowed choices there). Kept runnable for subjects already assigned it; hidden
 // from the default picker.
 protocol "alpha_coherence_c3c4" {
@@ -14,6 +14,7 @@ protocol "alpha_coherence_c3c4" {
     summary         = "Rewards stronger alpha-band coherence between the left and right sensorimotor areas, a connectivity and flow target."
     family          = "alpha_coherence_c3c4"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "exploratory"
     citation        = "Gruzelier 2014"
     goals           = ["flow_connectivity"]

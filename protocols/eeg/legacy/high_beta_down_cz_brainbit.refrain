@@ -2,7 +2,7 @@
 //
 // Reward when high-beta (22-30 Hz) amplitude is BELOW the adaptive
 // percentile — i.e., the user is rewarded for quieting the band
-// associated with rumination, worry, and over-arousal.
+// associated with over-arousal.
 //
 // Calm-goal protocol. Pairs naturally with alpha-up at Pz: alpha-up
 // trains positive presence of a calm rhythm, high-beta-down trains
@@ -19,20 +19,17 @@ protocol "high_beta_down_cz_brainbit_v1" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "High-beta (22-30 Hz) downtraining at Cz, BrainBit Flex monopolar"
     title             = "Ease over-arousal — quiet high-beta (top of head)"
-    summary           = "BrainBit: rewards lowering fast high-beta activity linked to anxiety and rumination."
+    summary           = "BrainBit: rewards lowering fast high-beta activity."
     family            = "hibeta_down_cz"
     status            = "legacy"
-    goals             = ["calm_anxiety"]
+    modality          = "eeg"
+    goals             = ["calm_stress"]
     author            = "Peak Mind"
     citation          = "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137."
-    population        = "adults_18_plus"
-    indication        = "anxiety_rumination_overarousal"
     control_ref       = "library/high_beta_down/sham@1.0"
-    safety_monitoring = ["pre_session_check"]
-    outcome_measures  = ["subjective_state_report", "STAI"]
   }
 
   requires {

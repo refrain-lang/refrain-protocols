@@ -1,5 +1,5 @@
 // hibeta_down_cz.refrain  —  DRAFT (status=draft, untested)
-// HIGH-BETA down-train at Cz.  clinical convention (anxiety/rumination)
+// HIGH-BETA down-train at Cz.
 //
 // RETIRED: superseded by protocols/eeg/high_beta_down.refrain — set the site
 // to Cz (already the template default; the trained band, ~20.5-30.8 Hz,
@@ -9,13 +9,14 @@ protocol "hibeta_down_cz" {
   meta {
     version         = "0.1.0"
     title           = "Ease over-arousal — quiet high-beta (top of head)"
-    summary         = "Rewards lowering fast high-beta activity associated with anxiety and rumination."
+    summary         = "Rewards lowering fast high-beta activity."
     family          = "hibeta_down_cz"
     description     = "HIGH-BETA down-train at Cz"
     status          = "legacy"
+    modality        = "eeg"
     evidence        = "probable"
-    citation        = "clinical convention (anxiety/rumination)"
-    goals           = ["calm_anxiety"]
+    citation        = "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137."
+    goals           = ["calm_stress"]
     bands           = ["high-beta"]
     site            = "Cz"
     direction       = "down"
