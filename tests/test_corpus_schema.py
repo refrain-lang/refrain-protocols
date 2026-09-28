@@ -1,0 +1,50 @@
+# Copyright 2026 Refrain Language Authors. Apache-2.0.
+"""Whole-schema validation of every distributed protocol.
+
+tests/test_catalog.py hand-checks a few fields. This validates the entire
+`meta` block against protocol-meta.schema.json, which is what catches a tier
+or enum value nobody declared -- the hole that let `evidence = "demo"` sit in
+19 files unnoticed.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import jsonschema
+import pytest
+from refrain.parser import parse
+
+ROOT = Path(__file__).resolve().parents[1]
+ALL = sorted((ROOT / "protocols").rglob("*.refrain")) + sorted(
+    (ROOT / "drafts").rglob("*.refrain")
+)
+SCHEMA = json.loads((ROOT / "schema" / "protocol-meta.schema.json").read_text())
+
+
+def _meta(path: Path) -> dict:
+    f = parse(path.read_text())
+    out: dict = {}
+    for stmt in f.protocol.body:
+        if getattr(stmt, "keyword", None) == "meta":
+            for a in stmt.body:
+                v = a.value
+                out[a.target] = (
+                    [getattr(e, "value", None) for e in v.elements]
+                    if hasattr(v, "elements") else getattr(v, "value", None)
+                )
+    return out
+
+
+@pytest.mark.parametrize("path", ALL, ids=lambda p: p.name)
+def test_whole_meta_validates(path):
+    jsonschema.validate(_meta(path), SCHEMA)
+
+
+def test_unknown_evidence_tier_rejected():
+    # Review Focus 5: the gate must reject ANY unknown tier, not just the two
+    # bad values that happened to be in the corpus.
+    doc = {"description": "d", "status": "draft", "goals": ["focus_attention"],
+           "evidence": "definitely_not_a_tier"}
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(doc, SCHEMA)
