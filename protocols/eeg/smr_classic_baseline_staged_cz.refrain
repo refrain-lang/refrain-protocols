@@ -32,7 +32,7 @@ protocol "smr_classic_baseline_staged_cz" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "Staged SMR operant training at Cz (4×5-min blocks with 2-min rests, one baseline), baseline-fixed thresholds"
     title             = "Classic SMR training — staged blocks (top of head)"
     summary           = "Classic SMR operant in four short blocks with rests, using fixed baseline thresholds."

@@ -30,7 +30,7 @@ protocol "beta_up_cz" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "Beta1 (15-20 Hz) uptraining at Cz with theta inhibit"
     title             = "Alert focus — boost beta (top of head)"
     summary           = "Rewards raising engaged beta with a theta inhibit at the top of the head."

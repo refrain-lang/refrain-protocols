@@ -33,7 +33,7 @@ protocol "smr_classic_cz" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "Classic SMR operant training at Cz (SMR up, loose theta inhibit, EMG artifact rejection)"
     title             = "Classic SMR training (top of head)"
     summary           = "The faithful Sterman/Lubar SMR operant at the top of the head, with adaptive or baseline-fixed thresholds."

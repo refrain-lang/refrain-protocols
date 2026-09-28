@@ -48,3 +48,27 @@ def test_unknown_evidence_tier_rejected():
            "evidence": "definitely_not_a_tier"}
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(doc, SCHEMA)
+
+
+PLACEHOLDER_CITATIONS = ("clinical convention", "convention", "n/a", "tbd", "")
+
+
+@pytest.mark.parametrize("path", ALL, ids=lambda p: p.name)
+def test_citation_is_a_real_reference(path):
+    m = _meta(path)
+    cite = (m.get("citation") or "").strip()
+
+    # A draft may not have a citation yet; anything past draft must.
+    if m.get("status") not in ("draft", "roadmap"):
+        assert cite, f"{path.name}: status>{m['status']} requires a citation"
+        assert cite.lower() not in PLACEHOLDER_CITATIONS, (
+            f"{path.name}: citation {cite!r} is a placeholder, not a reference"
+        )
+
+    # But a citation that EXISTS must never frame provenance clinically,
+    # whatever the file's maturity -- that is the neutralization, not a
+    # maturity question.
+    if cite:
+        assert "clinical convention" not in cite.lower(), (
+            f"{path.name}: citation {cite!r} still frames provenance clinically"
+        )

@@ -42,7 +42,7 @@ protocol "high_beta_down" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "Configurable high-beta (22-30 Hz) down-training template — clinician-selected site and thresholds"
     title             = "Ease over-arousal — configurable"
     summary           = "Rewards lowering fast high-beta activity associated with anxiety and rumination, at a clinician-chosen site, with adaptive or baseline-fixed thresholds."
@@ -51,7 +51,7 @@ protocol "high_beta_down" {
     status            = "draft"
     goals             = ["calm_stress"]
     author            = "Peak Mind"
-    citation          = "clinical convention (anxiety/rumination)"
+    citation          = "Hammond D.C. (2005). Neurofeedback treatment of depression and anxiety. Journal of Adult Development, 12(2-3), 131-137."
     population        = "adults_18_plus"
     indication        = "anxiety_arousal_regulation"
     control_ref       = "library/operant/hibeta_down_sham@1.0"

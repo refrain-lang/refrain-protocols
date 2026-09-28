@@ -20,7 +20,7 @@ protocol "alpha_up_pz_brainbit_v1" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "Alpha uptraining at Pz, BrainBit Flex monopolar — Calm-goal lead protocol"
     title             = "Calm the mind — boost alpha (back of head)"
     summary           = "BrainBit: rewards raising relaxed alpha at the back of the head, for calm and lowered anxiety."

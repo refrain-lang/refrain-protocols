@@ -31,7 +31,7 @@ protocol "beta_focus_staged_fz" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "Staged beta1-2 (13-19 Hz) uptraining at Fz with theta + high-beta inhibit (4×5-min blocks), adaptive percentile thresholds"
     title             = "Sustained focus — staged beta training (forehead)"
     summary           = "Staged beta uptraining with theta and high-beta inhibits at the forehead, using adaptive or baseline-fixed thresholds."

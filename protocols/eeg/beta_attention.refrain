@@ -43,7 +43,7 @@ protocol "beta_attention" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "Configurable lo-beta (15-18 Hz) up-training template — clinician-selected site, bands, and thresholds"
     title             = "Beta attention training — configurable"
     summary           = "Rewards raising engaged lo-beta while inhibiting theta and high-beta, at a clinician-chosen site, with adaptive or baseline-fixed thresholds."

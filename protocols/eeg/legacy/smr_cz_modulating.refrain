@@ -24,7 +24,7 @@ protocol "smr_cz_modulating" {
 
   meta {
     version           = "1.1.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "SMR/theta-beta operant training at Cz"
     title             = "Classic SMR training — ambient feedback (top of head)"
     summary           = "SMR operant at the top of the head with continuous ambient (modulating) audio feedback."

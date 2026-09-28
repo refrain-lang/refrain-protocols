@@ -26,7 +26,7 @@ protocol "alpha_coherence" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "exploratory"
     description       = "Alpha inter-hemispheric coherence up-training, clinician-selected pair (pair placement)"
     title             = "Alpha coherence — clinician-chosen pair"
     summary           = "BrainBit: alpha inter-hemispheric coherence up-training over an electrode pair the clinician selects."

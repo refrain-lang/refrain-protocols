@@ -67,7 +67,7 @@ protocol "smr" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "established"
     description       = "Configurable SMR (12-15 Hz) up-training template — clinician-selected site, bands, and thresholds"
     title             = "SMR training — configurable"
     summary           = "Rewards raising SMR while inhibiting theta and high-beta, at a clinician-chosen sensorimotor site, with adaptive or baseline-fixed thresholds."

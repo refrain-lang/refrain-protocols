@@ -37,7 +37,7 @@ protocol "alpha_up" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "demo"
+    evidence          = "probable"
     description       = "Configurable alpha (8-12 Hz) up-training template — clinician-selected site, bands, and thresholds"
     title             = "Calm the mind — configurable alpha training"
     summary           = "Rewards raising relaxed alpha waves at a clinician-chosen posterior site, with adaptive or baseline-fixed thresholds."
