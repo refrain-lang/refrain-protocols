@@ -1,0 +1,156 @@
+// Narrow-band alpha/theta crossover, adapted from the feedback structure
+// documented in Brain-Trainer's ALP1C design. This is a separate draft from
+// alpha_theta.refrain: it compares 6-8 Hz theta with 9-11 Hz alpha directly,
+// without an additional theta percentile gate or a sub-crossover shaping
+// target. A gong marks entry after one second; audio_gain remains present for
+// as long as strict crossover holds and scales with crossover depth.
+
+protocol "alpha_theta_narrowband" {
+
+  meta {
+    version         = "1.0.0"
+    evidence        = "exploratory"
+    description     = "Narrow-band 6-8 Hz theta over 9-11 Hz alpha crossover with continuous hold feedback and slow/fast guards"
+    title           = "Alpha/theta crossover — narrow-band continuous feedback"
+    summary         = "Eyes-closed posterior training with a gong on strict crossover and a sustained, graded sound while theta remains above alpha."
+    family          = "alpha_theta"
+    threshold_style = "adaptive"
+    status          = "draft"
+    modality        = "eeg"
+    goals           = ["deep_meditative"]
+    author          = "Peak Mind"
+    citation        = "Brain-Trainer Designs Manual, ALP1C Alpha Theta, pp. 12-13 (2020); Peniston & Kulkosky 1989, 1991"
+    control_ref     = "library/operant/alpha_theta_sham@1.0"
+    advanced_controls = [
+      "site",
+      "slow_guard", "slow_inhibit_rate",
+      "fast_guard", "fast_inhibit_rate",
+    ]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw" {
+    montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "slow_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (3 Hz, 5 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (6 Hz, 8 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "alpha_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (9 Hz, 11 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "fast_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (15 Hz, 56 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_alpha_ratio" {
+    formula = "theta_envelope" / "alpha_envelope"
+  }
+
+  inhibit "slow" {
+    metric    = bandpower(input: "raw", band: (3 Hz, 5 Hz), window: 2 s)
+    threshold = percentile(
+      target_pct: slow_guard == "on" ? slow_inhibit_rate : 100,
+      window: 2 min
+    )
+    action    = mute(release: 1 s)
+  }
+
+  inhibit "fast" {
+    metric    = bandpower(input: "raw", band: (15 Hz, 56 Hz), window: 250 ms)
+    threshold = percentile(
+      target_pct: fast_guard == "on" ? fast_inhibit_rate : 100,
+      window: 2 min
+    )
+    action    = mute(release: 500 ms)
+  }
+
+  reward {
+    event = dwell(
+      condition: above("theta_envelope", "alpha_envelope"),
+      duration: 1000 ms
+    )
+    continuous = sigmoid("theta_alpha_ratio", midpoint: 1.0, steepness: 4)
+  }
+
+  output {
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+    audio_chime = reward.event
+  }
+
+  controls {
+    site = placement {
+      kind    = "active"
+      default = "Pz"
+      label   = "Training site"
+    }
+    slow_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Slow-wave guard"
+    }
+    slow_inhibit_rate = percent {
+      default      = 95
+      range        = (75, 99)
+      label        = "Slow-wave inhibit threshold"
+      live_tunable = true
+    }
+    fast_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Fast-activity guard"
+    }
+    fast_inhibit_rate = percent {
+      default      = 95
+      range        = (75, 99)
+      label        = "Fast-activity inhibit threshold"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      phase { name = "settle";   duration = 2 min;  output_muted = true },
+      phase { name = "deep1";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min;  output_muted = true },
+      phase { name = "deep2";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 2 min;  output_muted = true },
+    ]
+  }
+}

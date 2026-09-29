@@ -97,6 +97,10 @@ KNOWN_GAPS = {
     "high_beta_down.refrain",
     "alpha_up.refrain",
     "alpha_theta.refrain",
+    # Direct envelope-vs-envelope crossover plus two mode-folded guard
+    # percentiles. The protocol resolves and runs, but catalog v1 cannot yet
+    # render this reward/guard combination back through the visual editor.
+    "alpha_theta_narrowband.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
