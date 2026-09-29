@@ -6,7 +6,7 @@ Companion guide for [`alpha_theta.refrain`](alpha_theta.refrain).
 
 | Field | Value |
 | --- | --- |
-| Protocol version | 1.2.0 |
+| Protocol version | 1.3.0 |
 | Library status | **Draft — untested as a complete system** |
 | Evidence tag | Established |
 | Default site | Pz, referenced to the amplifier reference |
@@ -119,6 +119,37 @@ during a 90-second warm-up when the host supports seed collection. The value
 used for a particular session can therefore differ from 0.60. Record both the
 initial seeded value and every live adjustment.
 
+## Autopilot
+
+The protocol carries a Refrain autopilot policy. When a host has autopilot
+turned on for the session, it watches training during Deep 1 and Deep 2 only
+(never during the muted Settle, Rest 1, or Cooldown stages) and, after a
+2-minute warm-up of clean data, may adjust one control at a time, no more
+often than every 3 minutes:
+
+| Control | What changes | Auto or suggest |
+| --- | --- | --- |
+| Crossover target | Steps by 0.05 within 0.50–1.00 | Applied automatically |
+| Theta reward rate | Steps by 5 points within 15–40%, adaptive style only | Suggested for the practitioner to apply |
+| Theta threshold | Steps by 10% of its current value, baseline style only | Suggested for the practitioner to apply |
+
+When training is comfortably above target, the crossover target is tightened
+before the theta reward rate — reaching strict crossover is the harder,
+rarer goal, so it is shaped first, one small step at a time. Autopilot never
+loosens the delta or EMG guard on its own; each carries its own 15% ceiling
+on how much of training time it may occupy before the host displays a
+message ("Slow activity rising; may be drifting toward sleep. Check
+alertness." for delta, "Muscle artifact; check jaw/neck tension or the
+electrode." for EMG).
+
+**Provenance tier: exploratory.** The 10–35% reward-time band this policy
+targets, and its step sizes, were carried over and adapted from Coherence
+Recorder's earlier guidance engine rather than derived fresh for this
+protocol; both the band and the tightening order need to be re-confirmed
+against recorded sessions before a host relies on them. Citations: Peniston
+& Kulkosky 1989, 1991 (protocol); Peak Mind practice team 2026 (autopilot
+step sizes and target band, adapted from Coherence Recorder guidance v1).
+
 ## Practitioner notes
 
 - Confirm a stable posterior signal and comfortable eyes-closed position before
@@ -195,6 +226,10 @@ establishes software behavior; it does not establish a therapeutic effect.
 
 ## Revision history
 
+- **1.3.0 — 2026-09-28:** Documents the autopilot policy: which controls it
+  adjusts automatically versus suggests, the phase and timing guards, the
+  delta/EMG guard messages, and the exploratory provenance tier that still
+  needs re-confirmation on recorded sessions.
 - **1.2.0 — 2026-09-28:** First companion guide. Documents the staged session,
   compound reward rule with the graded, warm-up-seeded `crossover_target`,
   delta and EMG guards, host-neutral feedback outputs, Recorder rendering

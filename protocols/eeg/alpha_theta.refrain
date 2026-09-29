@@ -1,3 +1,13 @@
+// v1.3.0 adds an autopilot policy (refrain's docs/AUTOPILOT-AUTHORING.md):
+// the two reward checks below are named (`as "theta"`, `as "crossover"`) so
+// the policy can address each one; `theta_reward_pct`, `crossover_target`,
+// and `theta_threshold_uv` each carry an `autopilot = ...` control policy;
+// and the `autopilot { }` block tightens the crossover target before the
+// theta reward rate, watching the delta and EMG guards. Evidence tier
+// "exploratory" — the 10-35% reward_target band carries over from earlier
+// guidance software and needs to be re-confirmed against recorded sessions
+// before it is relied on.
+//
 // Alpha/theta crossover — CONFIGURABLE canonical template (Peniston-Kulkosky).
 //
 // Last of the four goal templates that copy protocols/eeg/smr.refrain's
@@ -72,7 +82,7 @@
 protocol "alpha_theta" {
 
   meta {
-    version           = "1.2.0"
+    version           = "1.3.0"
     evidence          = "established"
     description       = "Configurable alpha/theta crossover template (Peniston-Kulkosky) — warmup-seeded crossover target, practitioner-selected site, bands, and thresholds"
     title             = "Deep meditative state — configurable alpha/theta crossover"
@@ -202,8 +212,8 @@ protocol "alpha_theta" {
     // rewarded deep state) — see header.
     event = dwell(
       condition: all_of([
-        above("theta_envelope", "theta_t"),
-        above("theta_alpha_ratio", crossover_target),
+        above("theta_envelope", "theta_t")           as "theta",
+        above("theta_alpha_ratio", crossover_target) as "crossover",
       ]),
       duration: 1000 ms
     )
@@ -232,6 +242,7 @@ protocol "alpha_theta" {
       range        = (15, 70)
       label        = "Theta reward rate"
       live_tunable = true
+      autopilot = fixed_step { fixes = "theta"; step = 5; higher_is = "harder"; limits = (15, 40); apply = "suggest"; only_when = threshold_style == "adaptive"; say = "Theta reward rate" }
     }
     crossover_target = number {
       default      = 0.60
@@ -243,6 +254,7 @@ protocol "alpha_theta" {
         window     = 90 s
         target_pct = 65
       }
+      autopilot = fixed_step { fixes = "crossover"; step = 0.05; higher_is = "harder"; limits = (0.5, 1.0); apply = "auto"; round_to = 0.01; say = "Crossover target" }
     }
 
     delta_guard = mode {
@@ -326,7 +338,27 @@ protocol "alpha_theta" {
         window     = 60 s
         target_pct = theta_reward_pct
       }
+      autopilot = proportional_step { fixes = "theta"; step = 10%; higher_is = "harder"; apply = "suggest"; round_to = 0.1 uV; only_when = threshold_style == "baseline"; say = "Theta threshold" }
     }
+  }
+
+  // Autopilot (docs/AUTOPILOT-AUTHORING.md). Shapes toward strict crossover in
+  // small steps; guards are never loosened automatically (the compiler refuses
+  // `apply = "auto"` on any knob that feeds an inhibit).
+  autopilot {
+    evidence      = "exploratory"
+    citation      = [
+      "Peniston & Kulkosky 1989, 1991 (protocol)",
+      "Peak Mind practice team 2026: step sizes and target band adapted from Coherence Recorder guidance v1",
+    ]
+    rationale     = "Crossover is rare by nature; a 50-75% target would drive the ratio target to its floor. Tighten crossover first, one 0.05 step at a time."
+    reward_target = (10%, 35%)
+    phases        = ["deep1", "deep2"]
+    watch         = 2 min
+    between_moves = 3 min
+    tighten_first = ["crossover", "theta"]
+    delta = guard { max = 15%; say = "Slow activity rising; may be drifting toward sleep. Check alertness." }
+    emg   = guard { max = 15%; say = "Muscle artifact; check jaw/neck tension or the electrode." }
   }
 
   // Deep-state session: long eyes-closed blocks (the legitimate exception
