@@ -2,17 +2,19 @@
 // documented in Brain-Trainer's ALP1C design. This is a separate draft from
 // alpha_theta.refrain: it compares 6-8 Hz theta with 9-11 Hz alpha directly,
 // without an additional theta percentile gate or a sub-crossover shaping
-// target. A gong marks entry after one second; audio_gain remains present for
-// as long as strict crossover holds and scales with crossover depth.
+// target. The live reward-ratio control defaults to strict crossover (1.00)
+// and can be lowered to shape toward it without changing the separately
+// reported literal theta-over-alpha statistic. A gong marks entry after one
+// second; audio_gain remains present while the reward target holds.
 
 protocol "alpha_theta_narrowband" {
 
   meta {
-    version         = "1.1.0"
+    version         = "1.2.0"
     evidence        = "exploratory"
-    description     = "Narrow-band 6-8 Hz theta over 9-11 Hz alpha crossover with continuous hold feedback and slow/fast guards"
+    description     = "Narrow-band 6-8 Hz theta/9-11 Hz alpha feedback with a live ratio target, continuous hold feedback, and slow/fast guards"
     title           = "Alpha/theta crossover — narrow-band continuous feedback"
-    summary         = "Eyes-closed posterior training with a gong on strict crossover and a sustained, graded sound while theta remains above alpha."
+    summary         = "Eyes-closed posterior training with a live reward-ratio target that defaults to strict theta-over-alpha crossover."
     family          = "alpha_theta"
     threshold_style = "adaptive"
     status          = "draft"
@@ -105,7 +107,9 @@ protocol "alpha_theta_narrowband" {
 
   reward {
     event = dwell(
-      condition: above("theta_envelope", "alpha_envelope"),
+      condition: all_of([
+        above("theta_alpha_ratio", reward_ratio_target) as "reward target",
+      ]),
       duration: 1000 ms
     )
     continuous = sigmoid("theta_alpha_ratio", midpoint: 1.0, steepness: 4)
@@ -117,6 +121,12 @@ protocol "alpha_theta_narrowband" {
   }
 
   controls {
+    reward_ratio_target = number {
+      default      = 1.00
+      range        = (0.70, 1.05)
+      label        = "Reward ratio target (1.00 = theta over alpha)"
+      live_tunable = true
+    }
     site = placement {
       kind    = "active"
       default = "Pz"
