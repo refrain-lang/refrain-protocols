@@ -14,11 +14,14 @@ classifiers = [
   "Intended Audience :: Healthcare Industry",
   "License :: OSI Approved :: Apache Software License",
 ]
-# Reading protocol metadata needs refrain (parse-only). Pinned to v0.10.0, which
-# carries the `number` control kind, the `autocorr` primitive, and the `bands { }`
-# fan-out (so the critical_fluctuation protocol resolves, not just parses).
+# Reading protocol metadata needs refrain (parse-only). Pinned to v0.22.0,
+# which adds the autopilot grammar (named reward checks via `as "name"`, the
+# `autopilot { }` section, and per-control `autopilot = ...` policies) that
+# protocols/eeg/alpha_theta.refrain now uses (v1.3.0) — an older refrain
+# can't even PARSE that file, so this floor is load-bearing for the whole
+# distributed set, not just alpha_theta.
 dependencies = [
-  "refrain >= 0.10.0",
+  "refrain >= 0.22.0",
 ]
 
 [project.optional-dependencies]
