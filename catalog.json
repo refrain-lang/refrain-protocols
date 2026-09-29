@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 44,
+  "count": 45,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -55,6 +55,35 @@
           "artifact_guard",
           "artifact_strictness",
           "theta_threshold_uv"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/alpha_theta_narrowband.refrain",
+      "name": "alpha_theta_narrowband",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "exploratory",
+        "description": "Narrow-band 6-8 Hz theta over 9-11 Hz alpha crossover with continuous hold feedback and slow/fast guards",
+        "title": "Alpha/theta crossover \u2014 narrow-band continuous feedback",
+        "summary": "Eyes-closed posterior training with a gong on strict crossover and a sustained, graded sound while theta remains above alpha.",
+        "family": "alpha_theta",
+        "threshold_style": "adaptive",
+        "status": "draft",
+        "modality": "eeg",
+        "goals": [
+          "deep_meditative"
+        ],
+        "author": "Peak Mind",
+        "citation": "Brain-Trainer Designs Manual, ALP1C Alpha Theta, pp. 12-13 (2020); Peniston & Kulkosky 1989, 1991",
+        "control_ref": "library/operant/alpha_theta_sham@1.0",
+        "advanced_controls": [
+          "site",
+          "slow_guard",
+          "slow_inhibit_rate",
+          "fast_guard",
+          "fast_inhibit_rate"
         ]
       }
     },
