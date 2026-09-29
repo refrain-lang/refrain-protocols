@@ -6,7 +6,7 @@ Companion guide for [`alpha_theta_narrowband.refrain`](alpha_theta_narrowband.re
 
 | Field | Value |
 | --- | --- |
-| Protocol version | 1.1.0 |
+| Protocol version | 1.2.0 |
 | Library status | **Draft — untested as a complete system** |
 | Evidence tag | Exploratory |
 | Default site | Pz, referenced to the amplifier reference |
@@ -19,15 +19,19 @@ not been shown to reproduce its signal processing, sounds, or reported outcomes.
 ## Training rule
 
 The protocol compares a 6–8 Hz theta envelope with a 9–11 Hz alpha envelope.
-Strict crossover begins when theta exceeds alpha. After that condition remains
-true for one second, `audio_chime` marks entry and `audio_gain` remains active
-for the duration of the crossover. Its value increases with the theta/alpha
-ratio, allowing a host to make sustained feedback slightly fuller or brighter
-as theta dominance increases.
+The live **Reward ratio target** defaults to 1.00, so reward begins at literal
+theta-over-alpha crossover. A clinician can lower it during a run to shape
+toward crossover when crossings are too brief to sustain useful feedback, or
+raise it toward 1.00 as performance stabilizes. The literal crossover statistic
+must remain theta/alpha > 1.00 regardless of this reward setting.
 
-There is no separate theta threshold and no alpha-down inhibit. A crossover
-cannot earn feedback merely by approaching a target below 1.0, and alpha is not
-treated as unwanted activity.
+After the reward condition remains true for one second, `audio_chime` marks
+entry and `audio_gain` remains active while the target is held. Its value
+increases with the theta/alpha ratio.
+
+There is no separate theta threshold and no alpha-down inhibit. A reward target
+below 1.00 is shaping feedback toward crossover; it must not be reported as
+literal crossover, and alpha is not treated as unwanted activity.
 
 The four band edges are available under Advanced setup. Their defaults preserve
 the published 6–8 Hz theta and 9–11 Hz alpha ranges. They are fixed when the

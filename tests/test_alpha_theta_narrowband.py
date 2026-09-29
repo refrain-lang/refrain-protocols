@@ -54,14 +54,21 @@ def test_narrowband_crossover_bands_are_configurable_at_session_setup():
         assert control.live_tunable is False
 
 
-def test_narrowband_reward_is_strict_crossover_without_theta_threshold():
+def test_narrowband_reward_target_defaults_to_strict_crossover_and_is_live_tunable():
     ir = _resolve()
     assert not ir.thresholds.keys() & {"theta_t"}
+    target = ir.controls["reward_ratio_target"]
+    assert target.default.value == 1.0
+    assert target.range_low.value == 0.7
+    assert target.range_high.value == 1.05
+    assert target.live_tunable is True
     event = ir.reward.event
     condition = next(arg.value for arg in event.args if arg.name == "condition")
-    assert condition.callee == "above"
-    assert condition.args[0].value.target == "derive/theta_envelope"
-    assert condition.args[1].value.target == "derive/alpha_envelope"
+    assert condition.callee == "all_of"
+    component = condition.args[0].value.elements[0]
+    assert component.callee == "above"
+    assert component.args[0].value.target == "derive/theta_alpha_ratio"
+    assert component.args[1].value.target == "control/reward_ratio_target"
     duration = next(arg.value for arg in event.args if arg.name == "duration")
     assert duration.value == 1000
 
