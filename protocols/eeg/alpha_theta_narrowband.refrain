@@ -8,7 +8,7 @@
 protocol "alpha_theta_narrowband" {
 
   meta {
-    version         = "1.0.0"
+    version         = "1.1.0"
     evidence        = "exploratory"
     description     = "Narrow-band 6-8 Hz theta over 9-11 Hz alpha crossover with continuous hold feedback and slow/fast guards"
     title           = "Alpha/theta crossover — narrow-band continuous feedback"
@@ -23,6 +23,8 @@ protocol "alpha_theta_narrowband" {
     control_ref     = "library/operant/alpha_theta_sham@1.0"
     advanced_controls = [
       "site",
+      "theta_lo_hz", "theta_hi_hz",
+      "alpha_lo_hz", "alpha_hi_hz",
       "slow_guard", "slow_inhibit_rate",
       "fast_guard", "fast_inhibit_rate",
     ]
@@ -52,7 +54,7 @@ protocol "alpha_theta_narrowband" {
   derive "theta_envelope" {
     from = "raw"
     pipeline = [
-      bandpass(band: (6 Hz, 8 Hz), order: 4),
+      bandpass(band: (theta_lo_hz, theta_hi_hz), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 500 ms),
@@ -62,7 +64,7 @@ protocol "alpha_theta_narrowband" {
   derive "alpha_envelope" {
     from = "raw"
     pipeline = [
-      bandpass(band: (9 Hz, 11 Hz), order: 4),
+      bandpass(band: (alpha_lo_hz, alpha_hi_hz), order: 4),
       hilbert(),
       magnitude(),
       smooth(tau: 500 ms),
@@ -119,6 +121,30 @@ protocol "alpha_theta_narrowband" {
       kind    = "active"
       default = "Pz"
       label   = "Training site"
+    }
+    theta_lo_hz = frequency {
+      default      = 6 Hz
+      range        = (4 Hz, 7 Hz)
+      label        = "Theta band low edge"
+      live_tunable = false
+    }
+    theta_hi_hz = frequency {
+      default      = 8 Hz
+      range        = (7 Hz, 9 Hz)
+      label        = "Theta band high edge"
+      live_tunable = false
+    }
+    alpha_lo_hz = frequency {
+      default      = 9 Hz
+      range        = (8 Hz, 11 Hz)
+      label        = "Alpha band low edge"
+      live_tunable = false
+    }
+    alpha_hi_hz = frequency {
+      default      = 11 Hz
+      range        = (10 Hz, 13 Hz)
+      label        = "Alpha band high edge"
+      live_tunable = false
     }
     slow_guard = mode {
       choices = ["on", "off"]

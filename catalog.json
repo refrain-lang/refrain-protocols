@@ -63,7 +63,7 @@
       "name": "alpha_theta_narrowband",
       "draft": true,
       "meta": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "evidence": "exploratory",
         "description": "Narrow-band 6-8 Hz theta over 9-11 Hz alpha crossover with continuous hold feedback and slow/fast guards",
         "title": "Alpha/theta crossover \u2014 narrow-band continuous feedback",
@@ -80,6 +80,10 @@
         "control_ref": "library/operant/alpha_theta_sham@1.0",
         "advanced_controls": [
           "site",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "alpha_lo_hz",
+          "alpha_hi_hz",
           "slow_guard",
           "slow_inhibit_rate",
           "fast_guard",

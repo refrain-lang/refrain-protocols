@@ -6,7 +6,7 @@ Companion guide for [`alpha_theta_narrowband.refrain`](alpha_theta_narrowband.re
 
 | Field | Value |
 | --- | --- |
-| Protocol version | 1.0.0 |
+| Protocol version | 1.1.0 |
 | Library status | **Draft — untested as a complete system** |
 | Evidence tag | Exploratory |
 | Default site | Pz, referenced to the amplifier reference |
@@ -28,6 +28,11 @@ as theta dominance increases.
 There is no separate theta threshold and no alpha-down inhibit. A crossover
 cannot earn feedback merely by approaching a target below 1.0, and alpha is not
 treated as unwanted activity.
+
+The four band edges are available under Advanced setup. Their defaults preserve
+the published 6–8 Hz theta and 9–11 Hz alpha ranges. They are fixed when the
+session starts; changing filters during a run would make its earlier and later
+measurements incomparable.
 
 ## Feedback contract
 
