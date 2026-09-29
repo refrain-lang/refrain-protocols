@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased — protocol autopilot
+
+Refrain v0.22.0 adds protocol-declared autopilot: a session-time advisor that
+watches training and applies or suggests small control changes, sourced and
+bounded by the protocol itself rather than judged against a generic default.
+
+### Breaking
+- **`refrain` floor raised to v0.22.0** (CI pin and `pyproject`'s dependency
+  floor, both up from v0.21.0 / >= 0.10.0). Distributed protocols may now use
+  v0.22 syntax — `as "name"` on a reward check, a protocol-wide
+  `autopilot { }` block, and a per-control `autopilot = ...` policy — which
+  an older `refrain` cannot even parse, not just resolve.
+
+### Added
+- `alpha_theta.refrain` (v1.3.0) carries an autopilot policy: the crossover
+  target tightens automatically in 0.05 steps within 0.5–1.0, while the theta
+  reward rate and the baseline-mode theta threshold are suggestion-only. The
+  policy targets 10–35% of training time in reward, watches the delta and
+  EMG guards, and is tagged evidence `exploratory` — the target band was
+  carried over from earlier guidance software and needs to be re-confirmed
+  against recorded sessions before it is relied on.
+- The companion guide (`alpha_theta.md`) gains an Autopilot section
+  documenting the same policy in practitioner-facing terms.
+- `docs/protocol-guide-template.md` gains an optional Autopilot section for
+  any protocol that adds a policy of its own.
+
 ## Unreleased — biosignal reframe (BREAKING)
 
 The library is now a general-purpose **biosignal** training-protocol library:

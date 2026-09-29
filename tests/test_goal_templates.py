@@ -348,6 +348,17 @@ def test_alpha_theta_crossover_target_is_live_and_graded():
     assert target.seed.target_pct.value == 65
 
 
+def test_alpha_theta_autopilot_policy():
+    # v1.3.0 adds a protocol-wide autopilot block plus per-control policies
+    # (docs/AUTOPILOT-AUTHORING.md, refrain repo): crossover_target applies
+    # automatically, theta_reward_pct only ever suggests.
+    ir = _resolve("alpha_theta", Q21)
+    assert ir.autopilot is not None
+    assert ir.autopilot.reward_target == (0.10, 0.35)
+    assert ir.controls["crossover_target"].autopilot.apply == "auto"
+    assert ir.controls["theta_reward_pct"].autopilot.apply == "suggest"
+
+
 # ---------------------------------------------------------------------------
 # advanced_controls meta matches the basic surface — all four
 # ---------------------------------------------------------------------------

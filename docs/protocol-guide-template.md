@@ -49,6 +49,17 @@ List defaults, ranges, whether each value is live-tunable, and its practical
 effect. Explain seeded values and identify controls that require restarting or
 resolving the protocol.
 
+## Autopilot (optional — only when the protocol has an `autopilot { }` block)
+
+State which controls autopilot may change, the step or move for each, and
+whether that control is applied automatically or only suggested to the
+practitioner. Name the session phases autopilot watches and the minimum time
+between two changes. List every guard ceiling and its message, and say that
+autopilot never loosens a guard on its own. State the provenance tier
+(established, probable, or exploratory) and its citations, and flag any
+number that still needs re-confirmation against recorded sessions before a
+host relies on it.
+
 ## Practitioner notes
 
 Cover preparation, what to monitor, when feedback is intentionally quiet, and
