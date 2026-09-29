@@ -3,6 +3,19 @@
 Two orthogonal axes (see `tagging.md`):
 
 - **`evidence`** — how established the signal-training **approach** is in prior art: `established` / `probable` / `exploratory`.
+
+  | Level | What qualifies |
+  |---|---|
+  | `established` | The approach has a long track record in the literature, cited in `citation`. |
+  | `probable` | Some prior-art support — a published source or a written practice guideline — but not a long track record. |
+  | `exploratory` | A practitioner's judgement, or untested starting points. Fine to ship; hosts should visibly label it so a practitioner can weigh it accordingly. |
+
+  This is the **same three-tier scale** `refrain`'s `autopilot { }` blocks use
+  for their numbers (see `docs/AUTOPILOT-AUTHORING.md` §7). Same words, same
+  meaning, different subject: here it describes the *training approach*, there
+  the *autopilot numbers*. A protocol can legitimately carry a different tier
+  in each — an `established` technique driven by `exploratory` autopilot
+  numbers is a normal and honest combination.
 - **`status`** — *our* file maturity: `draft` → `roadmap` → `reviewed` → `stable` (plus `legacy` for a file superseded by a newer one).
 
 ## What `evidence` does and does not say
