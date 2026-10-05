@@ -126,9 +126,9 @@ protocol "alpha_theta_narrowband" {
   output {
     audio_gain  = reward.event.holds ? reward.continuous : 0
     audio_chime = reward.event
-    feedback_approach = below("theta_alpha_ratio", approach_floor_ratio) ? 0.15 :
+    feedback_approach = below("theta_alpha_ratio", reward_ratio_target) ? 0 :
       (at_or_above("theta_alpha_ratio", 1.0) ? 1 :
-        0.15 + 0.85 * ("theta_alpha_ratio" - approach_floor_ratio) / (1.0 - approach_floor_ratio))
+        ("theta_alpha_ratio" - reward_ratio_target) / (1.001 - reward_ratio_target))
     feedback_crossover = hold_for(
       condition: at_or_above("theta_alpha_ratio", 1.0), duration: crossover_dwell
     )
@@ -138,12 +138,6 @@ protocol "alpha_theta_narrowband" {
   }
 
   controls {
-    approach_floor_ratio = number {
-      default = 0.60
-      range = (0.30, 0.95)
-      label = "Approach ramp starts at theta/alpha"
-      live_tunable = true
-    }
     crossover_dwell = duration {
       default = 1 s
       range = (0.5 s, 5 s)
@@ -157,9 +151,9 @@ protocol "alpha_theta_narrowband" {
       live_tunable = true
     }
     reward_ratio_target = number {
-      default      = 1.00
-      range        = (0.70, 1.05)
-      label        = "Reward ratio target (1.00 = theta over alpha)"
+      default      = 0.85
+      range        = (0.50, 1.00)
+      label        = "Approach starts at theta/alpha ratio"
       live_tunable = true
     }
     site = placement {

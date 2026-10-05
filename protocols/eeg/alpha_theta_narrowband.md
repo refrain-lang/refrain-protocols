@@ -19,20 +19,17 @@ not been shown to reproduce its signal processing, sounds, or reported outcomes.
 ## Training rule
 
 The protocol compares a 6–8 Hz theta envelope with a 9–11 Hz alpha envelope.
-The live **Reward ratio target** defaults to 1.00, so reward begins at literal
-theta-over-alpha crossover. A clinician can lower it during a run to shape
-toward crossover when crossings are too brief to sustain useful feedback, or
-raise it toward 1.00 as performance stabilizes. The literal crossover statistic
-must remain theta/alpha > 1.00 regardless of this reward setting.
+The live **Reward ratio target** defaults to 0.85. A clinician can lower it
+during a run to shape toward crossover when crossings are too brief to sustain
+useful feedback, or raise it toward 1.00 as performance stabilizes. The literal
+crossover statistic remains theta/alpha at or above 1.00 regardless of this
+shaping setting.
 
 The shaping reward condition is separate from the literal crossover. Lowering
-the reward target below 1.00 can provide approach feedback without changing
-the definition of theta-over-alpha. In the new continuous-texture rendering,
-the approach layer stays very quiet below its own adjustable ramp start
-(theta/alpha 0.60 by default), then gradually gains intensity up to literal
-crossover. This gives an audible path toward crossover even when the legacy
-reward target remains 1.00. The ramp start changes the sound only; it does not
-change the reward or literal-crossover statistics. In the new rendering,
+the reward target below 1.00 starts the approach texture. It rises gradually
+from quiet at that target to full approach intensity at literal crossover.
+This gives an audible path toward crossover without changing its definition.
+At target 1.00 there is no approach interval. In the new rendering,
 the protocol holds a literal crossover for one second before moving to its
 crossover layer, and for three seconds before moving to its sustained layer.
 Both dwell durations can be adjusted during a session within their declared

@@ -54,13 +54,13 @@ def test_narrowband_crossover_bands_are_configurable_at_session_setup():
         assert control.live_tunable is False
 
 
-def test_narrowband_reward_target_defaults_to_strict_crossover_and_is_live_tunable():
+def test_narrowband_reward_target_defaults_to_approach_shaping_and_is_live_tunable():
     ir = _resolve()
     assert not ir.thresholds.keys() & {"theta_t"}
     target = ir.controls["reward_ratio_target"]
-    assert target.default.value == 1.0
-    assert target.range_low.value == 0.7
-    assert target.range_high.value == 1.05
+    assert target.default.value == 0.85
+    assert target.range_low.value == 0.5
+    assert target.range_high.value == 1.0
     assert target.live_tunable is True
     event = ir.reward.event
     condition = next(arg.value for arg in event.args if arg.name == "condition")
@@ -75,11 +75,6 @@ def test_narrowband_reward_target_defaults_to_strict_crossover_and_is_live_tunab
 
 def test_narrowband_feedback_is_held_and_graded_by_crossover_depth():
     ir = _resolve()
-    approach = ir.controls["approach_floor_ratio"]
-    assert approach.default.value == 0.60
-    assert approach.range_low.value == 0.30
-    assert approach.range_high.value == 0.95
-    assert approach.live_tunable is True
     assert {"feedback_approach", "feedback_crossover", "feedback_sustained"} <= set(ir.output)
     assert ir.meta.fields["feedback_style"].value == "layered_texture"
     assert ir.meta.fields["feedback_approach_channel"].value == "feedback_approach"
