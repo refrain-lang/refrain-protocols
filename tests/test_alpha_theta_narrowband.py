@@ -75,6 +75,15 @@ def test_narrowband_reward_target_defaults_to_strict_crossover_and_is_live_tunab
 
 def test_narrowband_feedback_is_held_and_graded_by_crossover_depth():
     ir = _resolve()
-    assert set(ir.output) == {"audio_gain", "audio_chime"}
+    approach = ir.controls["approach_floor_ratio"]
+    assert approach.default.value == 0.60
+    assert approach.range_low.value == 0.30
+    assert approach.range_high.value == 0.95
+    assert approach.live_tunable is True
+    assert {"feedback_approach", "feedback_crossover", "feedback_sustained"} <= set(ir.output)
+    assert ir.meta.fields["feedback_style"].value == "layered_texture"
+    assert ir.meta.fields["feedback_approach_channel"].value == "feedback_approach"
+    assert ir.meta.fields["feedback_crossover_channel"].value == "feedback_crossover"
+    assert ir.meta.fields["feedback_sustained_channel"].value == "feedback_sustained"
     assert ir.output["audio_gain"].stream_type.value_kind == "scalar"
     assert ir.output["audio_chime"].stream_type.value_kind == "event"
