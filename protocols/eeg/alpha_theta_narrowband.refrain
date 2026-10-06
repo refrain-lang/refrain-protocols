@@ -122,9 +122,9 @@ protocol "alpha_theta_narrowband" {
     metric    = bandpower(input: "raw", band: (15 Hz, 56 Hz), window: 250 ms)
     threshold = percentile(
       target_pct: fast_guard == "on" ? fast_inhibit_rate : 100,
-      window: 2 min
+      window: 10 s
     )
-    action    = mute(release: 500 ms)
+    action    = mute(release: 1 ms)
   }
 
   reward {
@@ -229,7 +229,7 @@ protocol "alpha_theta_narrowband" {
       label   = "Fast-activity guard"
     }
     fast_inhibit_rate = percent {
-      default      = 95
+      default      = 99
       range        = (75, 99)
       label        = "Fast-activity inhibit threshold"
       live_tunable = true

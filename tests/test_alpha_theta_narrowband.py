@@ -135,3 +135,44 @@ def test_authored_theta_rise_changes_early_texture_before_ratio_target(backend):
     assert evaluator.seed_report()["theta_reference_uv"]["status"] == "seeded"
     assert outputs[2] == pytest.approx(0.1, abs=0.02)
     assert outputs[5] > outputs[2] + 0.5
+
+
+@pytest.mark.parametrize("backend", ["python", "rust"])
+def test_fast_guard_catches_a_burst_without_muting_a_gradual_rise(backend):
+    """Authored fast activity separates a slow drift from a brief large surge."""
+    source = REFRAIN.read_text().replace(
+        "duration = 2 min;  output_muted = true",
+        "duration = 2 s;  output_muted = true", 1,
+    ).replace("window = 60 s; target_pct = 50", "window = 1 s; target_pct = 50")
+    brainbit = load_amp_profile(
+        str(Path(__import__("refrain").__file__).parent / "amp_profiles" / "brainbit_flex.json")
+    )
+    ir = resolve(parse(source), amp=brainbit, bindings={"slow_guard": "off"})
+    evaluator = Evaluator.live(
+        ir, sample_rate_hz=250, channel_names=("Pz",),
+        record_streams=True, backend=backend,
+    )
+    evaluator.start()
+    rng = np.random.default_rng(7)
+    drift_muted = []
+    burst_muted = []
+    for second in range(46):
+        t = second + np.arange(250) / 250
+        fast_amplitude = max(1.0, 4.0 + 0.3 * second + rng.normal(0, 1.2))
+        if second == 44:
+            fast_amplitude += 45.0
+        authored_signal = (
+            5 * np.sin(2 * np.pi * 7 * t)
+            + 10 * np.sin(2 * np.pi * 10 * t)
+            + fast_amplitude * np.sin(2 * np.pi * 25 * t)
+        )[:, None]
+        for start in range(0, 250, 25):
+            evaluator.step_chunk(authored_signal[start : start + 25])
+            muted = bool(evaluator.last_taps()["muted"])
+            if 10 <= second < 40:
+                drift_muted.append(muted)
+            if second == 44:
+                burst_muted.append(muted)
+
+    assert np.mean(drift_muted) < 0.15
+    assert np.mean(burst_muted) > 0.20

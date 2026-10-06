@@ -85,11 +85,15 @@ if the local folder changes later.
 ## Guards
 
 The 3–5 Hz slow guard and 15–56 Hz fast guard withhold positive feedback during
-unusually large activity relative to their rolling two-minute histories. They
-are local feedback and signal-quality adaptations. Brain-Trainer describes
-separate warning sounds for these bands; this protocol's host-neutral contract
-uses inhibits, so Recorder mutes positive feedback and identifies the active
-guard instead.
+unusually large activity. The slow guard uses a rolling two-minute percentile
+and a one-second release. The fast guard uses a rolling ten-second percentile
+with no added release; its shorter history follows gradual changes in muscle
+activity while still detecting brief surges. Its default threshold is the
+99th percentile; the clinician can lower it to make the guard more sensitive.
+These are local feedback and signal-quality adaptations. Brain-Trainer
+describes separate warning sounds for these bands; this protocol's
+host-neutral contract uses inhibits, so Recorder withholds positive feedback
+and identifies the active guard instead.
 
 The wide fast band is especially sensitive to jaw and neck muscle activity.
 An active fast guard does not establish anxiety, rumination, or a cerebral
