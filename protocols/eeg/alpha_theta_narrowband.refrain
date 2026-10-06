@@ -2,7 +2,7 @@
 // documented in Brain-Trainer's ALP1C design. This is a separate draft from
 // alpha_theta.refrain: it compares 6-8 Hz theta with 9-11 Hz alpha directly,
 // without an additional theta percentile gate. The live reward-ratio control
-// defaults to strict crossover (1.00) and can be lowered to shape toward it
+// defaults to a 0.85 approach target and can be raised toward strict crossover
 // without changing the separately reported literal theta-over-alpha statistic.
 // Semantic outputs drive three continuous textures; the legacy audio_chime and
 // audio_gain channels remain available only if a host selects legacy rendering.
@@ -10,11 +10,11 @@
 protocol "alpha_theta_narrowband" {
 
   meta {
-    version         = "1.3.0"
+    version         = "1.4.0"
     evidence        = "exploratory"
     description     = "Narrow-band 6-8 Hz theta/9-11 Hz alpha feedback with a live ratio target, continuous hold feedback, and slow/fast guards"
     title           = "Alpha/theta crossover — narrow-band continuous feedback"
-    summary         = "Eyes-closed posterior training with a live reward-ratio target that defaults to strict theta-over-alpha crossover."
+    summary         = "Eyes-closed posterior training with theta-rise feedback before a strict theta-over-alpha crossover."
     family          = "alpha_theta"
     threshold_style = "adaptive"
     status          = "draft"
@@ -95,6 +95,20 @@ protocol "alpha_theta_narrowband" {
     formula = "theta_envelope" / "alpha_envelope"
   }
 
+  // Settle seeds theta_reference_uv once; it stays fixed through both Deep
+  // phases unless the clinician changes it. A 25% rise fills this contributor.
+  derive "theta_progress" {
+    formula = below("theta_envelope", theta_reference_uv) ? 0 :
+      (at_or_above("theta_envelope", theta_reference_uv * (1 + theta_rise_pct / 100)) ? 1 :
+        ("theta_envelope" / theta_reference_uv - 1) * 100 / theta_rise_pct)
+  }
+
+  derive "ratio_progress" {
+    formula = below("theta_alpha_ratio", reward_ratio_target) ? 0 :
+      (at_or_above("theta_alpha_ratio", 1.0) ? 1 :
+        ("theta_alpha_ratio" - reward_ratio_target) / (1.001 - reward_ratio_target))
+  }
+
   inhibit "slow" {
     metric    = bandpower(input: "raw", band: (3 Hz, 5 Hz), window: 2 s)
     threshold = percentile(
@@ -126,9 +140,9 @@ protocol "alpha_theta_narrowband" {
   output {
     audio_gain  = reward.event.holds ? reward.continuous : 0
     audio_chime = reward.event
-    feedback_approach = below("theta_alpha_ratio", reward_ratio_target) ? 0 :
-      (at_or_above("theta_alpha_ratio", 1.0) ? 1 :
-        ("theta_alpha_ratio" - reward_ratio_target) / (1.001 - reward_ratio_target))
+    feedback_approach = 0.10 + 0.65 * "theta_progress" + 0.25 * "ratio_progress"
+    feedback_theta_progress = "theta_progress"
+    feedback_ratio_progress = "ratio_progress"
     feedback_crossover = hold_for(
       condition: at_or_above("theta_alpha_ratio", 1.0), duration: crossover_dwell
     )
@@ -138,6 +152,19 @@ protocol "alpha_theta_narrowband" {
   }
 
   controls {
+    theta_reference_uv = voltage {
+      default = 10 uV
+      range = (0.1 uV, 500 uV)
+      label = "Theta level measured during Settle"
+      live_tunable = true
+      seed = percentile { from = "theta_envelope"; window = 60 s; target_pct = 50 }
+    }
+    theta_rise_pct = percent {
+      default = 25
+      range = (5, 75)
+      label = "Theta rise for full early feedback"
+      live_tunable = true
+    }
     crossover_dwell = duration {
       default = 1 s
       range = (0.5 s, 5 s)

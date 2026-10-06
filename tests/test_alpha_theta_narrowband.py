@@ -1,7 +1,11 @@
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 from refrain import parse
 from refrain.amp_profile import load_amp_profile
+from refrain.eval_ import Evaluator
 from refrain.resolver import resolve
 
 
@@ -82,3 +86,52 @@ def test_narrowband_feedback_is_held_and_graded_by_crossover_depth():
     assert ir.meta.fields["feedback_sustained_channel"].value == "feedback_sustained"
     assert ir.output["audio_gain"].stream_type.value_kind == "scalar"
     assert ir.output["audio_chime"].stream_type.value_kind == "event"
+
+
+def test_narrowband_theta_progress_uses_a_frozen_settle_reference():
+    ir = _resolve()
+    reference = ir.controls["theta_reference_uv"]
+    assert reference.type_kind == "voltage"
+    assert reference.live_tunable is True
+    assert reference.seed is not None
+    assert reference.seed.from_entity == "derive/theta_envelope"
+    assert reference.seed.window_ms == 60_000
+    assert reference.seed.target_pct.value == 50
+    assert ir.controls["theta_rise_pct"].default.value == 25
+    assert {"theta_progress", "ratio_progress"} <= set(ir.derives)
+    assert {"feedback_theta_progress", "feedback_ratio_progress"} <= set(ir.output)
+    assert ir.session.phases[0].name == "settle"
+    assert ir.session.phases[0].output_muted is True
+
+
+@pytest.mark.parametrize("backend", ["python", "rust"])
+def test_authored_theta_rise_changes_early_texture_before_ratio_target(backend):
+    """Authored synthetic components test code behavior, not clinical efficacy."""
+    source = REFRAIN.read_text().replace(
+        "duration = 2 min;  output_muted = true",
+        "duration = 2 s;  output_muted = true", 1,
+    ).replace("window = 60 s; target_pct = 50", "window = 1 s; target_pct = 50")
+    brainbit = load_amp_profile(
+        str(Path(__import__("refrain").__file__).parent / "amp_profiles" / "brainbit_flex.json")
+    )
+    ir = resolve(parse(source), amp=brainbit, bindings={"slow_guard": "off", "fast_guard": "off"})
+    evaluator = Evaluator.live(
+        ir, sample_rate_hz=250, channel_names=("Pz",),
+        record_streams=True, backend=backend,
+    )
+    evaluator.start()
+    outputs = []
+    for chunk_index in range(8):
+        t = (chunk_index * 250 + np.arange(250)) / 250
+        theta_amplitude = 5 if chunk_index < 4 else 10
+        authored_signal = (
+            theta_amplitude * np.sin(2 * np.pi * 7 * t)
+            + 20 * np.sin(2 * np.pi * 10 * t)
+        )[:, None]
+        evaluator.step_chunk(authored_signal)
+        outputs.append(float(evaluator.last_streams()["output/feedback_approach"][-1]))
+        if chunk_index == 7:
+            assert evaluator.last_taps()["derive/theta_alpha_ratio"] < 0.85
+    assert evaluator.seed_report()["theta_reference_uv"]["status"] == "seeded"
+    assert outputs[2] == pytest.approx(0.1, abs=0.02)
+    assert outputs[5] > outputs[2] + 0.5
