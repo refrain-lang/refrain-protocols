@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 45,
+  "count": 46,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -85,6 +85,51 @@
         "feedback_approach_asset": "01-approach-dark-soft.wav",
         "feedback_crossover_asset": "02-crossover-warm-open.wav",
         "feedback_sustained_asset": "03-sustained-deep-full.wav",
+        "advanced_controls": [
+          "site",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "alpha_lo_hz",
+          "alpha_hi_hz",
+          "slow_guard",
+          "slow_inhibit_rate",
+          "fast_guard",
+          "fast_inhibit_rate",
+          "crossover_dwell",
+          "sustained_dwell"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/alpha_theta_narrowband_melodic.refrain",
+      "name": "alpha_theta_narrowband_melodic",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "exploratory",
+        "description": "Narrow-band alpha/theta feedback with gently changing melodic sound and slow/fast guards",
+        "title": "Alpha/theta crossover \u2014 narrow-band melodic feedback",
+        "summary": "Eyes-closed posterior training with soft theta-rise, crossover melody, and sustained harmony.",
+        "family": "alpha_theta",
+        "threshold_style": "adaptive",
+        "status": "draft",
+        "modality": "eeg",
+        "goals": [
+          "deep_meditative"
+        ],
+        "author": "Peak Mind",
+        "citation": "Brain-Trainer Designs Manual, ALP1C Alpha Theta, pp. 12-13 (2020); Peniston & Kulkosky 1989, 1991",
+        "control_ref": "library/operant/alpha_theta_sham@1.0",
+        "feedback_style": "layered_texture",
+        "feedback_asset_bundle": "narrowband_melodic_v1",
+        "feedback_crossover_attack_s": 1.0,
+        "feedback_sustained_attack_s": 1.5,
+        "feedback_approach_channel": "feedback_approach",
+        "feedback_crossover_channel": "feedback_crossover",
+        "feedback_sustained_channel": "feedback_sustained",
+        "feedback_approach_asset": "01-approach-pad.wav",
+        "feedback_crossover_asset": "02-crossover-melody.wav",
+        "feedback_sustained_asset": "03-sustained-harmony.wav",
         "advanced_controls": [
           "site",
           "theta_lo_hz",

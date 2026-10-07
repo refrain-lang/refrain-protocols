@@ -1,0 +1,251 @@
+// Narrow-band melodic alpha/theta crossover, adapted from the feedback structure
+// documented in Brain-Trainer's ALP1C design. This is a separate draft from
+// alpha_theta.refrain: it compares 6-8 Hz theta with 9-11 Hz alpha directly,
+// without an additional theta percentile gate. The live reward-ratio control
+// defaults to a 0.85 approach target and can be raised toward strict crossover
+// without changing the separately reported literal theta-over-alpha statistic.
+// Semantic outputs drive three locally bundled melodic layers; the legacy audio_chime and
+// audio_gain channels remain available only if a host selects legacy rendering.
+
+protocol "alpha_theta_narrowband_melodic" {
+
+  meta {
+    version         = "1.0.0"
+    evidence        = "exploratory"
+    description     = "Narrow-band alpha/theta feedback with gently changing melodic sound and slow/fast guards"
+    title           = "Alpha/theta crossover — narrow-band melodic feedback"
+    summary         = "Eyes-closed posterior training with soft theta-rise, crossover melody, and sustained harmony."
+    family          = "alpha_theta"
+    threshold_style = "adaptive"
+    status          = "draft"
+    modality        = "eeg"
+    goals           = ["deep_meditative"]
+    author          = "Peak Mind"
+    citation        = "Brain-Trainer Designs Manual, ALP1C Alpha Theta, pp. 12-13 (2020); Peniston & Kulkosky 1989, 1991"
+    control_ref     = "library/operant/alpha_theta_sham@1.0"
+    feedback_style = "layered_texture"
+    feedback_asset_bundle = "narrowband_melodic_v1"
+    feedback_crossover_attack_s = 1.0
+    feedback_sustained_attack_s = 1.5
+    feedback_approach_channel = "feedback_approach"
+    feedback_crossover_channel = "feedback_crossover"
+    feedback_sustained_channel = "feedback_sustained"
+    feedback_approach_asset = "01-approach-pad.wav"
+    feedback_crossover_asset = "02-crossover-melody.wav"
+    feedback_sustained_asset = "03-sustained-harmony.wav"
+    advanced_controls = [
+      "site",
+      "theta_lo_hz", "theta_hi_hz",
+      "alpha_lo_hz", "alpha_hi_hz",
+      "slow_guard", "slow_inhibit_rate",
+      "fast_guard", "fast_inhibit_rate",
+      "crossover_dwell", "sustained_dwell",
+    ]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+  input "raw" {
+    montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "slow_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (3 Hz, 5 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (theta_lo_hz, theta_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "alpha_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (alpha_lo_hz, alpha_hi_hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 500 ms),
+    ]
+  }
+
+  derive "fast_envelope" {
+    from = "raw"
+    pipeline = [
+      bandpass(band: (15 Hz, 56 Hz), order: 4),
+      hilbert(),
+      magnitude(),
+      smooth(tau: 250 ms),
+    ]
+  }
+
+  derive "theta_alpha_ratio" {
+    formula = "theta_envelope" / "alpha_envelope"
+  }
+
+  // Settle seeds theta_reference_uv once; it stays fixed through both Deep
+  // phases unless the clinician changes it. A 25% rise fills this contributor.
+  derive "theta_progress" {
+    formula = below("theta_envelope", theta_reference_uv) ? 0 :
+      (at_or_above("theta_envelope", theta_reference_uv * (1 + theta_rise_pct / 100)) ? 1 :
+        ("theta_envelope" / theta_reference_uv - 1) * 100 / theta_rise_pct)
+  }
+
+  derive "ratio_progress" {
+    formula = below("theta_alpha_ratio", reward_ratio_target) ? 0 :
+      (at_or_above("theta_alpha_ratio", 1.0) ? 1 :
+        ("theta_alpha_ratio" - reward_ratio_target) / (1.001 - reward_ratio_target))
+  }
+
+  inhibit "slow" {
+    metric    = bandpower(input: "raw", band: (3 Hz, 5 Hz), window: 2 s)
+    threshold = percentile(
+      target_pct: slow_guard == "on" ? slow_inhibit_rate : 100,
+      window: 2 min
+    )
+    action    = mute(release: 1 s)
+  }
+
+  inhibit "fast" {
+    metric    = bandpower(input: "raw", band: (15 Hz, 56 Hz), window: 250 ms)
+    threshold = percentile(
+      target_pct: fast_guard == "on" ? fast_inhibit_rate : 100,
+      window: 10 s
+    )
+    action    = mute(release: 1 ms)
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("theta_alpha_ratio", reward_ratio_target) as "reward target",
+      ]),
+      duration: 1000 ms
+    )
+    continuous = sigmoid("theta_alpha_ratio", midpoint: 1.0, steepness: 4)
+  }
+
+  output {
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+    audio_chime = reward.event
+    feedback_approach = 0.30 + 0.50 * "theta_progress" + 0.20 * "ratio_progress"
+    feedback_theta_progress = "theta_progress"
+    feedback_ratio_progress = "ratio_progress"
+    feedback_crossover = hold_for(
+      condition: at_or_above("theta_alpha_ratio", 1.0), duration: crossover_dwell
+    )
+    feedback_sustained = hold_for(
+      condition: at_or_above("theta_alpha_ratio", 1.0), duration: sustained_dwell
+    )
+  }
+
+  controls {
+    theta_reference_uv = voltage {
+      default = 10 uV
+      range = (0.1 uV, 500 uV)
+      label = "Theta level measured during Settle"
+      live_tunable = true
+      seed = percentile { from = "theta_envelope"; window = 60 s; target_pct = 50 }
+    }
+    theta_rise_pct = percent {
+      default = 25
+      range = (5, 75)
+      label = "Theta rise for full early feedback"
+      live_tunable = true
+    }
+    crossover_dwell = duration {
+      default = 1 s
+      range = (0.5 s, 5 s)
+      label = "Literal crossover dwell"
+      live_tunable = true
+    }
+    sustained_dwell = duration {
+      default = 3 s
+      range = (2 s, 15 s)
+      label = "Sustained crossover dwell"
+      live_tunable = true
+    }
+    reward_ratio_target = number {
+      default      = 0.85
+      range        = (0.50, 1.00)
+      label        = "Approach starts at theta/alpha ratio"
+      live_tunable = true
+    }
+    site = placement {
+      kind    = "active"
+      default = "Pz"
+      label   = "Training site"
+    }
+    theta_lo_hz = frequency {
+      default      = 6 Hz
+      range        = (4 Hz, 7 Hz)
+      label        = "Theta band low edge"
+      live_tunable = false
+    }
+    theta_hi_hz = frequency {
+      default      = 8 Hz
+      range        = (7 Hz, 9 Hz)
+      label        = "Theta band high edge"
+      live_tunable = false
+    }
+    alpha_lo_hz = frequency {
+      default      = 9 Hz
+      range        = (8 Hz, 11 Hz)
+      label        = "Alpha band low edge"
+      live_tunable = false
+    }
+    alpha_hi_hz = frequency {
+      default      = 11 Hz
+      range        = (10 Hz, 13 Hz)
+      label        = "Alpha band high edge"
+      live_tunable = false
+    }
+    slow_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Slow-wave guard"
+    }
+    slow_inhibit_rate = percent {
+      default      = 95
+      range        = (75, 99)
+      label        = "Slow-wave inhibit threshold"
+      live_tunable = true
+    }
+    fast_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Fast-activity guard"
+    }
+    fast_inhibit_rate = percent {
+      default      = 99
+      range        = (75, 99)
+      label        = "Fast-activity inhibit threshold"
+      live_tunable = true
+    }
+  }
+
+  session {
+    phases = [
+      phase { name = "settle";   duration = 2 min;  output_muted = true },
+      phase { name = "deep1";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min;  output_muted = true },
+      phase { name = "deep2";    duration = 15 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 2 min;  output_muted = true },
+    ]
+  }
+}
