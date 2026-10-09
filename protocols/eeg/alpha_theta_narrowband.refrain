@@ -96,7 +96,7 @@ protocol "alpha_theta_narrowband" {
   }
 
   // Settle seeds theta_reference_uv once; it stays fixed through both Deep
-  // phases unless the clinician changes it. A 25% rise fills this contributor.
+  // phases unless the operator changes it. A 25% rise fills this contributor.
   derive "theta_progress" {
     formula = below("theta_envelope", theta_reference_uv) ? 0 :
       (at_or_above("theta_envelope", theta_reference_uv * (1 + theta_rise_pct / 100)) ? 1 :
