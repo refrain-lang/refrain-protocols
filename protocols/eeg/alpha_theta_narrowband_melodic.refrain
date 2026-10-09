@@ -154,6 +154,26 @@ protocol "alpha_theta_narrowband_melodic" {
     )
   }
 
+  feedback {
+    version = 1
+    external_background = true
+    approach = layer {
+      output = "feedback_approach"; role = "approach"; label = "Theta approach"
+      priority = 10; asset_role = "approach"; attack = 4 s; release = 8 s
+      preview = true; suppress_on_inhibit = true; suppress_on_mute = true; reset_on_gap = true
+    }
+    crossover = layer {
+      output = "feedback_crossover"; role = "crossover"; label = "Theta crossover"
+      priority = 20; asset_role = "crossover"; attack = 1 s; release = 8 s
+      preview = true; suppress_on_inhibit = true; suppress_on_mute = true; reset_on_gap = true
+    }
+    sustained = layer {
+      output = "feedback_sustained"; role = "sustained"; label = "Sustained theta"
+      priority = 30; asset_role = "sustained"; attack = 1.5 s; release = 8 s
+      preview = true; suppress_on_inhibit = true; suppress_on_mute = true; reset_on_gap = true
+    }
+  }
+
   controls {
     theta_reference_uv = voltage {
       default = 10 uV

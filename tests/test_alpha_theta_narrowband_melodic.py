@@ -8,6 +8,7 @@ import pytest
 from refrain import parse
 from refrain.amp_profile import load_amp_profile
 from refrain.eval_ import Evaluator
+from refrain.ir_json import ir_to_json_obj
 from refrain.resolver import resolve
 
 
@@ -35,6 +36,18 @@ def test_melodic_is_separate_with_the_same_narrowband_training_rule():
     assert ir.meta.fields["feedback_asset_bundle"].value == "narrowband_melodic_v1"
     assert ir.meta.fields["feedback_crossover_attack_s"].value == 1.0
     assert ir.meta.fields["feedback_sustained_attack_s"].value == 1.5
+
+
+def test_melodic_declares_its_three_feedback_layers():
+    ir = resolve(parse(PROTOCOL.read_text()), amp=AMP)
+    assert ir.feedback.external_background is True
+    assert [(entry.role, entry.output, entry.priority) for entry in ir.feedback.entries] == [
+        ("approach", "feedback_approach", 10),
+        ("crossover", "feedback_crossover", 20),
+        ("sustained", "feedback_sustained", 30),
+    ]
+    assert [entry.attack_ms for entry in ir.feedback.entries] == [4000, 1000, 1500]
+    assert ir_to_json_obj(ir)["refrain_ir_version"] == "0.5"
 
 
 def test_melodic_approach_has_an_audible_floor_before_crossover():
