@@ -2,6 +2,8 @@
 
 Inventory for a later migration, recorded while adding `alpha_theta_narrowband_melodic` and checked against the three draft branches on 2026-10-09. This is a design note, not a request to move the code now. The protocol files are the source of signal and reward semantics; Recorder remains responsible for device I/O, audio rendering, media windows, and session storage. Draft PRs #101 (Refrain), #30 (protocols), and #200 (Recorder) are not release availability on `main`.
 
+The [cross-repo feedback and review design](https://github.com/refrain-lang/refrain/blob/codex/alpha-theta-continuous-feedback/docs/superpowers/specs/2026-10-09-protocol-owned-feedback-and-review-design.md) gives the target contracts and migration order, including the shared YouTube setting that currently leaks an alpha/theta video into SMR setup.
+
 ## What has already moved
 
 | State | Contract now outside Recorder | Remaining Recorder role |
