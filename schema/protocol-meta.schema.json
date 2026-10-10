@@ -12,8 +12,14 @@
     "family": { "type": "string", "description": "Shared id across a concept's variant files; the picker groups by it." },
     "feedback_style": {
       "description": "How feedback is delivered.",
-      "enum": ["discrete", "graded", "modulating"]
+      "enum": ["discrete", "graded", "modulating", "layered_texture"]
     },
+    "feedback_asset_bundle": {
+      "type": "string",
+      "description": "Optional host-approved bundled audio set for a layered-texture protocol. A host may reject unknown bundle names."
+    },
+    "feedback_crossover_attack_s": { "type": "number", "minimum": 1, "maximum": 15 },
+    "feedback_sustained_attack_s": { "type": "number", "minimum": 1, "maximum": 15 },
     "session_shape": {
       "description": "Run structure.",
       "enum": ["single", "staged", "deep"]

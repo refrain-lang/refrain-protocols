@@ -14,17 +14,37 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Require private Refrain read access
+        env:
+          REFRAIN_READ_TOKEN: ${{ secrets.REFRAIN_READ_TOKEN }}
+        run: |
+          if [ -z "$REFRAIN_READ_TOKEN" ]; then
+            echo "::error::Set REFRAIN_READ_TOKEN with read-only access to refrain-lang/refrain"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          repository: refrain-lang/refrain
+          ref: 03191687652009976aad8215bf7ce9b020cdb8c0
+          token: ${{ secrets.REFRAIN_READ_TOKEN }}
+          path: refrain-source
+          persist-credentials: false
       - name: Install refrain + dev deps
         run: |
           python -m pip install --upgrade pip
-          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.22.0"
-          pip install pytest jsonschema
+          pip install ./refrain-source
+          pip install pytest jsonschema maturin
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build matching Rust evaluator for parity tests
+        run: |
+          maturin build --release -m refrain-source/refrain-core/Cargo.toml --out dist
+          pip install dist/refrain_core*.whl
       - name: Rebuild catalog (must match committed)
         run: |
           python tools/build_catalog.py
           git diff --exit-code catalog.json || (echo "::error::catalog.json is stale — run tools/build_catalog.py and commit" && exit 1)
       - name: Validate (parse + meta schema + catalog)
-        run: pytest -q
+        run: pytest -q tests/
 
   # Behavioural gate. `validate` proves each protocol parses and carries valid
   # metadata; this proves the engine actually behaves as the protocol claims.
@@ -49,10 +69,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Require private Refrain read access
+        env:
+          REFRAIN_READ_TOKEN: ${{ secrets.REFRAIN_READ_TOKEN }}
+        run: |
+          if [ -z "$REFRAIN_READ_TOKEN" ]; then
+            echo "::error::Set REFRAIN_READ_TOKEN with read-only access to refrain-lang/refrain"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          repository: refrain-lang/refrain
+          ref: 03191687652009976aad8215bf7ce9b020cdb8c0
+          token: ${{ secrets.REFRAIN_READ_TOKEN }}
+          path: refrain-source
+          persist-credentials: false
       - name: Install refrain
         run: |
           python -m pip install --upgrade pip
-          pip install "refrain @ git+https://github.com/refrain-lang/refrain.git@v0.22.0"
+          pip install ./refrain-source
       - name: Fuzz the corpus (structural + sample-exact + metamorphic tiers)
         run: |
           set -eu

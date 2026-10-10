@@ -1,20 +1,20 @@
-// Narrow-band alpha/theta crossover, adapted from the feedback structure
+// Narrow-band melodic alpha/theta crossover, adapted from the feedback structure
 // documented in Brain-Trainer's ALP1C design. This is a separate draft from
 // alpha_theta.refrain: it compares 6-8 Hz theta with 9-11 Hz alpha directly,
 // without an additional theta percentile gate. The live reward-ratio control
 // defaults to a 0.85 approach target and can be raised toward strict crossover
 // without changing the separately reported literal theta-over-alpha statistic.
-// Semantic outputs drive three continuous textures; the legacy audio_chime and
+// Semantic outputs drive three locally bundled melodic layers; the legacy audio_chime and
 // audio_gain channels remain available only if a host selects legacy rendering.
 
-protocol "alpha_theta_narrowband" {
+protocol "alpha_theta_narrowband_melodic" {
 
   meta {
-    version         = "1.4.0"
+    version         = "1.0.0"
     evidence        = "exploratory"
-    description     = "Narrow-band 6-8 Hz theta/9-11 Hz alpha feedback with a live ratio target, continuous hold feedback, and slow/fast guards"
-    title           = "Alpha/theta crossover — narrow-band continuous feedback"
-    summary         = "Eyes-closed posterior training with theta-rise feedback before a strict theta-over-alpha crossover."
+    description     = "Narrow-band alpha/theta feedback with gently changing melodic sound and slow/fast guards"
+    title           = "Alpha/theta crossover — narrow-band melodic feedback"
+    summary         = "Eyes-closed posterior training with soft theta-rise, crossover melody, and sustained harmony."
     family          = "alpha_theta"
     threshold_style = "adaptive"
     status          = "draft"
@@ -31,16 +31,18 @@ protocol "alpha_theta_narrowband" {
     review_denominator_stream = "alpha_envelope"
     review_numerator_label = "Theta"
     review_denominator_label = "Alpha"
-    legacy_sustained_cue_channel = "sustained_theta_cue"
     legacy_gong_asset = "alpha_theta_gong.wav"
     legacy_background_asset = "alpha_theta_background.wav"
     feedback_style = "layered_texture"
+    feedback_asset_bundle = "narrowband_melodic_v1"
+    feedback_crossover_attack_s = 1.0
+    feedback_sustained_attack_s = 1.5
     feedback_approach_channel = "feedback_approach"
     feedback_crossover_channel = "feedback_crossover"
     feedback_sustained_channel = "feedback_sustained"
-    feedback_approach_asset = "01-approach-dark-soft.wav"
-    feedback_crossover_asset = "02-crossover-warm-open.wav"
-    feedback_sustained_asset = "03-sustained-deep-full.wav"
+    feedback_approach_asset = "01-approach-pad.wav"
+    feedback_crossover_asset = "02-crossover-melody.wav"
+    feedback_sustained_asset = "03-sustained-harmony.wav"
     advanced_controls = [
       "site",
       "theta_lo_hz", "theta_hi_hz",
@@ -151,12 +153,7 @@ protocol "alpha_theta_narrowband" {
   output {
     audio_gain  = reward.event.holds ? reward.continuous : 0
     audio_chime = reward.event
-    sustained_theta_cue = dwell_rearm(
-      condition: above("theta_alpha_ratio", 1.0),
-      duration: sustained_dwell,
-      rearm: 3 s
-    )
-    feedback_approach = 0.10 + 0.65 * "theta_progress" + 0.25 * "ratio_progress"
+    feedback_approach = 0.30 + 0.50 * "theta_progress" + 0.20 * "ratio_progress"
     feedback_theta_progress = "theta_progress"
     feedback_ratio_progress = "ratio_progress"
     feedback_crossover = hold_for(
@@ -165,6 +162,26 @@ protocol "alpha_theta_narrowband" {
     feedback_sustained = hold_for(
       condition: at_or_above("theta_alpha_ratio", 1.0), duration: sustained_dwell
     )
+  }
+
+  feedback {
+    version = 1
+    external_background = true
+    approach = layer {
+      output = "feedback_approach"; role = "approach"; label = "Theta approach"
+      priority = 10; asset_role = "approach"; attack = 4 s; release = 8 s
+      preview = true; suppress_on_inhibit = true; suppress_on_mute = true; reset_on_gap = true
+    }
+    crossover = layer {
+      output = "feedback_crossover"; role = "crossover"; label = "Theta crossover"
+      priority = 20; asset_role = "crossover"; attack = 1 s; release = 8 s
+      preview = true; suppress_on_inhibit = true; suppress_on_mute = true; reset_on_gap = true
+    }
+    sustained = layer {
+      output = "feedback_sustained"; role = "sustained"; label = "Sustained theta"
+      priority = 30; asset_role = "sustained"; attack = 1.5 s; release = 8 s
+      preview = true; suppress_on_inhibit = true; suppress_on_mute = true; reset_on_gap = true
+    }
   }
 
   controls {
@@ -198,6 +215,7 @@ protocol "alpha_theta_narrowband" {
       range        = (0.50, 1.00)
       label        = "Approach starts at theta/alpha ratio"
       live_tunable = true
+      autopilot = fixed_step { fixes = "reward target"; step = 0.05; higher_is = "harder"; limits = (0.50, 1.00); apply = "auto"; round_to = 0.01; say = "Approach target" }
     }
     site = placement {
       kind    = "active"
@@ -250,6 +268,22 @@ protocol "alpha_theta_narrowband" {
       label        = "Fast-activity inhibit threshold"
       live_tunable = true
     }
+  }
+
+  // Exploratory shaping policy. It changes the adjustable approach target,
+  // never the literal theta/alpha > 1.00 crossover or the slow/fast guards.
+  // Recorder requires the operator to enable automatic application each run.
+  autopilot {
+    evidence      = "exploratory"
+    citation      = ["Peak Mind practice team 2026: cautious 0.05 shaping steps adapted from the classic alpha/theta policy"]
+    rationale     = "Give the learner attainable feedback while retaining literal theta-over-alpha as a separate measure. Wait for two clean minutes and space changes by at least three minutes."
+    reward_target = (10%, 35%)
+    phases        = ["deep1", "deep2"]
+    watch         = 2 min
+    between_moves = 3 min
+    tighten_first = ["reward target"]
+    slow = guard { max = 15%; say = "Slow activity is interrupting feedback; check alertness and signal quality." }
+    fast = guard { max = 15%; say = "Fast activity is interrupting feedback; check tension and signal quality." }
   }
 
   session {

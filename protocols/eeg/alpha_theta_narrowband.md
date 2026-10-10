@@ -6,7 +6,7 @@ Companion guide for [`alpha_theta_narrowband.refrain`](alpha_theta_narrowband.re
 
 | Field | Value |
 | --- | --- |
-| Protocol version | 1.2.0 |
+| Protocol version | 1.4.0 |
 | Library status | **Draft — untested as a complete system** |
 | Evidence tag | Exploratory |
 | Default site | Pz, referenced to the amplifier reference |
@@ -19,19 +19,36 @@ not been shown to reproduce its signal processing, sounds, or reported outcomes.
 ## Training rule
 
 The protocol compares a 6–8 Hz theta envelope with a 9–11 Hz alpha envelope.
-The live **Reward ratio target** defaults to 1.00, so reward begins at literal
-theta-over-alpha crossover. A clinician can lower it during a run to shape
-toward crossover when crossings are too brief to sustain useful feedback, or
-raise it toward 1.00 as performance stabilizes. The literal crossover statistic
-must remain theta/alpha > 1.00 regardless of this reward setting.
+The live **Reward ratio target** defaults to 0.85. A clinician can lower it
+during a run to shape toward crossover when crossings are too brief to sustain
+useful feedback, or raise it toward 1.00 as performance stabilizes. The literal
+crossover statistic remains theta/alpha at or above 1.00 regardless of this
+shaping setting.
 
-After the reward condition remains true for one second, `audio_chime` marks
-entry and `audio_gain` remains active while the target is held. Its value
-increases with the theta/alpha ratio.
+The shaping reward condition is separate from the literal crossover. During
+the two-minute Settle stage, the final 60 seconds of theta-envelope values
+seed a fixed median reference. At the start of Deep, the approach texture has
+a low 10% floor. Its level adds up to 65% as theta rises from that reference
+to 25% above it, plus up to 25% as the theta/alpha ratio rises from the live
+reward target to literal crossover. The theta contribution can therefore
+increase before the ratio reaches the reward target; a fall in alpha alone
+does not fill it. The theta-rise span defaults to 25% and can be adjusted
+during training. The seeded reference can also be adjusted, but changing it
+changes the meaning of subsequent progress. Neither control changes what
+counts as literal crossover. The ratio contribution disappears below its
+target; at target 1.00 there is no graded ratio interval. In the new rendering,
+the protocol holds a literal crossover for one second before moving to its
+crossover layer, and for three seconds before moving to its sustained layer.
+Both dwell durations can be adjusted during a session within their declared
+bounds. A guard, quiet phase, or pause resets the hold.
 
-There is no separate theta threshold and no alpha-down inhibit. A reward target
-below 1.00 is shaping feedback toward crossover; it must not be reported as
-literal crossover, and alpha is not treated as unwanted activity.
+The theta reference is a proportional feedback anchor, not a pass/fail theta
+gate. There is no alpha-down inhibit. A reward target below 1.00 shapes
+feedback toward crossover; it must not be reported as literal crossover, and
+alpha is not treated as unwanted activity. Let Settle run at least 60 seconds:
+advancing sooner leaves the reference unseeded and feedback fails quiet rather
+than guessing a baseline. The Settle median is not screened for artifacts, so
+review the signal and guards if the reference appears implausible.
 
 The four band edges are available under Advanced setup. Their defaults preserve
 the published 6–8 Hz theta and 9–11 Hz alpha ranges. They are fixed when the
@@ -40,24 +57,51 @@ measurements incomparable.
 
 ## Feedback contract
 
+The session overview compares the protocol-declared `alpha_envelope` and
+`theta_envelope` on one scale. Its chart does not infer a crossover from
+similarly named fields in unrelated protocols. The literal comparison is
+separate from the live `reward_ratio_target` used for early shaping.
+
 | Output | Meaning |
 | --- | --- |
-| `audio_chime` | Rising-edge event after one second of strict crossover |
-| `audio_gain` | Zero outside crossover; graded theta/alpha depth while crossover holds |
+| `feedback_approach` | Early texture level: 10% floor, up to 65% from theta rising above its Settle reference, up to 25% from ratio progress |
+| `feedback_theta_progress` | Theta-rise contributor, 0–1 relative to the frozen Settle reference and live rise span |
+| `feedback_ratio_progress` | Ratio contributor, 0–1 from the live reward target to literal theta-over-alpha |
+| `feedback_crossover` | True after one continuous clean second with theta/alpha at or above 1.00 |
+| `feedback_sustained` | True after three continuous clean seconds with theta/alpha at or above 1.00 |
+| `sustained_theta_cue` | Legacy deep-gong event after a strict theta-over-alpha hold for `sustained_dwell`, rearmed after three seconds out of crossover |
+| `audio_chime`, `audio_gain` | Legacy event and gain channels retained for older renderers |
 
-Coherence Recorder may render `audio_chime` as the existing gong and
-`audio_gain` as a quiet sustained harmonic layer over separately playing music.
-The host should use a slow attack and release so small oscillations around the
-boundary do not sound abrupt. Background music remains independent.
+The approach, crossover, and sustained outputs are semantic values. A host can map them to
+three synchronized audio textures, with sustained taking priority over
+crossover and crossover over approach. In this mode Recorder plays no ordinary
+or sustained gong. The separate YouTube/background track stays at a manually
+chosen steady volume. The local texture changes gently with the EEG, under its
+own volume ceiling, attack, release, contrast, and trim controls. Legacy
+rendering still uses `audio_chime` and `audio_gain` if chosen explicitly, and
+routes `sustained_theta_cue` to the deeper gong. Recorder enforces a separate
+20-second audible interval and records emitted versus played cues.
+
+The approved local files are `01-approach-dark-soft.wav`,
+`02-crossover-warm-open.wav`, and `03-sustained-deep-full.wav`: aligned
+90-second stereo, 44.1 kHz, 16-bit PCM variants. They are supplied from an
+operator-selected folder rather than bundled in this open-source repository
+until redistribution rights are recorded. Recorder stores their SHA-256 hashes
+in the capture manifest. A recording may therefore identify its assets even
+if the local folder changes later.
 
 ## Guards
 
 The 3–5 Hz slow guard and 15–56 Hz fast guard withhold positive feedback during
-unusually large activity relative to their rolling two-minute histories. They
-are local feedback and signal-quality adaptations. Brain-Trainer describes
-separate warning sounds for these bands; this protocol's host-neutral contract
-uses inhibits, so Recorder mutes positive feedback and identifies the active
-guard instead.
+unusually large activity. The slow guard uses a rolling two-minute percentile
+and a one-second release. The fast guard uses a rolling ten-second percentile
+with no added release; its shorter history follows gradual changes in muscle
+activity while still detecting brief surges. Its default threshold is the
+99th percentile; the clinician can lower it to make the guard more sensitive.
+These are local feedback and signal-quality adaptations. Brain-Trainer
+describes separate warning sounds for these bands; this protocol's
+host-neutral contract uses inhibits, so Recorder withholds positive feedback
+and identifies the active guard instead.
 
 The wide fast band is especially sensitive to jaw and neck muscle activity.
 An active fast guard does not establish anxiety, rumination, or a cerebral
@@ -67,7 +111,7 @@ source.
 
 | Stage | Duration | Feedback |
 | --- | ---: | --- |
-| Settle | 2 min | Quiet |
+| Settle | 2 min | Quiet; final 60 s seeds theta reference |
 | Deep 1 | 15 min | Active |
 | Rest 1 | 2 min | Quiet |
 | Deep 2 | 15 min | Active |
@@ -87,7 +131,11 @@ whose pitch and volume increase with theta dominance, alpha-linked nature
 sound, and separate 3–5 Hz and 15–56 Hz warning feedback. This implementation
 adopts the narrow bands, strict crossover, graded hold feedback, and guard
 bands. It does not reproduce their music, nature layer, threshold algorithm,
-or warning sounds.
+or warning sounds. The three local continuous textures are user-approved
+artwork for this application; they are not Brain-Trainer assets or a validated
+clinical intervention. The exact source prompt, creation service, account
+license, and redistribution permission still need to be recorded before
+any public binary distribution.
 
 1. Brain-Trainer. *Brain-Trainer Designs Manual*, ALP1C Alpha Theta, pp. 12–13,
    June 6, 2020. <https://brain-trainer.com/downloads/Designs_List_Brain-Trainer.pdf>
