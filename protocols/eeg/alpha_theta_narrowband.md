@@ -64,6 +64,7 @@ measurements incomparable.
 | `feedback_ratio_progress` | Ratio contributor, 0–1 from the live reward target to literal theta-over-alpha |
 | `feedback_crossover` | True after one continuous clean second with theta/alpha at or above 1.00 |
 | `feedback_sustained` | True after three continuous clean seconds with theta/alpha at or above 1.00 |
+| `sustained_theta_cue` | Legacy deep-gong event after a strict theta-over-alpha hold for `sustained_dwell`, rearmed after three seconds out of crossover |
 | `audio_chime`, `audio_gain` | Legacy event and gain channels retained for older renderers |
 
 The approach, crossover, and sustained outputs are semantic values. A host can map them to
@@ -72,7 +73,9 @@ crossover and crossover over approach. In this mode Recorder plays no ordinary
 or sustained gong. The separate YouTube/background track stays at a manually
 chosen steady volume. The local texture changes gently with the EEG, under its
 own volume ceiling, attack, release, contrast, and trim controls. Legacy
-rendering still uses `audio_chime` and `audio_gain` if chosen explicitly.
+rendering still uses `audio_chime` and `audio_gain` if chosen explicitly, and
+routes `sustained_theta_cue` to the deeper gong. Recorder enforces a separate
+20-second audible interval and records emitted versus played cues.
 
 The approved local files are `01-approach-dark-soft.wav`,
 `02-crossover-warm-open.wav`, and `03-sustained-deep-full.wav`: aligned

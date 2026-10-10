@@ -86,6 +86,10 @@ def test_narrowband_feedback_is_held_and_graded_by_crossover_depth():
     assert ir.meta.fields["feedback_sustained_channel"].value == "feedback_sustained"
     assert ir.output["audio_gain"].stream_type.value_kind == "scalar"
     assert ir.output["audio_chime"].stream_type.value_kind == "event"
+    cue = ir.output["sustained_theta_cue"]
+    assert cue.stream_type.value_kind == "event"
+    assert cue.callee == "dwell_rearm"
+    assert ir.meta.fields["legacy_sustained_cue_channel"].value == "sustained_theta_cue"
 
 
 def test_narrowband_theta_progress_uses_a_frozen_settle_reference():

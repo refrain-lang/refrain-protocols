@@ -27,6 +27,7 @@ protocol "alpha_theta_narrowband" {
     review_ratio_stream = "theta_alpha_ratio"
     review_target_control = "reward_ratio_target"
     review_literal_threshold = 1.0
+    legacy_sustained_cue_channel = "sustained_theta_cue"
     feedback_style = "layered_texture"
     feedback_approach_channel = "feedback_approach"
     feedback_crossover_channel = "feedback_crossover"
@@ -144,6 +145,11 @@ protocol "alpha_theta_narrowband" {
   output {
     audio_gain  = reward.event.holds ? reward.continuous : 0
     audio_chime = reward.event
+    sustained_theta_cue = dwell_rearm(
+      condition: above("theta_alpha_ratio", 1.0),
+      duration: sustained_dwell,
+      rearm: 3 s
+    )
     feedback_approach = 0.10 + 0.65 * "theta_progress" + 0.25 * "ratio_progress"
     feedback_theta_progress = "theta_progress"
     feedback_ratio_progress = "ratio_progress"
