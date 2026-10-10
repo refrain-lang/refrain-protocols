@@ -20,6 +20,20 @@ AMP = load_amp_profile(
 )
 
 
+@pytest.mark.parametrize("name,target", [
+    ("alpha_theta", "crossover_target"),
+    ("alpha_theta_narrowband", "reward_ratio_target"),
+    ("alpha_theta_narrowband_melodic", "reward_ratio_target"),
+])
+def test_alpha_theta_review_names_are_authored_in_each_protocol(name, target):
+    ir = resolve(parse((ROOT / "protocols/eeg" / f"{name}.refrain").read_text()), amp=AMP)
+    fields = ir.meta.fields
+    assert fields["review_version"].value == 1
+    assert fields["review_ratio_stream"].value in ir.derives
+    assert fields["review_target_control"].value == target
+    assert fields["review_literal_threshold"].value == 1.0
+
+
 def test_melodic_is_separate_with_the_same_narrowband_training_rule():
     ir = resolve(parse(PROTOCOL.read_text()), amp=AMP)
     original = resolve(parse(EXISTING.read_text()), amp=AMP)

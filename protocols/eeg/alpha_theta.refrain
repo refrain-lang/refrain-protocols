@@ -95,6 +95,10 @@ protocol "alpha_theta" {
     author            = "Peak Mind"
     citation          = "Peniston & Kulkosky 1989, 1991"
     control_ref       = "library/operant/alpha_theta_sham@1.0"
+    review_version    = 1
+    review_ratio_stream = "theta_alpha_ratio"
+    review_target_control = "crossover_target"
+    review_literal_threshold = 1.0
     advanced_controls = [
       "site",
       "delta_lo_hz", "delta_hi_hz",
