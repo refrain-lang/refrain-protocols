@@ -27,6 +27,8 @@ protocol "alpha_theta_narrowband_melodic" {
     review_ratio_stream = "theta_alpha_ratio"
     review_target_control = "reward_ratio_target"
     review_literal_threshold = 1.0
+    legacy_gong_asset = "alpha_theta_gong.wav"
+    legacy_background_asset = "alpha_theta_background.wav"
     feedback_style = "layered_texture"
     feedback_asset_bundle = "narrowband_melodic_v1"
     feedback_crossover_attack_s = 1.0
