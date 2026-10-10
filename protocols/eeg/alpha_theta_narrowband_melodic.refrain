@@ -27,6 +27,10 @@ protocol "alpha_theta_narrowband_melodic" {
     review_ratio_stream = "theta_alpha_ratio"
     review_target_control = "reward_ratio_target"
     review_literal_threshold = 1.0
+    review_numerator_stream = "theta_envelope"
+    review_denominator_stream = "alpha_envelope"
+    review_numerator_label = "Theta"
+    review_denominator_label = "Alpha"
     legacy_gong_asset = "alpha_theta_gong.wav"
     legacy_background_asset = "alpha_theta_background.wav"
     feedback_style = "layered_texture"

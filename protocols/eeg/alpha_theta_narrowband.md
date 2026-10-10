@@ -57,6 +57,11 @@ measurements incomparable.
 
 ## Feedback contract
 
+The session overview compares the protocol-declared `alpha_envelope` and
+`theta_envelope` on one scale. Its chart does not infer a crossover from
+similarly named fields in unrelated protocols. The literal comparison is
+separate from the live `reward_ratio_target` used for early shaping.
+
 | Output | Meaning |
 | --- | --- |
 | `feedback_approach` | Early texture level: 10% floor, up to 65% from theta rising above its Settle reference, up to 25% from ratio progress |
