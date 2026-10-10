@@ -50,6 +50,18 @@ def test_melodic_declares_its_three_feedback_layers():
     assert ir_to_json_obj(ir)["refrain_ir_version"] == "0.5"
 
 
+def test_melodic_autopilot_only_changes_the_graded_reward_target():
+    ir = resolve(parse(PROTOCOL.read_text()), amp=AMP)
+    assert ir.autopilot.reward_target == (0.10, 0.35)
+    assert ir.autopilot.watch_ms == 120_000
+    assert ir.autopilot.between_moves_ms == 180_000
+    assert ir.controls["reward_ratio_target"].autopilot.apply == "auto"
+    assert ir.controls["reward_ratio_target"].autopilot.step == 0.05
+    assert all(ir.controls[name].autopilot is None for name in (
+        "crossover_dwell", "sustained_dwell", "slow_inhibit_rate", "fast_inhibit_rate"
+    ))
+
+
 def test_melodic_approach_has_an_audible_floor_before_crossover():
     """An authored signal checks output math, not a clinical state."""
     source = PROTOCOL.read_text().replace(

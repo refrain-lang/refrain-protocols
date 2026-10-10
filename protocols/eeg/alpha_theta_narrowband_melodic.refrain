@@ -205,6 +205,7 @@ protocol "alpha_theta_narrowband_melodic" {
       range        = (0.50, 1.00)
       label        = "Approach starts at theta/alpha ratio"
       live_tunable = true
+      autopilot = fixed_step { fixes = "reward target"; step = 0.05; higher_is = "harder"; limits = (0.50, 1.00); apply = "auto"; round_to = 0.01; say = "Approach target" }
     }
     site = placement {
       kind    = "active"
@@ -257,6 +258,22 @@ protocol "alpha_theta_narrowband_melodic" {
       label        = "Fast-activity inhibit threshold"
       live_tunable = true
     }
+  }
+
+  // Exploratory shaping policy. It changes the adjustable approach target,
+  // never the literal theta/alpha > 1.00 crossover or the slow/fast guards.
+  // Recorder requires the operator to enable automatic application each run.
+  autopilot {
+    evidence      = "exploratory"
+    citation      = ["Peak Mind practice team 2026: cautious 0.05 shaping steps adapted from the classic alpha/theta policy"]
+    rationale     = "Give the learner attainable feedback while retaining literal theta-over-alpha as a separate measure. Wait for two clean minutes and space changes by at least three minutes."
+    reward_target = (10%, 35%)
+    phases        = ["deep1", "deep2"]
+    watch         = 2 min
+    between_moves = 3 min
+    tighten_first = ["reward target"]
+    slow = guard { max = 15%; say = "Slow activity is interrupting feedback; check alertness and signal quality." }
+    fast = guard { max = 15%; say = "Fast activity is interrupting feedback; check tension and signal quality." }
   }
 
   session {
