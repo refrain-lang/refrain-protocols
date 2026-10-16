@@ -101,6 +101,10 @@ KNOWN_GAPS = {
     # percentiles. The protocol resolves and runs, but catalog v1 cannot yet
     # render this reward/guard combination back through the visual editor.
     "alpha_theta_narrowband.refrain",
+    # The typed feedback section is validated and runnable, but catalog v1
+    # cannot round-trip it through the visual editor yet. Fail closed so an
+    # editor save never silently drops its audio contract.
+    "alpha_theta_narrowband_melodic.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
