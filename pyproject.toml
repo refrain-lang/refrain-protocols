@@ -14,10 +14,12 @@ classifiers = [
   "Intended Audience :: Healthcare Industry",
   "License :: OSI Approved :: Apache Software License",
 ]
-# v0.23.0 adds hold_for/at_or_above and host-resettable dwell outputs used by
-# alpha_theta_narrowband v1.3.0. An older evaluator cannot run that protocol.
+# v0.24.0 is the floor: protocols here use band_envelope (IR-JSON v0.5), and
+# their declared latencies were measured on 0.24.0, which also changed the
+# coherence segment length (nperseg 188 -> 125 at 250 Hz). An older refrain
+# would resolve these files and then run them with different numbers.
 dependencies = [
-  "refrain >= 0.23.0",
+  "refrain >= 0.24.0",
 ]
 
 [project.optional-dependencies]

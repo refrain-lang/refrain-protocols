@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — declared-latency envelope
+
+### Breaking
+- **`refrain` floor raised to v0.24.0** (CI pin and `pyproject`'s dependency
+  floor, up from the off-main commit `0319168` / >= 0.23.0). Protocols now use
+  `band_envelope`, and the latencies they declare were measured on v0.24.0,
+  which also changed the coherence segment length (`nperseg` 188 -> 125 at
+  250 Hz, 192 -> 128 at 256 Hz). A host on v0.23.0 would resolve these files
+  and run them with different numbers, so the floor is literal rather than
+  advisory.
+
+### Changed
+- `smr`, `alpha_up`, `beta_attention` and `high_beta_down` leave the editor
+  round-trip test's known-gaps list: refrain v0.24.0's editor describes and
+  renders control-bound band edges (refrain#109), so they are now gated by
+  the round-trip test instead.
+
 ## Unreleased — protocol autopilot
 
 Refrain v0.22.0 adds protocol-declared autopilot: a session-time advisor that
