@@ -14,10 +14,10 @@ classifiers = [
   "Intended Audience :: Healthcare Industry",
   "License :: OSI Approved :: Apache Software License",
 ]
-# v0.24.0 is the floor: protocols here use band_envelope (IR-JSON v0.5), and
-# their declared latencies were measured on 0.24.0, which also changed the
-# coherence segment length (nperseg 188 -> 125 at 250 Hz). An older refrain
-# would resolve these files and then run them with different numbers.
+# v0.24.0 is the floor: it changed the coherence segment length (nperseg
+# 188 -> 125 at 250 Hz) that alpha_coherence depends on, so an older refrain
+# would resolve that file and run it with different numbers; and the coming
+# protocol redesigns use band_envelope (IR-JSON v0.5), which 0.24.0 ships.
 dependencies = [
   "refrain >= 0.24.0",
 ]

@@ -80,7 +80,7 @@ def _classify(path_name: str, names: list[str]) -> str:
         return "migrated"
     if names == ["bandpass"]:
         return "bare_bandpass"  # an inhibit or coherence input, not an envelope
-    if path_name in WAITING:
+    if path_name in WAITING and names == _FOUR_STAGE:
         return "waiting"
     return "unlisted"
 
@@ -141,23 +141,31 @@ def test_envelope_is_declared_or_excluded(path, name, names, call):
     )
 
 
-@pytest.mark.parametrize(
-    "path,name,call",
-    [(p, n, c) for p, n, names, c in _live_envelopes() if names == ["band_envelope"]],
-    ids=lambda v: v.name if isinstance(v, Path) else (v if isinstance(v, str) else ""),
-)
-def test_declared_latency_clears_the_bandwidth_floor(path, name, call):
+def _floor_violation(call: dict) -> str | None:
+    """Why a band_envelope call sits below its bandwidth-time floor, or None."""
     args = {a["name"]: a["value"] for a in call["args"] if a["name"]}
     lo, hi = (_num(e) for e in args["band"]["elements"])
     latency_ms = _num(args["latency"])
     if args["latency"].get("unit") == "s":
         latency_ms *= 1000.0
     floor_ms = 1000.0 / (hi - lo)
-    assert latency_ms >= floor_ms, (
-        f"{path.name}:{name} declares {latency_ms:g} ms on {lo:g}-{hi:g} Hz, below its "
-        f"{floor_ms:.0f} ms bandwidth-time floor; it would be less accurate than the "
-        "chain it replaced"
+    if latency_ms >= floor_ms:
+        return None
+    return (
+        f"declares {latency_ms:g} ms on {lo:g}-{hi:g} Hz, below its {floor_ms:.0f} ms "
+        "bandwidth-time floor; it would be less accurate than the chain it replaced"
     )
+
+
+@pytest.mark.parametrize(
+    "path,name,call",
+    # Every chain that starts with band_envelope, whatever follows it.
+    [(p, n, c) for p, n, names, c in _live_envelopes() if names[0] == "band_envelope"],
+    ids=lambda v: v.name if isinstance(v, Path) else (v if isinstance(v, str) else ""),
+)
+def test_declared_latency_clears_the_bandwidth_floor(path, name, call):
+    problem = _floor_violation(call)
+    assert problem is None, f"{path.name}:{name} {problem}"
 
 
 @pytest.mark.parametrize("path", LEGACY, ids=lambda p: p.name)
@@ -199,3 +207,27 @@ def test_waiting_files_still_wait():
 def test_waiting_files_exist():
     live = {p.name for p in LIVE}
     assert set(WAITING) <= live, sorted(set(WAITING) - live)
+
+
+def test_waiting_file_only_excuses_the_four_stage_chain():
+    """A waiting file may keep its old chains, not grow new unchecked shapes."""
+    assert _classify("smr.refrain", ["band_envelope", "smooth"]) == "unlisted"
+
+
+def _call(lo: float, hi: float, latency: float, unit: str = "ms") -> dict:
+    num = lambda v: {"node": "number", "value": v}  # noqa: E731
+    return {"node": "call", "callee": "band_envelope", "args": [
+        {"name": None, "value": {"node": "stream_ref", "target": "input/raw"}},
+        {"name": "band", "value": {"node": "tuple", "elements": [num(lo), num(hi)]}},
+        {"name": "latency", "value": {**num(latency), "unit": unit}},
+    ]}
+
+
+def test_floor_rejects_a_latency_below_the_bandwidth_floor():
+    assert _floor_violation(_call(12, 15, 100)) is not None
+    assert _floor_violation(_call(12, 15, 0.1, unit="s")) is not None
+
+
+def test_floor_accepts_a_latency_at_or_above_it():
+    assert _floor_violation(_call(12, 15, 360)) is None
+    assert _floor_violation(_call(20, 30, 100)) is None
