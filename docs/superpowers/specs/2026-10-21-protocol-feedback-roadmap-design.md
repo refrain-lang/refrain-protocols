@@ -142,13 +142,36 @@ later refrain release; those families are not urgent.
 
 ### Stage 2b — recorder: continuous-tone gain smoothing
 
+Owned by the coherence-recorder session (agreed 2026-10-21).
+
 The recorder's audio renderer smooths gain asymmetrically (`_GAIN_ATTACK_TAU_S = 0.05`,
-`_GAIN_RELEASE_TAU_S = 0.30`, `recorder/backend/nf/audio_renderer.py`). That suited a tone gated on
-the reward. For an always-on tone tracking SMR it adds roughly 250 ms to every "SMR has dropped"
-change. Needed: fast, symmetric smoothing (tens of ms, enough to avoid clicks) for the continuous
-channel, and the mute's release honouring its declared value (REC-15 already records that the
-declared 200 ms is delivered as ~300 ms). This is coherence-recorder work, coordinated with the
-other session; it does not block protocol PRs but must land before Stage 4.
+`_GAIN_RELEASE_TAU_S = 0.30`, `recorder/backend/nf/audio_renderer.py:70-71`). For an always-on
+tone tracking SMR the slow release adds roughly 250 ms to every "SMR has dropped" change.
+
+**Constraint: do not retune the module constants.** The 0.30 s release exists to stop a
+reward-gated gain (`audio_gain = reward.event.holds ? continuous : 0`) from pumping at the chime
+rate (the audible "warble"), and every existing dwell protocol still needs it. Smoothing becomes a
+property of the gain source: fast and symmetric for a continuous channel, asymmetric as now for a
+reward-gated one.
+
+**Not verified:** the renderer's mute is a hard zero and un-mute fades in over the attack
+constant, so the "declared 200 ms mute release delivered as ~300 ms" recorded on REC-15 is not
+renderer behaviour. If it is real it comes from the engine-level inhibit path, not yet located.
+Do not carry the 300 ms figure as fact until the recorder session reports the measured value.
+
+Sequencing: after the recorder's pin bump; blocks no Stage 3 PR; lands before Stage 4.
+
+### Stage 2c — measure the delay model before Stage 3 (recorder session)
+
+The recorder session re-runs `measure_nf_latency.py` for its pin bump and will report real values
+for the poll wait, the cFIR threshold-crossing time and audio output. That validates or breaks the
+delay model below while Stage 3 is still cheap to re-sequence.
+
+The amplifier's Bluetooth hop (modelled at 20–50 ms) cannot be measured by that harness and is
+the one hop that could invalidate the model: at 120 ms the strong-burst total passes 400 ms and
+the Stage 4 gate gets tight. It needs hardware and a new method (for example a physical event at
+the electrode captured on the same clock as the speaker output). Scheduled with the user's
+recordings in Stage 4, earlier if the hardware is to hand.
 
 Gate: refrain suite and drift gate green; fuzzer scenarios covering the new hold (dip shorter
 than tolerance keeps the hold, longer resets it, chunk-boundary cases); editor round-trip of an
@@ -245,10 +268,13 @@ REC-15 itself, updated to this design. Each family gets its own detailed plan
 1. Dip tolerance and two-line-threshold values: no study gives them. Choose by replay against the
    25–40 % target, then check on live sessions.
 2. Whether `high_beta_down` stays (Stage 3, family 5).
-3. Who bumps the corpus to 0.2.0, and when. Stage 1 now carries no speed-up, so 0.2.0 ships the
-   tooling and the refrain floor; the SMR family would be the first release that changes what a
-   trainee hears. For the other session to decide.
-4. Whole-system delay on the recorder is unmeasured; Stage 4 measures it.
+3. Whole-system delay on the recorder is unmeasured; Stage 2c measures most hops, Stage 4 the
+   amplifier's Bluetooth hop.
+
+Resolved 2026-10-21 by the recorder session: corpus **0.2.0 is cut from Stage 1** (same protocols,
+refrain floor >= 0.24.0, new tooling), so the recorder bumps refrain, refrain-core and
+refrain-protocols in one commit and pins a tag rather than a commit SHA. **0.3.0 is the SMR family**
+(Stage 3 #1), the first release that changes what a trainee hears.
 
 ## Calls made in this document (not decided by the user)
 

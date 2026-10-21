@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased — declared-latency tooling (no protocol changes)
+## 0.2.0 — declared-latency tooling (no protocol changes)
+
+First tagged release of the corpus. It also carries every "Unreleased" section
+below.
 
 ### Breaking
 - **`refrain` floor raised to v0.24.0** (CI pin and `pyproject`'s dependency
