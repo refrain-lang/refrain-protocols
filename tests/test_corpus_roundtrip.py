@@ -79,23 +79,10 @@ KNOWN_GAPS = {
     # entry used to carry — that description predates this check and no longer
     # matches what `describe_protocol` actually reports.
     "scp_cz.refrain",
-    # Configurable goal templates (2026-07, replace the whole SMR/alpha/beta/
-    # theta family below): each combines a `placement` site control with PAIRED
-    # `frequency` band-edge controls referenced directly in
-    # `bandpass(band: (lo_ctrl, hi_ctrl))` — e.g. smr.refrain's
-    # `bandpass(band: (smr_lo_hz, smr_hi_hz), order: 4)`. Verified directly:
-    # `_build_model` raises "envelope needs center + bandwidth: ratio(R), or
-    # band: (lo, hi)" for all five — catalog v1's envelope matcher accepts a
-    # literal `(lo, hi)` Hz tuple, not a tuple of control references. Amp-neutral
-    # resolution (q21) is NOT the blocker: all five read `amp.reference` and
-    # resolve past that fine now; this matcher gap is reached and hit on every
-    # one. (They'd also need catalog-v1 support for the artifact-guard `mode`
-    # folded one level inside a call argument, not at `threshold.type`, but the
-    # band-edge shape is what `_build_model` actually raises on first.)
-    "smr.refrain",
-    "beta_attention.refrain",
-    "high_beta_down.refrain",
-    "alpha_up.refrain",
+    # alpha_theta: still out of subset on refrain v0.24.0. The other four
+    # configurable goal templates (smr, beta_attention, high_beta_down,
+    # alpha_up) left this set when refrain#109 taught the editor
+    # control-bound band edges -- see the note below the set.
     "alpha_theta.refrain",
     # Direct envelope-vs-envelope crossover plus two mode-folded guard
     # percentiles. The protocol resolves and runs, but catalog v1 cannot yet
@@ -129,6 +116,11 @@ KNOWN_GAPS = {
 # zero round-trip mismatches (verified by running the suite, not by
 # reasoning). The amp-neutral gate was their only blocker, exactly as this
 # file predicted before landing the fix. 34 -> 7.
+#
+# Closed by refrain v0.24.0 (refrain#109, 2026-10): band edges bound to
+# `frequency` controls, and the artifact guard's conditional `target_pct`, now
+# describe and render. smr, beta_attention, high_beta_down and alpha_up moved
+# out of KNOWN_GAPS and are gated by the round-trip test. 9 -> 5.
 _IN_SUBSET = [p for p in ALL if p.name not in KNOWN_GAPS]
 _GAPS = [p for p in ALL if p.name in KNOWN_GAPS]
 

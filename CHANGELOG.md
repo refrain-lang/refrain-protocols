@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.2.0 — declared-latency tooling (no protocol changes)
+
+First tagged release of the corpus. It also carries every "Unreleased" section
+below.
+
+### Breaking
+- **`refrain` floor raised to v0.24.0** (CI pin and `pyproject`'s dependency
+  floor, up from the off-main commit `0319168` / >= 0.23.0). v0.24.0 changed
+  the coherence segment length (`nperseg` 188 -> 125 at 250 Hz, 192 -> 128 at
+  256 Hz) that `alpha_coherence` depends on, so a host on v0.23.0 would run
+  it with different numbers; and the coming family redesigns use
+  `band_envelope`, which v0.24.0 ships. The floor is literal rather than
+  advisory.
+
+### Changed
+- `smr`, `alpha_up`, `beta_attention` and `high_beta_down` leave the editor
+  round-trip test's known-gaps list: refrain v0.24.0's editor describes and
+  renders control-bound band edges (refrain#109), so they are now gated by
+  the round-trip test instead.
+
+### Added
+- `tools/measure_envelopes.py`: replays a protocol over EDF recordings and
+  reports each envelope's delay and accuracy against a zero-phase reference,
+  plus reward onsets per minute and time held. Not run in CI (the recordings
+  are clinical and do not ship); its scoring is unit-tested.
+- `tests/test_declared_latency.py`: every live envelope is a `band_envelope`
+  at or above its bandwidth floor, excluded with a reason, or in a file
+  waiting on a named roadmap item. `legacy/` is guarded as frozen.
+- `docs/research/2026-10-21-feedback-design-by-protocol.md` (literature review
+  of feedback design per protocol) and
+  `docs/superpowers/specs/2026-10-21-protocol-feedback-roadmap-design.md`.
+
+### Not changed, and why
+- No protocol moves to `band_envelope` yet. A one-for-one swap made every
+  envelope faster and more accurate, but on replayed recordings it cut time
+  holding a reward from 8.5–39.9 % to 0.4–10.1 % across the protocols: the
+  old smoothing stage was steadier than the real signal, and the reward rules
+  depended on it. Each family migrates together with its reward redesign;
+  see the roadmap.
+
 ## Unreleased — protocol autopilot
 
 Refrain v0.22.0 adds protocol-declared autopilot: a session-time advisor that
