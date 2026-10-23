@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 46,
+  "count": 47,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -161,6 +161,59 @@
         "feedback_approach_asset": "01-approach-pad.wav",
         "feedback_crossover_asset": "02-crossover-melody.wav",
         "feedback_sustained_asset": "03-sustained-harmony.wav",
+        "advanced_controls": [
+          "site",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "alpha_lo_hz",
+          "alpha_hi_hz",
+          "slow_guard",
+          "slow_inhibit_rate",
+          "fast_guard",
+          "fast_inhibit_rate",
+          "crossover_dwell",
+          "sustained_dwell"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/alpha_theta_narrowband_theta_rise.refrain",
+      "name": "alpha_theta_narrowband_theta_rise",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "exploratory",
+        "description": "Narrow-band theta-rise continuous feedback, with a separate literal theta-over-alpha crossover and slow/fast guards",
+        "title": "Theta rise \u2014 narrow-band continuous feedback",
+        "summary": "Continuous theta-rise sound independent of alpha, with a separate strict theta-over-alpha crossover.",
+        "family": "alpha_theta",
+        "threshold_style": "adaptive",
+        "status": "draft",
+        "modality": "eeg",
+        "goals": [
+          "deep_meditative"
+        ],
+        "author": "Peak Mind",
+        "citation": "Brain-Trainer Designs Manual, ALP1C Alpha Theta, pp. 12-13 (2020); Peniston & Kulkosky 1989, 1991",
+        "control_ref": "library/operant/alpha_theta_sham@1.0",
+        "review_version": 1.0,
+        "review_ratio_stream": "theta_alpha_ratio",
+        "review_target_control": "reward_ratio_target",
+        "review_literal_threshold": 1.0,
+        "review_numerator_stream": "theta_envelope",
+        "review_denominator_stream": "alpha_envelope",
+        "review_numerator_label": "Theta",
+        "review_denominator_label": "Alpha",
+        "legacy_sustained_cue_channel": "sustained_theta_cue",
+        "legacy_gong_asset": "alpha_theta_gong.wav",
+        "legacy_background_asset": "alpha_theta_background.wav",
+        "feedback_style": "layered_texture",
+        "feedback_approach_channel": "feedback_approach",
+        "feedback_crossover_channel": "feedback_crossover",
+        "feedback_sustained_channel": "feedback_sustained",
+        "feedback_approach_asset": "01-approach-dark-soft.wav",
+        "feedback_crossover_asset": "02-crossover-warm-open.wav",
+        "feedback_sustained_asset": "03-sustained-deep-full.wav",
         "advanced_controls": [
           "site",
           "theta_lo_hz",
