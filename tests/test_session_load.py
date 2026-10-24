@@ -107,3 +107,22 @@ def test_recorder_pinned_ref_reads_tag_or_sha(tmp_path):
                      f'  "refrain-protocols @ git+https://github.com/refrain-lang/refrain-protocols.git@{ref}",\n]\n')
         assert recorder_pinned_ref(p) == ref
     assert recorder_pinned_ref(tmp_path / "missing.toml") is None
+
+
+def test_default_protocol_path_bad_ref_explains_itself(tmp_path):
+    s = load_session(_session(tmp_path))
+    with pytest.raises(ValueError) as e:
+        default_protocol_path(s, ROOT, ref="no-such-ref-xyz")
+    msg = str(e.value)
+    assert "no-such-ref-xyz" in msg and "git" in msg and "unknown revision" in msg
+
+
+def test_unclean_session_loads_without_footer_or_summary(tmp_path):
+    rec = {"type": "control_change", "t_s": 0.4}
+    d = _session(tmp_path, markers=[(100, rec)], footer=False)
+    assert not (d / "feedback-summary.json").exists()
+    s = load_session(d)
+    assert s.meta["completed"] is False
+    assert len(s.chunks) == 40 and sum(len(c) for c in s.chunks) == 1000
+    assert [(e.after_chunk, e.record["t_s"]) for e in s.events] == [(3, 0.4)]
+    assert s.notes == []

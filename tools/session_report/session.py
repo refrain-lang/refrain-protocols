@@ -154,7 +154,11 @@ def recorder_pinned_ref(pyproject: Path = RECORDER_PYPROJECT) -> str | None:
 
 
 def _git(repo: Path, *args: str) -> bytes:
-    return subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True).stdout
+    try:
+        return subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True).stdout
+    except subprocess.CalledProcessError as e:
+        why = e.stderr.decode("utf-8", "replace").strip() or f"exit status {e.returncode}"
+        raise ValueError(f"git {' '.join(args)} failed in {repo}: {why}") from e
 
 
 def default_protocol_path(session: Session, repo: Path, ref: str | None = None) -> tuple[Path, str, str]:
