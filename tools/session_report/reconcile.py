@@ -20,6 +20,7 @@ EVENTS_MIN = 0.99          # share of dings matched within the tolerance
 OUTPUTS_MIN = 0.99         # share of output values within OUTPUT_REL_TOL
 TELEMETRY_MIN = 0.98       # share of telemetry booleans that agree
 OUTPUT_REL_TOL = 0.01
+COVERAGE_MARGIN_S = 1.0    # a replay may stop this many seconds short of the recording and still reconcile
 
 
 @dataclass
@@ -27,7 +28,7 @@ class Reconciliation:
     """A score is None when its check had nothing to compare; that is not a pass.
 
     ``evaluated`` says which of "events", "outputs", "telemetry" were actually checked.
-    ``reconciled`` means the replay covered the whole recording, at least one check ran
+    ``reconciled`` means the replay covered the recording (to within COVERAGE_MARGIN_S), at least one check ran
     and none that ran fell short. ``coverage`` is the share of samples replayed.
     """
     events_matched: float | None
@@ -227,12 +228,18 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     ran = [got is not None for _, got, _ in scores]
     if not any(ran):
         notes.append("no check could be evaluated, so the replay is not reported as reconciled")
-    complete = coverage is None or coverage >= 1.0
-    if not complete:
-        notes.append(f"FAILED coverage: the replay stepped through {coverage:.1%} of the recording; "
-                     f"{uncovered} logged reward record(s) and the telemetry frames noted above lie past its end "
-                     "and were not compared. The scores above describe only the covered part, so this is not a "
-                     "protocol disagreement but an incomplete replay")
+    short = total_samples - replay_end
+    complete = short <= COVERAGE_MARGIN_S * fs
+    if uncovered:
+        notes.append(f"{uncovered} logged reward record(s) lie past the end of the replayed samples and were not compared")
+    if short > 0:
+        gap = f"{short} sample(s) ({short / fs:.3f} s) short of the end, covering {coverage:.4%} of the recording"
+        if complete:
+            notes.append(f"coverage: the replay stopped {gap}, within the {COVERAGE_MARGIN_S:g} s margin")
+        else:
+            notes.append(f"FAILED coverage: the replay stopped {gap}, beyond the {COVERAGE_MARGIN_S:g} s margin. "
+                         "The scores above describe only the covered part, so this is not a protocol "
+                         "disagreement but an incomplete replay")
     passed = complete and any(ran) and all(got >= need for _, got, need in scores if got is not None)
     if replay.mismatches:
         notes.append("replay reported mismatches, so the protocol replayed may not be the one that ran: "

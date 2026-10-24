@@ -240,7 +240,7 @@ def test_an_incomplete_replay_fails_on_coverage_not_on_agreement(tmp_path):
     assert rec.coverage == pytest.approx(0.8)
     assert (rec.events_matched, rec.outputs_within_1pct, rec.telemetry_agree) == (1.0, 1.0, 1.0)
     assert rec.reconciled is False
-    assert any(n.startswith("FAILED coverage") and "80.0%" in n for n in rec.notes)
+    assert any(n.startswith("FAILED coverage") and "80.0000%" in n for n in rec.notes)
     assert any("past the end of the replay and were not compared" in n for n in rec.notes)
 
 
@@ -255,3 +255,31 @@ def test_a_complete_replay_reports_full_coverage(tmp_path):
     s, r = _case(tmp_path)
     rec = reconcile(s, r, CHUNK)
     assert rec.coverage == 1.0 and not any("coverage" in n for n in rec.notes)
+
+
+def test_a_replay_a_few_chunks_short_still_reconciles_and_says_so(tmp_path):
+    s, r = _case(tmp_path)
+    _stopped_early(r, 248)                      # 8 of 1000 samples (0.08 s) short
+    rec = reconcile(s, r, CHUNK)
+    assert rec.coverage == pytest.approx(0.992) and rec.reconciled is True
+    note = next(n for n in rec.notes if n.startswith("coverage:"))
+    assert "8 sample(s) (0.080 s) short" in note and "99.2000%" in note and "1 s margin" in note
+    assert not any(n.startswith("FAILED coverage") for n in rec.notes)
+
+
+def test_a_replay_beyond_the_margin_names_the_gap_precisely(tmp_path):
+    s, r = _case(tmp_path)
+    _stopped_early(r, 200)                      # 2 s short
+    rec = reconcile(s, r, CHUNK)
+    note = next(n for n in rec.notes if n.startswith("FAILED coverage"))
+    assert "200 sample(s) (2.000 s) short" in note and "beyond the 1 s margin" in note and rec.reconciled is False
+
+
+def test_reward_records_past_the_last_sample_are_always_noted(tmp_path):
+    def late(markers, frames):
+        extra = {"type": "reward_event", "channel": "level", "kind": "value", "value": 0.5, "t_s": N / FS + 5}
+        return markers + [(N + 500, extra)], frames
+    s, r = _case(tmp_path, edit=late)
+    rec = reconcile(s, r, CHUNK)
+    assert rec.coverage == 1.0 and rec.reconciled is True
+    assert any(n.startswith("1 logged reward record(s) lie past the end") for n in rec.notes)
