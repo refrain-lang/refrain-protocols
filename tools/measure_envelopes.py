@@ -64,11 +64,12 @@ MAX_LAG_MS = 2000.0
 
 
 def _chain(expr: dict) -> tuple[list[str], dict, dict | None]:
-    """Callee names innermost-first, the call carrying `band`, and the source ref."""
+    """Callee names innermost-first, the call naming the band, and the source ref."""
     names, band_call, node = [], None, expr
     while node.get("node") == "call":
         names.append(node["callee"])
-        if any(a.get("name") == "band" for a in node["args"]):
+        named = {a.get("name") for a in node["args"]}
+        if "band" in named or {"center", "bandwidth"} <= named:
             band_call = node
         node = node["args"][0]["value"]
     return names[::-1], band_call, (node if node.get("node") == "stream_ref" else None)
@@ -76,6 +77,23 @@ def _chain(expr: dict) -> tuple[list[str], dict, dict | None]:
 
 def _num(v: dict) -> float:
     return float(v["value"] if v["node"] == "number" else v["default"])
+
+
+def _band(args: dict) -> tuple[float, float] | None:
+    """(low, high) edge in Hz, from `band: (lo, hi)` or from `center` + `bandwidth: ratio(r)`.
+
+    `bandwidth` in any other form is refused rather than guessed at: a bandwidth given
+    in Hz would mean center +/- w/2, a different band from the same two numbers.
+    """
+    if "band" in args:
+        lo, hi = (_num(e) for e in args["band"]["elements"])
+        return lo, hi
+    width = args["bandwidth"]
+    if width.get("node") != "call" or width["callee"] != "ratio" or len(width["args"]) != 1:
+        return None
+    root = float(np.sqrt(_num(width["args"][0]["value"])))
+    center = _num(args["center"])
+    return center / root, center * root
 
 
 def envelopes(ir_json: dict) -> list[dict]:
@@ -86,9 +104,11 @@ def envelopes(ir_json: dict) -> list[dict]:
         if shape is None or call is None or src is None:
             continue
         args = {a["name"]: a["value"] for a in call["args"] if a["name"]}
-        lo, hi = (_num(e) for e in args["band"]["elements"])
+        band = _band(args)
+        if band is None:
+            continue
         latency = _num(args["latency"]) if "latency" in args else None
-        out.append(dict(derive=name, shape=shape, band=(lo, hi), latency_ms=latency,
+        out.append(dict(derive=name, shape=shape, band=band, latency_ms=latency,
                         source=src["target"].split("/", 1)[-1]))
     return out
 
