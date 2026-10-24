@@ -154,17 +154,14 @@ def test_applied_advice_sets_its_control_and_other_advice_does_not(tmp_path):
     assert _gain(r)[-1] == 7.0
 
 
-def test_pause_and_resume_freeze_the_phase_clock(tmp_path, monkeypatch):
-    calls = []
-    real = Evaluator.set_clock_frozen
-    monkeypatch.setattr(Evaluator, "set_clock_frozen", lambda self, f: (calls.append(f), real(self, f))[1])
+def test_pause_and_resume_freeze_the_phase_clock(tmp_path):
+    # settle is `timed` for 1 s (100 samples). Paused from sample 20 to sample 300, its remaining
+    # 80 samples (20 chunks) only run after the resume, so phase 1 first shows at chunk 95.
     pause = {"type": "session_state", "action": "pause", "t_s": 0.2}
     resume = {"type": "session_state", "action": "resume", "t_s": 3.0}
-    _replay(tmp_path, [(20, pause), (300, resume)])
-    # the replay also re-asserts "not frozen" each chunk to refresh its view of the phase,
-    # so look at the transitions: running, paused at the pause record, running again at the resume
-    transitions = [c for i, c in enumerate(calls) if i == 0 or c != calls[i - 1]]
-    assert transitions == [False, True, False]
+    r = _replay(tmp_path, [(20, pause), (300, resume)], text=TIMED_FIRST)
+    first_work = next(i for i, t in enumerate(r.taps_per_chunk) if t["phase/index"] == 1)
+    assert first_work == 95
 
 
 def _spy_resets(monkeypatch):

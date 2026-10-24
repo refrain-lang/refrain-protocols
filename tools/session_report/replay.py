@@ -173,8 +173,9 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
 
         `current_phase()` is a snapshot taken while the last chunk was processed, so it
         misses an advance refrain's own timer made at the end of that chunk. Re-asserting
-        the clock state refreshes the snapshot without changing anything (it is skipped
-        while paused: no timer can fire then, and freezing resets held outputs).
+        the clock state refreshes the snapshot without changing anything. Two things must stay:
+        the skip while paused (no timer can fire then, and re-asserting False would discard the
+        logged pause), and the False (re-asserting True resets held outputs, which is observable).
         """
         if not state["frozen"]:
             ev.set_clock_frozen(False)
