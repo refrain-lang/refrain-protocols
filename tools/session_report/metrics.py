@@ -14,7 +14,17 @@ run through this module:
 * **Each figure's denominator is the time it belongs to.** Reward share is over
   *unmuted* time, because muted reward reached nobody; episode rates are over
   the *trusted window*, because that is the only stretch the truth model could
-  look at; mute shares are over the whole replayed recording.
+  look at; mute shares are over the replayed recording after warmup.
+
+Everything is measured **after warmup**. A protocol's warmup is its first phase
+when that phase is output-muted (refrain's own rule, and the window its
+percentile thresholds and filters fill in), and during it the trainee is
+getting no feedback at all -- so counting it would dilute every rate in the
+report. The span is taken from the live telemetry's ``state`` field where the
+log has one and from the protocol's own first phase otherwise, both figures are
+reported, and a disagreement between them is noted rather than resolved
+silently. A phase that is entirely warmup comes back with None figures, not
+zeroes: nothing was measured there, which is not the same as nothing happening.
 
 Resolutions differ by source and the report says so: refrain's artifact mute and
 the phase's output mute are read from the replay's per-chunk taps (one chunk of
@@ -39,6 +49,7 @@ BUCKET_S = 60.0                  # protocol_views trajectory buckets
 MIN_LAG_S = 10.0                 # lag_and_r needs at least this much signal to search over
 FLAT_STD = 1e-9
 MUTE_SOURCES = ("artifact", "phase", "pause", "audio")
+WARMUP_DISAGREE_S = 1.0          # log and protocol further apart than this is worth saying
 
 
 def _share(part, whole) -> float | None:
@@ -98,6 +109,15 @@ def _onsets(stream) -> np.ndarray:
     return np.concatenate(([0], rising)) if on[0] else rising
 
 
+def _run_lengths(flags: np.ndarray, lo: int) -> list[int]:
+    """Length in samples of every run of True that starts at or after ``lo``."""
+    if not flags.size:
+        return []
+    edges = np.diff(np.concatenate(([False], flags, [False])).astype(np.int8))
+    starts, ends = np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)
+    return [int(end - start) for start, end in zip(starts, ends) if start >= lo]
+
+
 def _pause_mask(session, replay, n: int, notes: list[str]) -> np.ndarray:
     """When the clinician had the session paused, from the log's own records."""
     mask = np.zeros(max(n, 0), dtype=bool)
@@ -127,11 +147,9 @@ def _pause_mask(session, replay, n: int, notes: list[str]) -> np.ndarray:
     return mask
 
 
-def _audio_mask(session, replay, n: int, fs: float, notes: list[str]) -> np.ndarray:
+def _audio_mask(frames, n: int, fs: float, notes: list[str]) -> np.ndarray:
     """When the recorder had the audio muted, from the 10 Hz telemetry."""
     mask = np.zeros(max(n, 0), dtype=bool)
-    placement: list[str] = []
-    frames = frame_positions(session, placement)
     if not frames:
         notes.append("the log carries no telemetry, so nothing says when the audio was muted; "
                      "audio mute is reported as never")
@@ -147,6 +165,70 @@ def _audio_mask(session, replay, n: int, fs: float, notes: list[str]) -> np.ndar
         if value:
             mask[max(at, 0):min(end, n)] = True
     return mask
+
+
+def _declared_warmup(ir_json, fs: float) -> int | None:
+    """The warmup the protocol itself declares, in samples.
+
+    refrain's rule: the first session phase is the warmup window when that phase is
+    output-muted, and nothing is warmup otherwise. This is the replay's own view, and
+    it needs no state the replay does not already expose.
+    """
+    phases = ((ir_json or {}).get("session") or {}).get("phases") or []
+    if not phases:
+        return None
+    first = phases[0]
+    if not first.get("output_muted"):
+        return 0
+    return int(round(float(first.get("duration_ms") or 0.0) / 1000.0 * fs))
+
+
+def _logged_warmup(frames, n: int, fs: float) -> int | None:
+    """Where the live telemetry says warmup ended, in samples, or None if it never says.
+
+    Warmup ends where the first frame that is not in it begins. A log that never reports
+    the warmup state describes a session that never had one -- and that is not the same as
+    "warmup ended when telemetry started", which would quietly drop the first frames of
+    every session that had no warmup at all. A log whose frames are *all* warmup describes
+    a session that never left it, so the whole replay is warmup.
+    """
+    states = [(int(round(t * fs)), frame.get("state")) for frame, t in frames
+              if frame.get("state") is not None]
+    if not states:
+        return None
+    if not any(state == "warmup" for _, state in states):
+        return 0
+    running = [at for at, state in states if state != "warmup"]
+    return min(running) if running else n
+
+
+def _warmup_span(frames, ir_json, n: int, fs: float, notes: list[str]) -> dict:
+    """The span excluded from every figure, and where that span was read from."""
+    declared, logged = _declared_warmup(ir_json, fs), _logged_warmup(frames, n, fs)
+    if logged is not None:
+        end, source = logged, "the live telemetry's state field"
+    elif declared is not None:
+        end, source = declared, ("the protocol's own first phase, which is output_muted"
+                                 if declared else "the protocol's own first phase, which is "
+                                                  "not output_muted, so it has no warmup")
+    else:
+        end, source = 0, "nothing: neither the log nor a protocol IR says where warmup ended"
+    reached, end = int(end), max(0, min(int(end), max(n, 0)))
+    if end:
+        notes.append(f"metrics are measured after warmup: samples 0 to {end} "
+                     f"({end / fs:.1f} s) are excluded, read from {source}")
+    else:
+        notes.append(f"no warmup was excluded, according to {source}")
+    if n and end >= n:
+        notes.append(f"warmup covers the whole replay (it runs to {reached / fs:.1f} s of the "
+                     f"{n / fs:.1f} s replayed), so there is no time after it to measure and "
+                     "every figure is reported as unmeasured rather than as zero")
+    if declared is not None and logged is not None and abs(declared - logged) > WARMUP_DISAGREE_S * fs:
+        notes.append(f"the log says warmup ended at {logged / fs:.1f} s but the protocol declares "
+                     f"{declared / fs:.1f} s; the log is what actually ran, so it was used, and "
+                     "the difference is reported rather than resolved")
+    return {"end_sample": end, "end_s": end / fs, "source": source,
+            "logged_end_sample": logged, "declared_end_sample": declared}
 
 
 def _condition_node(event) -> dict | None:
@@ -217,6 +299,15 @@ def _episode_rows(tracks: _Tracks) -> list[dict]:
     condition first held, which is the filter's delay without the dwell -- is measured
     only for episodes that did get a reward, so that it and ``ding_ms`` describe the
     same episodes and the gap between them is the protocol's hold and nothing else.
+
+    An episode whose live condition was *already* holding when the behaviour truly
+    started gets ``condition_ms = None`` and ``condition_at_start = True``, not 0 ms.
+    The real delay there is negative and unmeasurable from this side: the condition
+    began before the episode did, so the search would have to look backwards into the
+    previous episode. Recording it as zero would drag the median down and make the
+    filter look faster than it is, and would break the decomposition the report prints
+    (experienced latency = filter delay + hold). The count of such episodes is reported
+    beside the latency instead.
     """
     rows = []
     for start, end in (tracks.episodes or []):
@@ -230,12 +321,16 @@ def _episode_rows(tracks: _Tracks) -> list[dict]:
             "rewarded_by_grace": by_grace,
             "ding_ms": (int(tracks.onsets[after]) - start) / tracks.fs * 1000.0 if by_grace else None,
             "condition_ms": None,
+            "condition_at_start": False,
             "rise_ms": None,
             "lost": {},
         }
         if by_grace and tracks.condition is not None:
-            held = np.flatnonzero(tracks.condition[start:stop])
-            row["condition_ms"] = float(held[0]) / tracks.fs * 1000.0 if held.size else None
+            if tracks.condition[start]:
+                row["condition_at_start"] = True          # began before the episode did
+            else:
+                held = np.flatnonzero(tracks.condition[start:stop])
+                row["condition_ms"] = float(held[0]) / tracks.fs * 1000.0 if held.size else None
         if tracks.continuous is not None:
             risen = np.flatnonzero(tracks.continuous[start:stop] >= RISE_FRACTION)
             row["rise_ms"] = float(risen[0]) / tracks.fs * 1000.0 if risen.size else None
@@ -266,8 +361,10 @@ def _span_metrics(tracks: _Tracks, rows: list[dict], lo: int, hi: int) -> dict:
         "elapsed_s": elapsed,
         "unmuted_s": unmuted / tracks.fs,
         "window_s": trusted / tracks.fs,
-        "episodes": len(mine) if judged else None,
-        "reward_onsets": onsets,
+        # A span with no time in it -- a phase that is entirely warmup -- counted nothing,
+        # which is not the same as having counted none, so even the counts are None there.
+        "episodes": len(mine) if judged and width else None,
+        "reward_onsets": onsets if width else None,
         "reward_share_of_unmuted": _share(held, unmuted),
         "rewards_per_min": _per_min(onsets, elapsed),
         "episodes_per_min": _per_min(len(mine), trusted / tracks.fs) if judged else None,
@@ -429,7 +526,14 @@ def _control_track(replay, name: str | None, n: int) -> np.ndarray | None:
     return out
 
 
-def _ratio_view(session, replay, ir_json, fs: float, n: int, notes: list[str]) -> dict | None:
+def _ratio_view(session, replay, ir_json, fs: float, n: int, begin: int,
+                notes: list[str]) -> dict | None:
+    """The review ratio's trajectory, and how much of the time it was above target.
+
+    The buckets run from the start of the recording, each labelled with its own seconds,
+    because the trajectory through warmup is part of what a reviewer is looking at. The
+    single share figure is measured after warmup like every other share.
+    """
     contract, source = _review_contract(session, ir_json)
     if contract is None:
         return None
@@ -465,7 +569,9 @@ def _ratio_view(session, replay, ir_json, fs: float, n: int, notes: list[str]) -
     return {"ratio_stream": name, "target_control": contract["target_control"],
             "scored_against": against, "declared_in": source,
             "literal_threshold": contract["literal_threshold"],
-            "share_above_target": None if above is None or not n else float(above.mean()),
+            "share_above_target": (None if above is None or n <= begin
+                                   else float(above[begin:].mean())),
+            "share_measured_from_s": begin / fs,
             "buckets": buckets}
 
 
@@ -477,16 +583,20 @@ def _layered(session, ir_json) -> bool:
     return style == "layered_texture"
 
 
-def _feedback_state_view(session) -> dict | None:
-    """Time in each logged feedback state, for a session whose audio is layered texture."""
+def _feedback_state_view(frames, begin: int, fs: float) -> dict | None:
+    """Time in each logged feedback state, for a session whose audio is layered texture.
+
+    Counted over the frames after warmup, like every other share here.
+    """
     counts: dict[str, int] = {}
-    for frame in session.telemetry:
+    after = [frame for frame, t in frames if int(round(t * fs)) >= begin]
+    for frame in after:
         state = frame.get("feedback_state")
         if state is not None:
             counts[str(state)] = counts.get(str(state), 0) + 1
     reported = sum(counts.values())
     return {"frames": dict(sorted(counts.items())), "reported_frames": reported,
-            "telemetry_frames": len(session.telemetry),
+            "telemetry_frames": len(after), "measured_from_s": begin / fs,
             "share": {k: _share(v, reported) for k, v in sorted(counts.items())}}
 
 
@@ -495,10 +605,11 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
 
     ``truth`` is the ``TruthResult`` for this replay and ``muscle`` the muscle
     episodes found in the recording's own samples. ``ir_json`` is the replayed
-    protocol's IR as JSON, which names its phases, its envelopes and the review
-    view it declares; without it those sections are reported as unavailable.
-    ``own`` is False for a comparison design, which never ran live, so nothing
-    the recorder logged about rendering describes it.
+    protocol's IR as JSON, which names its phases, its envelopes, the review view
+    it declares, and the warmup to exclude when the log does not say; without it
+    those sections are reported as unavailable. ``own`` is False for a comparison
+    design, which never ran live, so nothing the recorder logged about rendering
+    describes it.
     """
     notes: list[str] = []
     fs = float(fs)
@@ -506,10 +617,13 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
     if n <= 0:
         notes.append("the replay stepped no samples, so nothing could be measured")
 
+    # The telemetry's clock mapping (ruling R15) is wanted by three things below, so it
+    # runs once; the reconciliation reports its drift, which is why the notes are dropped.
+    frames = frame_positions(session, [])
     mutes = {"artifact": _expand_tap(replay, "muted", n) > 0.5,
              "phase": _expand_tap(replay, "phase/output_muted", n) > 0.5,
              "pause": _pause_mask(session, replay, n, notes),
-             "audio": _audio_mask(session, replay, n, fs, notes)}
+             "audio": _audio_mask(frames, n, fs, notes)}
     muted = np.zeros(max(n, 0), dtype=bool)
     for mask in mutes.values():
         muted |= mask
@@ -544,35 +658,49 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
     in_window = (tracks.onsets >= window[0]) & (tracks.onsets < window[1])
     tracks.strays = tracks.onsets[in_window & ~covered[tracks.onsets]] if n else tracks.onsets
 
+    warmup = _warmup_span(frames, ir_json, n, fs, notes)
+    begin = warmup["end_sample"]
     blocks = _phase_blocks(replay, ir_json, n)
     judged = truth.judged
-    rewarded = [r for r in rows if r["ding_ms"] is not None]
-    out = dict(_span_metrics(tracks, rows, 0, n))
+    # Every figure below is measured after warmup, so the episodes counted are the ones
+    # that began after it. A phase entirely inside warmup gets an empty span, hence Nones.
+    mine = [r for r in rows if r["start"] >= begin]
+    rewarded = [r for r in mine if r["ding_ms"] is not None]
+    out = dict(_span_metrics(tracks, rows, begin, n))
     out.update({
         "samples": n,
+        "warmup": warmup,
         "judged": bool(judged),
         "window": list(window),
         "unreproducible": list(truth.unreproducible),
         "truth_notes": list(truth.notes),
-        "episode_len_ms": _median_p90([(r["end"] - r["start"]) / fs * 1000.0 for r in rows]),
+        "episode_len_ms": _median_p90([(r["end"] - r["start"]) / fs * 1000.0 for r in mine]),
+        "reward_hold_len_ms": _median_p90(
+            [length / fs * 1000.0 for length in _run_lengths(tracks.holds, begin)]),
         "latency_from_episode_ms": _median_p90([r["ding_ms"] for r in rewarded]),
         "latency_from_condition_true_ms": _median_p90(
             [r["condition_ms"] for r in rewarded if r["condition_ms"] is not None]),
+        "condition_already_true_at_start": (sum(r["condition_at_start"] for r in rewarded)
+                                            if judged else None),
         "deadline_curve": {
             int(deadline): (_share(sum(r["ding_ms"] is not None and r["ding_ms"] <= deadline
-                                       for r in rows), len(rows)) if judged else None)
+                                       for r in mine), len(mine)) if judged else None)
             for deadline in DEADLINES_MS},
         "continuous_rise_ms": {"median": _median_p90(
-            [r["rise_ms"] for r in rows if r["rise_ms"] is not None])["median"]},
-        "episodes_lost_to_mute": ({source: sum(r["lost"][source] for r in rows)
+            [r["rise_ms"] for r in mine if r["rise_ms"] is not None])["median"]},
+        "episodes_lost_to_mute": ({source: sum(r["lost"][source] for r in mine)
                                    for source in (*MUTE_SOURCES, "any")} if judged
                                   else {source: None for source in (*MUTE_SOURCES, "any")}),
+        # A threshold's value at a block's edges is not a rate warmup can dilute, so it is
+        # reported over the whole block -- including a block that is all warmup, where the
+        # seeding of an adaptive threshold is the interesting part.
         "thresholds_per_block": _thresholds_per_block(replay, blocks, notes),
-        "derive_lag_r": _derive_lag_r(replay, ir_json, fs, window, notes),
+        "derive_lag_r": _derive_lag_r(replay, ir_json, fs, (max(window[0], begin), window[1]),
+                                      notes),
         "ding_decided_vs_rendered": _dings(session, replay, own),
         "per_phase": [{"index": b["index"], "name": b["name"], "block": b["block"],
                        "start_s": b["start"] / fs, "end_s": b["end"] / fs,
-                       **_span_metrics(tracks, rows, b["start"], b["end"])}
+                       **_span_metrics(tracks, rows, max(b["start"], begin), b["end"])}
                       for b in blocks],
         "settings": {
             "muscle_band_hz": list(muscle_band(fs)) if muscle_band(fs) else None,
@@ -583,14 +711,15 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
             "continuous_rise_fraction": RISE_FRACTION,
             "bucket_s": BUCKET_S,
             "trusted_window_samples": list(window),
+            "measured_from_sample": begin,
         },
         "notes": notes,
     })
     views = {}
-    ratio = _ratio_view(session, replay, ir_json, fs, n, notes)
+    ratio = _ratio_view(session, replay, ir_json, fs, n, begin, notes)
     if ratio is not None:
         views["ratio"] = ratio
     if _layered(session, ir_json):
-        views["feedback_state"] = _feedback_state_view(session)
+        views["feedback_state"] = _feedback_state_view(frames, begin, fs)
     out["protocol_views"] = views
     return out

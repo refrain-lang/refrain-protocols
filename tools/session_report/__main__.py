@@ -10,7 +10,8 @@ that may not be the one that ran, a replay that did not cover the recording, a
 phase the replay disagreed about, anything the loader doubted. Only then the
 numbers, per protocol: reward, true target episodes and latency, mutes against
 an independent muscle measure, threshold drift, envelope lag, and the views a
-protocol declares for itself.
+protocol declares for itself. Every figure is measured after warmup, and the
+header says which span that excluded and where that span was read from.
 
 ``--json`` writes the same content, so a later report can be diffed against this
 one. Nothing from a session is copied anywhere else.
@@ -39,9 +40,14 @@ from refrain.ir_json import ir_to_json_obj  # noqa: E402
 from refrain.parser import ParseError  # noqa: E402
 from refrain.resolver import ResolveError  # noqa: E402
 
-from session_report.metrics import MUTE_SOURCES, session_metrics  # noqa: E402
+# _share and _per_min are imported rather than reimplemented so that every rate and share
+# in the report, printed or stored, obeys the one zero-denominator rule.
+from session_report.metrics import (  # noqa: E402
+    MUTE_SOURCES, _per_min, _share, session_metrics,
+)
 from session_report.muscle import (  # noqa: E402
-    MIN_WINDOWS, MUSCLE_FACTOR, WINDOW_MS, muscle_band, muscle_episodes,
+    EDGE_GUARD_S, MIN_WINDOWS, MUSCLE_FACTOR, WINDOW_MS, muscle_band, muscle_episodes,
+    noise_floor_per_min,
 )
 from session_report.reconcile import (  # noqa: E402
     COVERAGE_MARGIN_S, EVENTS_MIN, OUTPUTS_MIN, TELEMETRY_MIN, reconcile,
@@ -207,8 +213,11 @@ def build_report(folder: Path, *, protocol: Path | None = None, protocols_ref: s
             "factor": MUSCLE_FACTOR,
             "window_ms": WINDOW_MS,
             "min_windows": MIN_WINDOWS,
+            "edge_guard_s": EDGE_GUARD_S,
             "episodes": len(muscle),
             "seconds": sum(b - a for a, b in muscle) / session.fs if session.fs else None,
+            # what the same rule finds on pure noise at this rate, so a count can be read
+            "noise_episodes_per_min": noise_floor_per_min(session.fs),
         },
         "protocols": protocols,
     }
@@ -257,6 +266,13 @@ def _provenance(doc: dict) -> list[str]:
     else:
         lines.append(f"  trusted window for true episodes: samples {window[0]} to {window[1]} "
                      "(nothing could be looked at)")
+    warmup = entry.get("warmup") or {}
+    if warmup.get("end_sample"):
+        lines.append(f"  warmup excluded from every figure below: samples 0 to "
+                     f"{warmup['end_sample']} (0.0 s to {warmup['end_s']:.1f} s), read from "
+                     f"{warmup['source']}; {_num(entry['elapsed_s'], '{:.1f}')} s measured")
+    else:
+        lines.append(f"  no warmup excluded, according to {warmup.get('source', 'nothing')}")
     return lines
 
 
@@ -284,14 +300,32 @@ def _caveats(doc: dict) -> list[str]:
     return head + (out if out else ["  nothing was flagged"])
 
 
+def _reconciliation_detail(doc: dict) -> list[str]:
+    """Every reconciliation note the caveats did not already lead with.
+
+    The caveats take the FAILED and NOT EVALUATED notes, but the rest are not
+    decoration: "N logged reward record(s) lie past the end of the replayed samples"
+    and "output channel(s) in the log but never produced by the replay" are how a
+    reader sees what was and was not compared, and dropping them would undo the
+    reason Task 4 was made to report them in the first place.
+    """
+    rest = [note for note in doc["reconciliation"]["notes"]
+            if not note.startswith(("FAILED", "NOT EVALUATED"))]
+    if not rest:
+        return []
+    return ["", "Reconciliation detail:"] + [f"  - {note}" for note in rest]
+
+
 def _reward_lines(entry: dict) -> list[str]:
     dings = entry["ding_decided_vs_rendered"]
     out = ["  Reward",
            f"    reward decisions (the protocol's own reward.event, before any mute): "
-           f"{entry['reward_onsets']} ({_num(entry['rewards_per_min'], '{:.2f}')} per minute of "
+           f"{_num(entry['reward_onsets'])} ({_num(entry['rewards_per_min'], '{:.2f}')} per minute of "
            f"{_num(entry['elapsed_s'], '{:.1f}')} s replayed)",
            f"    reward held for {_pct(entry['reward_share_of_unmuted'])} of "
-           f"{_num(entry['unmuted_s'], '{:.1f}')} s unmuted"]
+           f"{_num(entry['unmuted_s'], '{:.1f}')} s unmuted; each hold lasted "
+           f"{_ms(entry['reward_hold_len_ms']['median'])} median, "
+           f"{_ms(entry['reward_hold_len_ms']['p90'])} at p90"]
     if dings["logged"] is None:
         out.append(f"    ding channels fired in this replay: {dings['decided']} (this design never "
                    "ran live, so nothing of it was rendered to anyone)")
@@ -317,18 +351,21 @@ def _episode_lines(entry: dict) -> list[str]:
                        for k in sorted(entry["deadline_curve"]))
     return [
         "  True target episodes",
-        f"    {entry['episodes']} episode(s), {_num(entry['episodes_per_min'], '{:.2f}')} per minute "
+        f"    {_num(entry['episodes'])} episode(s), {_num(entry['episodes_per_min'], '{:.2f}')} per minute "
         f"of the {_num(entry['window_s'], '{:.1f}')} s trusted window; length median "
         f"{_ms(entry['episode_len_ms']['median'])}, p90 {_ms(entry['episode_len_ms']['p90'])}",
-        f"    rewarded while still going: {_pct(entry['rewarded_in_episode'])}; "
+        f"    a reward decided while still going: {_pct(entry['rewarded_in_episode'])}; "
         f"by episode end + {entry['settings']['grace_ms']:.0f} ms: "
-        f"{_pct(entry['rewarded_by_end_plus_250'])}",
+        f"{_pct(entry['rewarded_by_end_plus_250'])} (decided, not necessarily heard: the "
+        "ding line above says what the channels fired)",
         f"    latency from the episode's true start: median "
         f"{_ms(entry['latency_from_episode_ms']['median'])}, p90 "
         f"{_ms(entry['latency_from_episode_ms']['p90'])}",
         f"    of which the filter's own delay, to the protocol's condition first holding: median "
         f"{_ms(entry['latency_from_condition_true_ms']['median'])}, p90 "
-        f"{_ms(entry['latency_from_condition_true_ms']['p90'])}",
+        f"{_ms(entry['latency_from_condition_true_ms']['p90'])} — over the rewarded episodes "
+        f"except {_num(entry['condition_already_true_at_start'])}, where the condition was "
+        "already holding when the behaviour started and the delay cannot be read",
         f"    rewarded within: {curve}",
         f"    continuous output half-rise from the true start: median "
         f"{_ms(entry['continuous_rise_ms']['median'])}",
@@ -337,7 +374,25 @@ def _episode_lines(entry: dict) -> list[str]:
     ]
 
 
-def _mute_lines(entry: dict, muscle: dict) -> list[str]:
+def _muscle_lines(muscle: dict, recorded_s) -> list[str]:
+    """What the muscle measure found, with the noise floor it has to be read against."""
+    rate = _per_min(muscle["episodes"], recorded_s)
+    floor = muscle["noise_episodes_per_min"]
+    read_against = (f"on pure noise at this sample rate the same rule finds about "
+                    f"{floor:.2g} a minute, so read the count against that"
+                    if floor is not None else
+                    "this rule's noise floor has not been measured at this sample rate, so the "
+                    "count is not a safe count of real events")
+    return [
+        f"    muscle: {muscle['episodes']} episode(s), {_num(rate, '{:.2f}')} per minute, "
+        f"{_num(muscle['seconds'], '{:.1f}')} s = {_pct(_share(muscle['seconds'], recorded_s))} "
+        f"of the {_num(recorded_s, '{:.1f}')} s recorded",
+        f"      {read_against}; and the first and last {muscle['edge_guard_s']:g} s cannot be "
+        "seen at all (they are the filter's own edge transient)",
+    ]
+
+
+def _mute_lines(entry: dict, muscle: dict, recorded_s) -> list[str]:
     share = entry["mute_share"]
     lost = entry["episodes_lost_to_mute"]
     return [
@@ -345,10 +400,10 @@ def _mute_lines(entry: dict, muscle: dict) -> list[str]:
         "    muted, by source (one sample can be muted by several): "
         + " | ".join(f"{name} {_pct(share[name])}" for name in MUTE_SOURCES)
         + f" (unmuted {_num(entry['unmuted_s'], '{:.1f}')} s of "
-          f"{_num(entry['elapsed_s'], '{:.1f}')} s)",
-        f"    muscle: {muscle['episodes']} episode(s) over "
-        f"{_num(muscle['seconds'], '{:.1f}')} s; {_pct(entry['muscle_time_muted'])} of muscle time "
-        f"was muted, and {_pct(entry['muted_without_muscle'])} of muted time had no muscle",
+          f"{_num(entry['elapsed_s'], '{:.1f}')} s measured)",
+        *_muscle_lines(muscle, recorded_s),
+        f"      {_pct(entry['muscle_time_muted'])} of muscle time was muted, and "
+        f"{_pct(entry['muted_without_muscle'])} of muted time had no muscle",
         "    episodes lost to mute (muted for the whole episode): "
         + " | ".join(f"{name} {_num(lost[name])}" for name in (*MUTE_SOURCES, "any")),
     ]
@@ -417,14 +472,14 @@ def _view_lines(entry: dict) -> list[str]:
     return out
 
 
-def _protocol_lines(entry: dict, muscle: dict) -> list[str]:
+def _protocol_lines(entry: dict, muscle: dict, recorded_s) -> list[str]:
     role = "the session's own protocol" if entry["role"] == "session" else "comparison design"
     out = ["", f"== {role}: {entry.get('name') or Path(entry['path']).name} =="]
     if entry.get("error"):
         return out + [f"  could not be replayed: {entry['error']}"]
     out += _reward_lines(entry)
     out += _episode_lines(entry)
-    out += _mute_lines(entry, muscle)
+    out += _mute_lines(entry, muscle, recorded_s)
     out += _threshold_lines(entry)
     out += _lag_lines(entry)
     out += _phase_lines(entry)
@@ -446,8 +501,9 @@ def render(doc: dict) -> list[str]:
     lines = [_verdict(doc)]
     lines += _provenance(doc)
     lines += _caveats(doc)
+    lines += _reconciliation_detail(doc)
     for entry in doc["protocols"]:
-        lines += _protocol_lines(entry, doc["muscle"])
+        lines += _protocol_lines(entry, doc["muscle"], doc["session"]["duration_s"])
     return lines
 
 

@@ -105,6 +105,9 @@ def _frames(replay) -> list[dict]:
         out.append({"type": "telemetry", "t_s": pos / FS, "audio_muted": False,
                     "paused": False, "output_muted": bool(tap["phase/output_muted"]),
                     "muted": bool(tap["muted"]), "inhibits": {},
+                    # this protocol's first phase is not output-muted, so refrain never
+                    # enters warmup and every frame the recorder writes says "run"
+                    "state": "run",
                     "reward_event_holds": bool(tap["reward/event.holds"])})
     return out
 
@@ -151,6 +154,15 @@ def test_cli_prints_reconciliation_first_and_writes_json(tmp_path):
     # what the tool chose, so the numbers can be read
     assert "70-112.5 Hz" in printed and "3x" in printed
     assert "trusted window" in printed
+    # the muscle count cannot be read without its noise floor and its blind spots
+    assert "on pure noise at this sample rate the same rule finds about 0.84 a minute" in printed
+    assert "first and last 0.5 s cannot be seen at all" in printed
+    # this protocol's first phase is not output-muted, so there is no warmup to drop,
+    # and the log's own state field is what says so
+    assert "no warmup excluded, according to the live telemetry's state field" in printed
+    # the reconciliation notes that are not a failure are still printed, not dropped
+    assert "Reconciliation detail:" in printed
+    assert "match tolerance" in printed and "dings:" in printed
     assert "None" not in printed
 
     doc = json.loads(out.read_text())
@@ -249,13 +261,15 @@ def test_the_default_protocol_comes_from_the_repo_at_a_ref(tmp_path, capsys):
     """
     from session_report.__main__ import main
 
-    seconds, fs = 40.0, 250.0
+    # Long enough to outlast the protocol's own two-minute output-muted settle phase,
+    # which is its warmup window and is excluded from every figure.
+    seconds, fs, warmup_s = 200.0, 250.0, 120.0
     n = int(seconds * fs)
     t = np.arange(n) / fs
     rng = np.random.default_rng(3)
     pz = 10.0 * np.sin(2 * np.pi * 10.0 * t) + 3.0 * np.sin(2 * np.pi * 7.0 * t) \
         + 0.3 * rng.standard_normal(n)
-    crossover = (t >= 20.0) & (t < 30.0)                       # theta overtakes alpha
+    crossover = (t >= 140.0) & (t < 170.0)                     # theta overtakes alpha, in deep1
     pz[crossover] = (20.0 * np.sin(2 * np.pi * 7.0 * t[crossover])
                      + 3.0 * np.sin(2 * np.pi * 10.0 * t[crossover]))
     folder = build_session(tmp_path / "s", fs=fs, channel_names=["Pz"], eeg=pz[:, None], chunk=CHUNK,
@@ -268,10 +282,19 @@ def test_the_default_protocol_comes_from_the_repo_at_a_ref(tmp_path, capsys):
     assert printed.splitlines()[0].startswith("Reconciliation:")
     assert "equals HEAD (it was read at HEAD)" in printed
     assert "alpha_theta_narrowband" in printed
+    # the warmup it excluded is stated, with the span and where it was read from
+    assert f"warmup excluded from every figure below: samples 0 to {int(warmup_s * fs)}" in printed
+    assert "the protocol's own first phase, which is output_muted" in printed
+    assert "None" not in printed
 
     entry = json.loads(out.read_text())["protocols"][0]
     assert entry["source"].startswith("ref ")
     assert entry["judged"] is True
+    assert entry["warmup"]["end_sample"] == int(warmup_s * fs)
+    assert entry["warmup"]["logged_end_sample"] is None        # this fixture logs no telemetry
+    assert entry["elapsed_s"] == pytest.approx(seconds - warmup_s, abs=0.1)
+    # the ratio view's share is measured after warmup too, while its buckets are not
+    assert entry["protocol_views"]["ratio"]["share_measured_from_s"] == pytest.approx(warmup_s)
     # the two derives the recorder itself could not classify, named but not blocking
     assert entry["unreproducible"] == ["theta_progress", "ratio_progress"]
     # its own review contract, read from the protocol rather than from a manifest

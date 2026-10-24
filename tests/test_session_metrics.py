@@ -25,7 +25,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from session_fixture import build_session  # noqa: E402
 from session_report.metrics import session_metrics  # noqa: E402
-from session_report.muscle import MUSCLE_FACTOR, muscle_band, muscle_episodes  # noqa: E402
+from session_report.muscle import (  # noqa: E402
+    MUSCLE_FACTOR, NOISE_EPISODES_PER_MIN, muscle_band, muscle_episodes,
+    noise_floor_per_min,
+)
 from session_report.replay import replay_session  # noqa: E402
 from session_report.session import load_session  # noqa: E402
 from session_report.truth import true_episodes, truth_streams  # noqa: E402
@@ -36,26 +39,38 @@ SECONDS = 90.0
 N = int(SECONDS * FS)
 T = np.arange(N) / FS
 CHANS = ("A1", "Pz")
-SETTLE_S = 20.0                         # phase 0: output muted end to end
 DWELL_MS = 250.0
 CHUNK_MS = 1000.0 * CHUNK / FS
 SAMPLE_MS = 1000.0 / FS
 WINDOW = (2500, 21000)                  # what the zero-phase filters can be trusted on
 THRESHOLD_UV = 5.0
 
-PAUSE_S, RESUME_S = 25.0, 27.0
-AUDIO_MUTED_S = (40.0, 42.0)
-SMR_ONSETS = (30.0, 50.0, 70.0)
+# The phase plan mirrors the real protocol's shape -- a muted settle that refrain treats
+# as the warmup window, then work, a muted mid-session rest, and more work -- because
+# warmup is excluded from every figure and a muted phase that is NOT warmup is where the
+# mute metrics have to be exercised.
+SETTLE_S = 15.0                         # phase 0, output muted: refrain's warmup window
+REST_S = (60.0, 70.0)                   # phase 2, output muted, mid-session
+WARMUP_END = int(SETTLE_S * FS)
+MEASURED_S = (N - WARMUP_END) / FS      # the span every whole-session figure covers
+PAUSE_S, RESUME_S = 20.0, 22.0
+AUDIO_MUTED_S = (45.0, 47.0)
+SMR_ONSETS = (25.0, 40.0, 75.0)
 SMR_LEN_S = 1.5
-MUSCLE_ONSETS = (5.0, 60.0)             # 5.0 s is inside the muted settle phase
+# 5 s is inside warmup, 30 s is unmuted work, 62 s is inside the muted rest
+MUSCLE_ONSETS = (5.0, 30.0, 62.0)
 MUSCLE_LEN_S = 0.4
 
 
-def _protocol(*, muted_throughout: bool = False) -> str:
-    phases = ('phase { name = "settle"; duration = 20 s; output_muted = true }, '
-              'phase { name = "work"; duration = 70 s; mode = timed_with_floor }')
-    if muted_throughout:
-        phases = 'phase { name = "dark"; duration = 90 s; output_muted = true }'
+def _protocol(*, paused_throughout: bool = False) -> str:
+    phases = ('phase { name = "settle"; duration = 15 s; output_muted = true }, '
+              'phase { name = "work"; duration = 45 s; mode = timed_with_floor }, '
+              'phase { name = "rest"; duration = 10 s; output_muted = true }, '
+              'phase { name = "work2"; duration = 20 s; mode = timed_with_floor }')
+    if paused_throughout:
+        # no output_muted first phase, so refrain declares no warmup at all and the whole
+        # session can be muted by a pause the log never resumes
+        phases = 'phase { name = "work"; duration = 90 s; mode = timed_with_floor }'
     return 'protocol "metrics_smr" {' + '''
   meta { version = "1.0.0" evidence = "exploratory" description = "t" title = "t" summary = "t"
          family = "t" status = "draft" modality = "eeg" }
@@ -100,44 +115,60 @@ def _with_bursts(pz: np.ndarray, onsets, length, hz, amplitude) -> np.ndarray:
     return out
 
 
-def _phase_markers(muted_throughout: bool) -> list[tuple[int, dict]]:
+def _phase_markers(paused_throughout: bool) -> list[tuple[int, dict]]:
     """Phase records as a recorder writes them: a little after refrain's own clock.
 
     The log's wall clock runs behind refrain's sample clock (the real session drifts
     ~3 s over 34 minutes), so a logged phase change always arrives after the phase
     actually turned over.
     """
-    if muted_throughout:
-        return [(0, {"type": "phase_change", "phase_index": 0, "phase_name": "dark", "t_s": 0.0})]
-    at = SETTLE_S + 0.1
-    return [(0, {"type": "phase_change", "phase_index": 0, "phase_name": "settle", "t_s": 0.0}),
-            (int(at * FS), {"type": "phase_change", "phase_index": 1, "phase_name": "work",
-                            "t_s": at})]
-
-
-def _audio_frames() -> list[dict]:
-    """10 Hz telemetry that mutes the audio for AUDIO_MUTED_S, as the recorder logs it."""
+    if paused_throughout:
+        return [(0, {"type": "phase_change", "phase_index": 0, "phase_name": "work", "t_s": 0.0})]
+    edges = [(0, 0, "settle"), (SETTLE_S, 1, "work"), (REST_S[0], 2, "rest"),
+             (REST_S[1], 3, "work2")]
     out = []
-    for k in range(int(SECONDS * 10)):
-        t = k / 10.0
-        out.append({"type": "telemetry", "t_s": t, "audio_muted": AUDIO_MUTED_S[0] <= t < AUDIO_MUTED_S[1]})
+    for at, index, name in edges:
+        late = at + 0.1 if at else 0.0
+        out.append((int(late * FS), {"type": "phase_change", "phase_index": index,
+                                     "phase_name": name, "t_s": late}))
     return out
 
 
-def _plant(tmp_path: Path, *, smr=(), muscle=(), paused=True, muted_throughout=False,
+def _audio_frames(*, state_until=None) -> list[dict]:
+    """10 Hz telemetry that mutes the audio for AUDIO_MUTED_S, as the recorder logs it.
+
+    With ``state_until`` the frames also carry refrain's session state, which is the
+    report's preferred source for where warmup ended.
+    """
+    out = []
+    for k in range(int(SECONDS * 10)):
+        t = k / 10.0
+        frame = {"type": "telemetry", "t_s": t,
+                 "audio_muted": AUDIO_MUTED_S[0] <= t < AUDIO_MUTED_S[1]}
+        if state_until is not None:
+            frame["state"] = "warmup" if t < state_until else "run"
+        out.append(frame)
+    return out
+
+
+def _plant(tmp_path: Path, *, smr=(), muscle=(), paused=True, paused_throughout=False,
            text=None, pz=None, phase_markers=None, telemetry=None, audio=None, manifest=None):
     """Build, replay and measure a planted session; return (metrics, extras)."""
     tmp_path.mkdir(parents=True, exist_ok=True)
     path = tmp_path / "p.refrain"
-    path.write_text(text if text is not None else _protocol(muted_throughout=muted_throughout))
+    path.write_text(text if text is not None else _protocol(paused_throughout=paused_throughout))
     ir = resolve(refrain.parse_file(str(path)), None)
     ir_json = ir_to_json_obj(ir)
 
     pz = _quiet_eeg(31) if pz is None else pz
     pz = _with_bursts(pz, smr, SMR_LEN_S, 13.5, 12.0)
     pz = _with_bursts(pz, muscle, MUSCLE_LEN_S, 80.0, 40.0)
-    markers = _phase_markers(muted_throughout) if phase_markers is None else list(phase_markers)
-    if paused:
+    markers = (_phase_markers(paused_throughout) if phase_markers is None
+               else list(phase_markers))
+    if paused_throughout:
+        # a pause at the very first sample that the log never resumes
+        markers += [(0, {"type": "session_state", "action": "pause", "t_s": 0.0})]
+    elif paused:
         markers += [(int(PAUSE_S * FS), {"type": "session_state", "action": "pause", "t_s": PAUSE_S}),
                     (int(RESUME_S * FS), {"type": "session_state", "action": "resume", "t_s": RESUME_S})]
     folder = build_session(tmp_path / "s", fs=FS, channel_names=list(CHANS),
@@ -173,14 +204,22 @@ def test_muscle_episodes_found():
     assert muscle_band(150.0) is None
     assert muscle_episodes(_eeg_band(T)[:4500], 150.0) == []
 
+    # the noise floor the report prints is only claimed for rates it was measured at
+    assert noise_floor_per_min(FS) == NOISE_EPISODES_PER_MIN[FS]
+    assert noise_floor_per_min(256.0) is None
+
 
 def test_metrics_on_planted_session(tmp_path):
     m, (res, eps, replay) = _plant(tmp_path, smr=SMR_ONSETS, muscle=MUSCLE_ONSETS)
 
-    # --- what was looked at ---
+    # --- what was looked at: the trusted window, minus warmup ---
     assert m["judged"] is True and tuple(m["window"]) == WINDOW
-    assert m["elapsed_s"] == pytest.approx(SECONDS, abs=0.1)
-    assert m["window_s"] == pytest.approx((WINDOW[1] - WINDOW[0]) / FS, abs=0.01)
+    assert m["warmup"]["end_sample"] == WARMUP_END          # the muted settle phase
+    assert m["warmup"]["declared_end_sample"] == WARMUP_END
+    assert m["warmup"]["logged_end_sample"] is None         # this log carries no state field
+    assert "first phase" in m["warmup"]["source"]
+    assert m["elapsed_s"] == pytest.approx(MEASURED_S, abs=0.1)
+    assert m["window_s"] == pytest.approx((WINDOW[1] - WARMUP_END) / FS, abs=0.01)
 
     # --- true episodes: one per planted burst ---
     assert m["episodes"] == 3, [(a / FS, b / FS) for a, b in res.episodes]
@@ -207,6 +246,8 @@ def test_metrics_on_planted_session(tmp_path):
     condition = m["latency_from_condition_true_ms"]["median"]
     assert abs((ding - condition) - DWELL_MS) <= CHUNK_MS + SAMPLE_MS, (ding, condition)
     assert m["latency_from_episode_ms"]["p90"] >= ding
+    # the bursts are isolated, so the condition was not already holding at any true start
+    assert m["condition_already_true_at_start"] == 0
     # the filter's own delay: the live envelope cannot cross a threshold it is only
     # 40 % of the way to later than its measured lag against the zero-phase truth
     lag_ms, r = m["derive_lag_r"]["smr_envelope"]
@@ -216,23 +257,31 @@ def test_metrics_on_planted_session(tmp_path):
     # from, so it rises no later than the ding
     assert 0.0 <= m["continuous_rise_ms"]["median"] <= ding
 
-    # --- mutes: three sources planted, one left at zero ---
+    # --- the ding duration distribution: the reward hold's own run lengths ---
+    holds = m["reward_hold_len_ms"]
+    # a hold starts one dwell into a burst and can outlast it only by the envelope's decay
+    assert DWELL_MS < holds["median"] < SMR_LEN_S * 1000.0
+    assert holds["p90"] >= holds["median"]
+
+    # --- mutes: three sources planted, one left at zero, all measured after warmup ---
+    rest_s = REST_S[1] - REST_S[0]
     assert m["mute_share"]["artifact"] == 0.0                # this protocol declares no inhibit
-    assert m["mute_share"]["phase"] == pytest.approx(SETTLE_S / SECONDS, abs=0.01)
-    assert m["mute_share"]["pause"] == pytest.approx((RESUME_S - PAUSE_S) / SECONDS, abs=0.01)
+    assert m["mute_share"]["phase"] == pytest.approx(rest_s / MEASURED_S, abs=0.01)
+    assert m["mute_share"]["pause"] == pytest.approx((RESUME_S - PAUSE_S) / MEASURED_S, abs=0.01)
     assert m["mute_share"]["audio"] == pytest.approx(
-        (AUDIO_MUTED_S[1] - AUDIO_MUTED_S[0]) / SECONDS, abs=0.01)
-    muted_s = SETTLE_S + (RESUME_S - PAUSE_S) + (AUDIO_MUTED_S[1] - AUDIO_MUTED_S[0])
-    assert m["unmuted_s"] == pytest.approx(SECONDS - muted_s, abs=0.3)
+        (AUDIO_MUTED_S[1] - AUDIO_MUTED_S[0]) / MEASURED_S, abs=0.01)
+    muted_s = rest_s + (RESUME_S - PAUSE_S) + (AUDIO_MUTED_S[1] - AUDIO_MUTED_S[0])
+    assert m["unmuted_s"] == pytest.approx(MEASURED_S - muted_s, abs=0.3)
     # the reward can only hold inside three 1.5 s bursts, all of them in unmuted time
     assert 0.0 < m["reward_share_of_unmuted"] <= 3 * (SMR_LEN_S + 0.5) / m["unmuted_s"]
     # every episode is in unmuted time, so none was lost to a mute
     assert m["episodes_lost_to_mute"] == {"artifact": 0, "phase": 0, "pause": 0, "audio": 0, "any": 0}
 
-    # --- muscle: one of the two planted bursts is inside the muted settle phase ---
-    assert len(eps) == 2, [(a / FS, b / FS) for a, b in eps]
+    # --- muscle: three bursts planted, one in warmup and one inside the muted rest ---
+    assert len(eps) == 3, [(a / FS, b / FS) for a, b in eps]
+    # the warmup burst is not measured at all, so of the two that are, one was muted
     assert 0.3 <= m["muscle_time_muted"] <= 0.7
-    assert m["muted_without_muscle"] > 0.95          # 0.4 s of muscle in ~24 s of mute
+    assert m["muted_without_muscle"] > 0.9           # 0.4 s of muscle in 14 s of mute
 
     # --- dings decided against dings heard ---
     assert m["ding_decided_vs_rendered"]["decided"] == 3
@@ -240,19 +289,25 @@ def test_metrics_on_planted_session(tmp_path):
     assert m["ding_decided_vs_rendered"]["logged"] == 0
     assert m["ding_decided_vs_rendered"]["rendered"] == 0
 
-    # --- thresholds: absolute, so flat in every block ---
+    # --- thresholds: absolute, so flat in every block, warmup block included ---
     blocks = m["thresholds_per_block"]["smr_t"]
-    assert [b["block"] for b in blocks] == ["settle", "work"]
+    assert [b["block"] for b in blocks] == ["settle", "work", "rest", "work2"]
     assert all(b["start"] == THRESHOLD_UV and b["end"] == THRESHOLD_UV and b["drift"] == 0.0
                for b in blocks)
 
-    # --- per phase: the settle phase has no unmuted time at all ---
-    settle, work = m["per_phase"]
-    assert (settle["name"], work["name"]) == ("settle", "work")
-    assert settle["mute_share"]["phase"] == 1.0
-    assert settle["reward_share_of_unmuted"] is None          # nothing was unmuted in it
-    assert settle["rewards_per_min"] == 0.0
-    assert work["rewards_per_min"] > 0.0
+    # --- per phase ---
+    settle, work, rest, work2 = m["per_phase"]
+    assert [p["name"] for p in m["per_phase"]] == ["settle", "work", "rest", "work2"]
+    # the settle phase is entirely warmup, so nothing in it was measured at all
+    assert settle["elapsed_s"] == 0.0
+    assert settle["rewards_per_min"] is None and settle["mute_share"]["phase"] is None
+    assert settle["reward_share_of_unmuted"] is None
+    # the rest phase is muted but is not warmup: it is measured, and has no unmuted time
+    assert rest["mute_share"]["phase"] == 1.0
+    assert rest["reward_share_of_unmuted"] is None
+    assert rest["rewards_per_min"] == 0.0
+    assert rest["muscle_time_muted"] == 1.0                   # the 62 s burst, inside it
+    assert work["rewards_per_min"] > 0.0 and work2["rewards_per_min"] > 0.0
 
 
 def test_empty_session_metrics_are_defined(tmp_path):
@@ -276,12 +331,14 @@ def test_empty_session_metrics_are_defined(tmp_path):
     assert m["latency_from_condition_true_ms"] == {"median": None, "p90": None}
     assert m["continuous_rise_ms"] == {"median": None}
     assert all(v is None for v in m["deadline_curve"].values())
+    assert m["reward_hold_len_ms"] == {"median": None, "p90": None}
+    assert m["condition_already_true_at_start"] == 0
     assert m["muscle_time_muted"] is None                     # no muscle, so no share of it
-    assert m["muted_without_muscle"] == 1.0                   # the settle phase, with no muscle in it
+    assert m["muted_without_muscle"] == 1.0                   # the rest phase, with no muscle in it
     assert m["episodes_lost_to_mute"]["any"] == 0
     assert m["ding_decided_vs_rendered"] == {"decided": 0, "rendered": 0, "logged": 0, "by_channel": {}}
-    assert m["mute_share"]["phase"] == pytest.approx(SETTLE_S / SECONDS, abs=0.01)
-    for phase in m["per_phase"]:
+    assert m["mute_share"]["phase"] == pytest.approx((REST_S[1] - REST_S[0]) / MEASURED_S, abs=0.01)
+    for phase in m["per_phase"][1:]:                          # phase 0 is all warmup: None
         assert phase["rewards_per_min"] == 0.0
 
 
@@ -367,12 +424,59 @@ def test_protocol_views_follow_the_contract_a_protocol_declares(tmp_path):
 
 
 def test_a_session_muted_end_to_end_rewards_nobody(tmp_path):
-    """Every sample muted: no share of unmuted time exists, and every episode is lost."""
-    m, (res, _, _) = _plant(tmp_path, smr=SMR_ONSETS, muted_throughout=True, paused=False)
+    """Every sample muted by a pause the log never resumes: nothing reached anybody."""
+    m, (res, _, _) = _plant(tmp_path, smr=SMR_ONSETS, paused_throughout=True)
 
-    assert m["mute_share"]["phase"] == 1.0 and m["unmuted_s"] == 0.0
+    # no output_muted first phase, so there is no warmup to exclude and the whole
+    # recording is measured -- and all of it is muted by the pause
+    assert m["warmup"]["end_sample"] == 0 and m["elapsed_s"] == pytest.approx(SECONDS, abs=0.1)
+    assert m["mute_share"]["pause"] == 1.0 and m["unmuted_s"] == 0.0
     assert m["reward_share_of_unmuted"] is None                 # no unmuted time to take a share of
     assert m["episodes"] == 3 and m["rewarded_in_episode"] == 1.0
     # the protocol still decided every reward; the trainee could not hear any of them
-    assert m["episodes_lost_to_mute"] == {"artifact": 0, "phase": 3, "pause": 0, "audio": 0, "any": 3}
+    assert m["episodes_lost_to_mute"] == {"artifact": 0, "phase": 0, "pause": 3, "audio": 0, "any": 3}
     assert m["per_phase"][0]["reward_share_of_unmuted"] is None
+    assert any("never resumes" in note for note in m["notes"])
+
+
+def test_warmup_comes_from_the_log_when_it_says_and_a_clash_is_named(tmp_path):
+    """The live telemetry's state field is preferred, and a disagreement is reported."""
+    # the log says warmup ended at 14.5 s, the protocol declares 15 s: close enough that
+    # only the source is worth reporting
+    m, _ = _plant(tmp_path / "agree", smr=SMR_ONSETS, telemetry=_audio_frames(state_until=14.5))
+    assert m["warmup"]["source"] == "the live telemetry's state field"
+    assert m["warmup"]["end_sample"] == int(14.5 * FS)
+    assert m["warmup"]["declared_end_sample"] == WARMUP_END
+    assert m["elapsed_s"] == pytest.approx((N - 14.5 * FS) / FS, abs=0.1)
+    assert not any("but the protocol declares" in note for note in m["notes"])
+
+    # the log says warmup ran five seconds longer than the protocol declares: the log is
+    # what ran, so it is used, and the difference is named rather than resolved
+    m, _ = _plant(tmp_path / "clash", smr=SMR_ONSETS, telemetry=_audio_frames(state_until=20.0))
+    assert m["warmup"]["end_sample"] == int(20.0 * FS)
+    assert any("but the protocol declares" in note for note in m["notes"])
+    assert any("20.0 s" in note and "15.0 s" in note for note in m["notes"])
+
+    # a session the log says never left warmup: there is no time after it to measure, so
+    # every figure is unmeasured -- including the counts, which would otherwise read as
+    # "we looked and found none"
+    m, _ = _plant(tmp_path / "never", smr=SMR_ONSETS,
+                  telemetry=_audio_frames(state_until=SECONDS + 1))
+    assert m["warmup"]["end_sample"] == N and m["elapsed_s"] == 0.0
+    assert m["episodes"] is None and m["reward_onsets"] is None
+    assert m["rewards_per_min"] is None and m["mute_share"]["phase"] is None
+    assert any("warmup covers the whole replay" in note for note in m["notes"])
+
+
+def test_the_documented_noise_floor_still_describes_the_detector():
+    """The floor the report prints is a measured figure, so it must not go stale.
+
+    The table in ``muscle.py`` was measured over four seeds of 36 minutes per rate, which
+    is far too slow for a test; ten minutes of one seed is enough to catch a detector that
+    has drifted far from what the report claims about it.
+    """
+    for fs, documented in sorted(NOISE_EPISODES_PER_MIN.items()):
+        minutes = 10.0
+        noise = np.random.default_rng(4242).standard_normal(int(minutes * 60 * fs))
+        measured = len(muscle_episodes(noise, fs)) / minutes
+        assert documented / 3.0 <= max(measured, 0.1) <= documented * 3.0, (fs, measured, documented)

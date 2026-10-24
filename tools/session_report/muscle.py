@@ -18,11 +18,31 @@ The choices, which the report states:
   detector on every recording.
 * **length** at least 100 ms. Windows are 100 ms long and step 50 ms, and an
   episode is a run of at least two consecutive windows over the level, so the
-  excess has to persist across 100 ms rather than appear in one window. Even so,
-  a 100 ms window is a noisy power estimate: on pure white noise this finds
-  about one 100 ms "episode" per two minutes at 250 Hz. That is the floor of
-  what this measure can tell, and it is why the report gives muscle as a share
-  of time rather than as a count of events.
+  excess has to persist across 100 ms rather than appear in one window.
+
+Even so, a 100 ms window is a noisy power estimate, and how noisy depends
+entirely on the sample rate, because the rate sets how wide the band is and how
+many samples fall in a window. ``NOISE_EPISODES_PER_MIN`` records what this rule
+finds on pure white noise -- signal with no muscle in it at all -- measured over
+four seeds of 36 minutes at each rate:
+
+===========  ====================  =========================
+sample rate  band                  white-noise episodes/min
+===========  ====================  =========================
+200 Hz       70-90 Hz              10.1
+250 Hz       70-112.5 Hz           0.84
+500 Hz       70-120 Hz             0.37
+===========  ====================  =========================
+
+That is the floor of what the measure can tell, and the report prints it beside
+the session's own figure so the two can be compared. At 200 Hz the band is too
+narrow for a 100 ms window to say much and the count there is mostly noise; even
+at 250 Hz (the BrainBit Flex) the floor is around thirty 100 ms episodes over a
+36-minute session, so a count means something only when it is well clear of
+that. It is also why the report gives muscle as a share of time beside the count
+rather than as a count alone: pure noise accounts for about 0.2 % of the time at
+250 Hz (measured the same way), so a share is much harder to mistake than a
+count is.
 
 Two guards keep arithmetic from being read as signal:
 
@@ -50,12 +70,21 @@ MIN_WINDOWS = 2             # two overlapping windows = 100 ms of sustained exce
 EDGE_GUARD_S = 0.5          # the zero-phase filter's own transient, dropped at both ends
 SILENT_SHARE = 1e-9         # band power below this share of mean square power is arithmetic
 FILTER_ORDER = 4
+# What this rule finds on pure white noise, per minute, by sample rate: measured over
+# four seeds of 36 minutes each (see the module docstring). Only measured rates are
+# listed, because the figure depends steeply on how wide the band is at that rate.
+NOISE_EPISODES_PER_MIN = {200.0: 10.1, 250.0: 0.84, 500.0: 0.37}
 
 
 def muscle_band(fs: float) -> tuple[float, float] | None:
     """The band the muscle index is measured over, or None if the rate leaves none."""
     high = min(MUSCLE_HIGH_HZ, NYQUIST_SHARE * float(fs))
     return (MUSCLE_LOW_HZ, high) if high > MUSCLE_LOW_HZ else None
+
+
+def noise_floor_per_min(fs: float) -> float | None:
+    """Episodes a minute this rule finds on pure noise at ``fs``, if that was measured."""
+    return NOISE_EPISODES_PER_MIN.get(float(fs))
 
 
 def _window_power(x: np.ndarray, sos: np.ndarray, window: int, starts: np.ndarray) -> np.ndarray:
