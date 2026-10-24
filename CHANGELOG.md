@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `tools/session_report/`: `python -m tools.session_report <session_folder>
+  [--protocol PATH | --protocols-ref REF] [--compare PATH ...] [--json OUT]`
+  reports how the protocol behaved in a saved coherence-recorder session. It
+  replays the session's real EEG through refrain, following the session's own
+  log (clinician control changes at the moment they happened, applied advice,
+  pause and resume, phase advances), and always reconciles that replay against
+  what the live run recorded. Disagreement is printed first with a verdict,
+  because every other number is only as trustworthy as the replay behind it.
+  Not run in CI (sessions are clinical and do not ship); its parts are
+  unit-tested.
+- Reward is judged against an offline, zero-phase version of the protocol's
+  own reward condition, for any protocol rather than only SMR. Judging it
+  against the protocol's own envelope would be circular, since that envelope
+  lags by design. Mutes are judged against a high-frequency muscle measure
+  that nothing in the protocol produced, so a guard cannot grade itself.
+- The report states its own choices: the muscle band and its measured noise
+  floor, the match tolerance, the trusted window and the excluded warmup span.
+- `tools/session_report/xdf_chunks.py` reads the recorder's raw XDF chunk by
+  chunk in file order. pyxdf merges chunks and discards that order, which the
+  replay needs, so this adds no dependency.
+- `tools/measure_envelopes.py`'s replay stepping core is now shared with the
+  session report; its behaviour is unchanged.
+
 ## 0.2.0 — declared-latency tooling (no protocol changes)
 
 First tagged release of the corpus. It also carries every "Unreleased" section
