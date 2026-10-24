@@ -79,24 +79,44 @@ def _num(v: dict) -> float:
     return float(v["value"] if v["node"] == "number" else v["default"])
 
 
-def _band(args: dict) -> tuple[float, float] | None:
-    """(low, high) edge in Hz, from `band: (lo, hi)` or from `center` + `bandwidth: ratio(r)`.
+def _edge_controls(nodes: list[dict]) -> dict[str, float]:
+    """The controls a band's edges came from, each mapped to the default it was baked at.
 
-    `bandwidth` in any other form is refused rather than guessed at: a bandwidth given
-    in Hz would mean center +/- w/2, a different band from the same two numbers.
+    A band edge written as a control is frozen into the IR at that control's default, so a
+    caller that needs the real band has to check what the control actually held.
+    """
+    return {n["target"]: float(n["default"]) for n in nodes if n.get("node") == "control_ref"}
+
+
+def _band(args: dict) -> tuple[tuple[float, float], dict[str, float]] | None:
+    """((low, high) edge in Hz, the controls those edges came from).
+
+    The band is either `band: (lo, hi)` or `center` + `bandwidth: ratio(r)`. `bandwidth`
+    in any other form is refused rather than guessed at: a bandwidth given in Hz would
+    mean center +/- w/2, a different band from the same two numbers.
     """
     if "band" in args:
-        lo, hi = (_num(e) for e in args["band"]["elements"])
-        return lo, hi
+        edges = args["band"]["elements"]
+        lo, hi = (_num(e) for e in edges)
+        return (lo, hi), _edge_controls(edges)
     width = args["bandwidth"]
     if width.get("node") != "call" or width["callee"] != "ratio" or len(width["args"]) != 1:
         return None
-    root = float(np.sqrt(_num(width["args"][0]["value"])))
+    ratio = width["args"][0]["value"]
+    root = float(np.sqrt(_num(ratio)))
     center = _num(args["center"])
-    return center / root, center * root
+    return (center / root, center * root), _edge_controls([args["center"], ratio])
 
 
 def envelopes(ir_json: dict) -> list[dict]:
+    """Every derive whose pipeline is a band envelope, with the band it filters at.
+
+    `source` is the bare stream name the derive reads, as refrain keys its live streams;
+    `source_kind` ("input", "derive", ...) says which kind of stream that name belongs to,
+    because refrain keys inputs, derives and thresholds alike and the name alone cannot
+    tell them apart. `band_controls` names the controls the band edges came from, empty
+    when the band is literal.
+    """
     out = []
     for name, d in ir_json["derives"].items():
         names, call, src = _chain(d["expression"])
@@ -104,12 +124,14 @@ def envelopes(ir_json: dict) -> list[dict]:
         if shape is None or call is None or src is None:
             continue
         args = {a["name"]: a["value"] for a in call["args"] if a["name"]}
-        band = _band(args)
-        if band is None:
+        found = _band(args)
+        if found is None:
             continue
+        band, band_controls = found
+        kind, _, source = src["target"].rpartition("/")
         latency = _num(args["latency"]) if "latency" in args else None
         out.append(dict(derive=name, shape=shape, band=band, latency_ms=latency,
-                        source=src["target"].split("/", 1)[-1]))
+                        source=source, source_kind=kind, band_controls=band_controls))
     return out
 
 

@@ -79,6 +79,26 @@ IGNORES_SLOWING = 'protocol "truth_auto_out" {' + HEADER + SLOWING + '''
   reward { event = dwell(condition: above("band", 5 uV), duration: 250 ms) }
   output { audio_chime = reward.event }
 ''' + PLAN
+# an envelope of the autocorrelation: reproducible in shape, but its input is not
+FILTERS_SLOWING = 'protocol "truth_auto_feed" {' + HEADER + SLOWING + '''
+  derive "slow_env" { from = "slowing"
+    pipeline = [ bandpass(band: (1 Hz, 4 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 250 ms) ] }
+  reward { event = dwell(condition: above("slow_env", 0.01), duration: 250 ms) }
+  output { audio_chime = reward.event }
+''' + PLAN
+
+# the real session's shape: a band edge that is a control, feeding a ratio, feeding the reward
+TUNABLE_BAND = 'protocol "truth_tunable" {' + HEADER + '''
+  derive "theta_envelope" { from = "raw"
+    pipeline = [ bandpass(band: (theta_lo_hz, 8 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ] }
+  derive "alpha_envelope" { from = "raw"
+    pipeline = [ bandpass(band: (9 Hz, 11 Hz), order: 4), hilbert(), magnitude(), smooth(tau: 500 ms) ] }
+  derive "theta_alpha_ratio" { formula = "theta_envelope" / "alpha_envelope" }
+  reward { event = dwell(condition: above("theta_alpha_ratio", 1.0), duration: 1000 ms) }
+  output { audio_chime = reward.event }
+  controls { theta_lo_hz = frequency { default = 6 Hz  range = (4 Hz, 7 Hz)
+                                       label = "Theta low edge"  live_tunable = true } }
+''' + PLAN
 
 CONTROL = 'protocol "truth_control" {' + HEADER + SMR_ENVELOPE + '''
   reward { event = dwell(condition: above("smr_envelope", smr_level_uv), duration: 250 ms) }
@@ -117,7 +137,8 @@ def _replay(tmp_path: Path, text: str, channels: dict[str, np.ndarray], markers=
     path = tmp_path / "p.refrain"
     path.write_text(text)
     ir = resolve(refrain.parse_file(str(path)), None)
-    eeg = np.column_stack([channels.get(c, np.zeros(N)) for c in CHANS])
+    length = len(next(iter(channels.values())))
+    eeg = np.column_stack([channels.get(c, np.zeros(length)) for c in CHANS])
     folder = build_session(tmp_path / "s", fs=FS, channel_names=list(CHANS), eeg=eeg, chunk=CHUNK,
                            protocol_id="x", markers=list(markers), telemetry=[])
     session = load_session(folder)
@@ -192,6 +213,87 @@ def test_unreproducible_derive_is_named_not_judged(tmp_path):
     res = true_episodes(ir_json, truth, replay, FS)
     assert res.judged is True and res.unreproducible == ["slowing"]
     assert res.episodes == [WINDOW]                              # alpha is above 5 uV throughout
+
+
+def test_a_derive_reading_an_unreproducible_derive_is_unreproducible_too(tmp_path):
+    # `slow_env` is a textbook envelope, but it filters the autocorrelation the model
+    # just refused. refrain keys its live streams by bare name for inputs and derives
+    # alike, so a name-only lookup would quietly rebuild `slow_env` out of the
+    # protocol's own causal output and report plausible episodes off it.
+    pz = _noise(23) + 10.0 * np.sin(2 * np.pi * 10.0 * T)
+
+    ir_json, replay = _replay(tmp_path, FILTERS_SLOWING, {"Pz": pz})
+    assert "slowing" in replay.streams                           # the live stream is right there
+    truth, unreproducible = truth_streams(ir_json, replay)
+    assert unreproducible == ["slowing", "slow_env"] and set(truth) == {"band"}
+
+    res = true_episodes(ir_json, truth, replay, FS)
+    assert res.judged is False and res.episodes == []
+    assert res.unreproducible == ["slowing", "slow_env"]
+    assert any("slow_env" in n for n in res.notes)
+
+
+def test_a_band_edge_the_session_moved_makes_the_derive_unreproducible(tmp_path):
+    # The theta band's low edge is a control, which the IR bakes at its 6 Hz default. A
+    # session the clinician started or moved elsewhere was never filtered at 6-8 Hz, and
+    # one zero-phase envelope cannot follow a band that moves.
+    pz = _noise(25) + 20.0 * np.sin(2 * np.pi * 7.0 * T)
+    moved = {"type": "control_change", "name": "theta_lo_hz", "value": 4.0, "engine_value": 4.0,
+             "source": "clinician", "t_s": 16.0}
+
+    held, replay = _replay(tmp_path / "held", TUNABLE_BAND, {"Pz": pz})
+    truth, unreproducible = truth_streams(held, replay)
+    assert unreproducible == [] and set(truth) == {"theta_envelope", "alpha_envelope",
+                                                  "theta_alpha_ratio"}
+    res = true_episodes(held, truth, replay, FS)
+    assert res.judged is True and res.episodes == [WINDOW]
+    # the band's provenance is stated even when nothing moved
+    assert any("6-8 Hz" in n and "theta_lo_hz at 6" in n for n in res.notes)
+
+    ir_json, replay = _replay(tmp_path / "moved", TUNABLE_BAND, {"Pz": pz}, markers=[(4000, moved)])
+    assert replay.control_timeline["theta_lo_hz"] == [(0, 6.0), (80, 4.0)]
+    truth, unreproducible = truth_streams(ir_json, replay)
+    # and it cascades: the ratio that reads the refused envelope is refused too, which
+    # takes the reward condition with it
+    assert unreproducible == ["theta_envelope", "theta_alpha_ratio"]
+    assert set(truth) == {"alpha_envelope"}
+    res = true_episodes(ir_json, truth, replay, FS)
+    assert res.judged is False and res.episodes == []
+    assert any("theta_lo_hz" in n and "wrong edges" in n for n in res.notes)
+
+
+def test_a_sample_rate_that_disagrees_with_the_protocol_is_refused(tmp_path):
+    pz = _noise(27) + 10.0 * np.sin(2 * np.pi * 13.5 * T)
+    ir_json, replay = _replay(tmp_path, BURSTS, {"Pz": pz})
+    assert ir_json["sample_rate_hz"] == FS
+
+    # the recording's own rate: filters and episodes agree, as before
+    truth, unreproducible = truth_streams(ir_json, replay, FS)
+    assert unreproducible == [] and true_episodes(ir_json, truth, replay, FS).judged is True
+
+    # a recording at twice the rate the protocol resolved to would put every truth band
+    # an octave out, so nothing is reproduced and nothing is judged
+    truth, unreproducible = truth_streams(ir_json, replay, 2 * FS)
+    assert truth == {} and unreproducible == ["smr_envelope"]
+    res = true_episodes(ir_json, truth, replay, 2 * FS)
+    assert res.judged is False and res.episodes == []
+    assert any("500 Hz" in n and "250 Hz" in n for n in res.notes)
+
+
+def test_a_window_too_short_to_trust_is_not_judged(tmp_path):
+    # 12 s leaves nothing between a 10 s head guard and a 6 s tail guard. "We could not
+    # look anywhere" must not render the same as "we looked and found nothing".
+    short = int(12.0 * FS)
+    t = np.arange(short) / FS
+    pz = _noise(29, n=short) + 10.0 * np.sin(2 * np.pi * 13.5 * t)
+
+    ir_json, replay = _replay(tmp_path, BURSTS, {"Pz": pz})
+    truth, unreproducible = truth_streams(ir_json, replay)
+    assert unreproducible == []                                  # the truth stream itself is fine
+    res = true_episodes(ir_json, truth, replay, FS)
+    assert res.window[0] == res.window[1]
+    assert res.judged is False and res.episodes == []
+    assert any("not the same as looking and finding no target behaviour" in n for n in res.notes)
 
 
 def test_a_control_operand_follows_its_mid_session_change(tmp_path):

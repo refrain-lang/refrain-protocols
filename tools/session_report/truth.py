@@ -23,6 +23,12 @@ What a derive's truth stream is:
 * anything else -- a conditional, an autocorrelation, a filter shape not listed
   above -- is named as unreproducible and left out.
 
+Nothing unreproducible is quietly replaced by the protocol's own output. A derive
+that reads a derive the model refused is refused in turn, and so is an envelope
+whose band came from a control the session did not hold at the IR's default: one
+zero-phase envelope cannot follow a band that moves, and filtering at the wrong
+edges would report plausible episodes instead of saying so.
+
 A reward condition reads four kinds of operand and all four have to be resolved
 per sample, not collapsed to a constant: a derive (its truth stream), a threshold
 (the replay's own per-sample threshold stream, adaptive or not), a control (its
@@ -34,7 +40,9 @@ and last samples of a recording are filter transient, not signal. Episodes are
 therefore looked for only inside the same trusted window ``measure_envelopes``
 scores on (``SKIP_HEAD_S`` in, ``SKIP_TAIL_S`` from the end). ``TruthResult.window``
 says which samples that was, so a report can print what it covers, and an episode
-that reaches a window edge is reported clipped to it rather than extrapolated.
+that reaches a window edge is reported clipped to it rather than extrapolated. A
+recording too short to leave any such window is not judged at all: "we could not
+look anywhere" must not read as "we looked and found nothing".
 """
 from __future__ import annotations
 
@@ -53,6 +61,7 @@ ARITHMETIC = {"+": operator.add, "-": operator.sub, "*": operator.mul, "/": oper
 CONDITION_PARAMS = {"above": ("signal", "threshold"), "at_or_above": ("signal", "threshold"),
                     "below": ("signal", "threshold"), "inside": ("signal", "low", "high")}
 SECONDS_PER_UNIT = {"ms": 1e-3, "s": 1.0, "min": 60.0}
+FS_TOLERANCE_HZ = 0.01   # the disagreement session.py already reports when it loads a recording
 
 
 @dataclass
@@ -64,9 +73,11 @@ class TruthResult:
     episode starts where the behaviour started, not where the dwell was satisfied --
     the dwell decides which runs count, not when they began.
 
-    ``judged`` is False only when the reward condition itself reads something the
-    truth model cannot reproduce. A protocol with unreproducible derives elsewhere is
-    still judged; those derives are named in ``unreproducible`` either way.
+    ``judged`` is False when the reward condition itself reads something the truth
+    model cannot reproduce, when nothing could be looked at (an empty ``window``, or a
+    sample rate that disagrees with the protocol's), or when there is no reward
+    condition to judge. A protocol with unreproducible derives *elsewhere* is still
+    judged; those derives are named in ``unreproducible`` either way.
 
     ``window`` is the half-open sample range the zero-phase filters can be trusted on.
     """
@@ -78,7 +89,13 @@ class TruthResult:
 
 
 def _bare(target: str) -> str:
-    return target.split("/", 1)[-1]
+    return target.rpartition("/")[2]
+
+
+def _split(target: str) -> tuple[str, str]:
+    """(bare name, kind) of a canonical IR target such as "derive/theta_envelope"."""
+    kind, _, name = target.rpartition("/")
+    return name, kind
 
 
 def _describe(node: dict) -> str:
@@ -223,12 +240,20 @@ def _condition_list(node: dict) -> list[dict]:
     return values
 
 
-def _source_stream(name: str, replay, truth: dict[str, np.ndarray], n: int) -> np.ndarray | None:
-    """The truth stream a derive reads: another derive's truth, else the replay's own input."""
-    for found in (truth.get(name), replay.streams.get(name)):
-        if found is not None and len(found) >= n:
-            return np.asarray(found, dtype=float)[:n]
-    return None
+def _source_stream(name: str, kind: str, replay, truth: dict[str, np.ndarray],
+                   n: int) -> np.ndarray | None:
+    """What a derive reads, in truth terms: another derive's truth stream, or an input.
+
+    ``kind`` decides where to look, and it is not a nicety. refrain keys its live streams
+    by bare name for inputs, derives and thresholds alike, so a name-only lookup that fell
+    back to ``replay.streams`` would rebuild a derive the truth model had just refused out
+    of the protocol's own causal, laggy output -- the circularity this module exists to
+    avoid, and the kind that reports plausible episodes rather than raising.
+    """
+    found = truth.get(name) if kind == "derive" else replay.streams.get(name)
+    if found is None or len(found) < n:
+        return None
+    return np.asarray(found, dtype=float)[:n]
 
 
 def _centred_coherence(a: np.ndarray, b: np.ndarray, fs: float, band: tuple[float, float],
@@ -272,8 +297,8 @@ def _truth_coherence(node: dict, replay, truth: dict[str, np.ndarray], n: int,
     a_node, b_node, band_node, _ = nodes
     if a_node.get("node") != "stream_ref" or b_node.get("node") != "stream_ref":
         return None
-    a = _source_stream(_bare(a_node["target"]), replay, truth, n)
-    b = _source_stream(_bare(b_node["target"]), replay, truth, n)
+    a = _source_stream(*_split(a_node["target"]), replay, truth, n)
+    b = _source_stream(*_split(b_node["target"]), replay, truth, n)
     if a is None or b is None:
         return None
     edges = [_number(e) for e in band_node.get("elements", ())]
@@ -283,6 +308,61 @@ def _truth_coherence(node: dict, replay, truth: dict[str, np.ndarray], n: int,
                               int(coeffs["nperseg"]), int(coeffs.get("noverlap", 0)))
 
 
+def _band_controls(ir_json: dict, replay, n: int, fs: float) -> list[dict]:
+    """Per envelope derive whose band edges came from controls: what was baked, what moved.
+
+    A band edge written as a control is frozen into the IR at that control's *default*, and
+    a session need not have begun there -- ``replay._starting_values`` exists precisely
+    because the log can show a control starting somewhere else, and ``live_tunable = false``
+    only stops a clinician moving one mid-session. One zero-phase envelope cannot follow a
+    band that moves, so a derive whose band control ever held another value is reported as
+    unreproducible rather than silently filtered at the wrong edges.
+    """
+    reader = _Operands(replay, {}, n, fs)
+    out = []
+    for shape in envelopes(ir_json):
+        baked = dict(sorted(shape["band_controls"].items()))
+        if not baked:
+            continue
+        moved = []
+        for target, default in baked.items():
+            held = reader.control(_bare(target), default)
+            if held is not None and held.size and not np.all(held == default):
+                moved.append(target)
+        out.append({"derive": shape["derive"], "band": shape["band"], "baked": baked, "moved": moved})
+    return out
+
+
+def _band_control_notes(rows: list[dict]) -> list[str]:
+    """One note per derive whose band came from a control: the edges used, and whether they held."""
+    notes = []
+    for row in rows:
+        band = f"{row['band'][0]:g}-{row['band'][1]:g} Hz"
+        edges = ", ".join(f"{t} at {v:g}" for t, v in row["baked"].items())
+        if row["moved"]:
+            notes.append(f"derive {row['derive']} takes its band from {', '.join(row['moved'])}, whose "
+                         f"value is not the default the IR baked the band at, so the single band "
+                         f"{band} does not describe what the protocol filtered; the derive is "
+                         "reported as unreproducible rather than scored at the wrong edges")
+        else:
+            notes.append(f"derive {row['derive']} takes its {band} band from a control ({edges}), "
+                         "held at that value for the whole replay")
+    return notes
+
+
+def _rate_clash(ir_json: dict, fs: float | None) -> str | None:
+    """A note when the rate the truth filters would use is not the rate the samples came at.
+
+    ``session.py`` already reports this disagreement when it loads a recording; here it
+    would silently shift every truth band instead, so it is refused.
+    """
+    resolved = float(ir_json["sample_rate_hz"])
+    if fs is None or abs(float(fs) - resolved) <= FS_TOLERANCE_HZ:
+        return None
+    return (f"the protocol resolves to {resolved:g} Hz but the recording's samples came at "
+            f"{float(fs):g} Hz, which would shift every truth band by {float(fs) / resolved:.4g}x")
+
+
 def _derive_order(ir_json: dict) -> list[str]:
     """Derive names in dependency order, so a derive sees the truth of what it reads."""
     order = [_bare(k) for k in ir_json.get("topological_order", ()) if k.startswith("derive/")]
@@ -290,22 +370,31 @@ def _derive_order(ir_json: dict) -> list[str]:
     return known + [name for name in ir_json["derives"] if name not in known]
 
 
-def truth_streams(ir_json: dict, replay) -> tuple[dict[str, np.ndarray], list[str]]:
-    """The truth value per derive, plus the names of the derives it cannot reproduce."""
-    fs = float(ir_json["sample_rate_hz"])
+def truth_streams(ir_json: dict, replay, fs: float | None = None) -> tuple[dict[str, np.ndarray], list[str]]:
+    """The truth value per derive, plus the names of the derives it cannot reproduce.
+
+    ``fs`` is the rate the recording's samples actually came at (``Session.fs``). It
+    defaults to the rate the protocol resolved to; when the two disagree, nothing is
+    reproduced, because every truth band would be filtered at the wrong frequencies.
+    """
     n = _span(replay)
+    if _rate_clash(ir_json, fs) is not None:
+        return {}, _derive_order(ir_json)
+    rate = float(ir_json["sample_rate_hz"] if fs is None else fs)
     truth: dict[str, np.ndarray] = {}
     unreproducible: list[str] = []
     shapes = {e["derive"]: e for e in envelopes(ir_json)}
-    arithmetic = _Operands(replay, truth, n, fs)
+    moved_bands = {row["derive"] for row in _band_controls(ir_json, replay, n, rate) if row["moved"]}
+    arithmetic = _Operands(replay, truth, n, rate)
     for name in _derive_order(ir_json):
         node = ir_json["derives"][name]["expression"]
         shape = shapes.get(name)
         if shape is not None:
-            source = _source_stream(shape["source"], replay, truth, n)
-            found = None if source is None else reference_envelope(source, fs, shape["band"])
+            source = _source_stream(shape["source"], shape["source_kind"], replay, truth, n)
+            found = (None if source is None or name in moved_bands
+                     else reference_envelope(source, rate, shape["band"]))
         elif node.get("node") == "call" and node["callee"] == "coherence":
-            found = _truth_coherence(node, replay, truth, n, fs)
+            found = _truth_coherence(node, replay, truth, n, rate)
         else:
             found = arithmetic.value(node)
         if found is None:
@@ -336,12 +425,20 @@ def true_episodes(ir_json: dict, truth: dict[str, np.ndarray], replay, fs: float
     notes = [f"zero-phase filters are unreliable at a recording's edges, so episodes are looked for "
              f"only from {SKIP_HEAD_S:g} s in to {SKIP_TAIL_S:g} s before the end: "
              f"samples {window[0]} to {window[1]} of {n}"]
-    if window[0] == window[1]:
-        notes.append(f"the replay covers {n / fs:.1f} s, too short to leave any trustworthy window, "
-                     "so no episode can be found in it")
     unreproducible = [name for name in _derive_order(ir_json) if name not in truth]
     if unreproducible:
         notes.append("derives the truth model cannot reproduce: " + ", ".join(unreproducible))
+
+    clash = _rate_clash(ir_json, fs)
+    if clash is not None:
+        notes.append(clash + ", so this session cannot be judged")
+        return TruthResult([], False, unreproducible, window, notes)
+    notes += _band_control_notes(_band_controls(ir_json, replay, n, fs))
+    if window[0] == window[1]:
+        notes.append(f"the replay covers {n / fs:.1f} s, which leaves no stretch the zero-phase "
+                     "filters can be trusted on, so nowhere in it could be looked at. That is not "
+                     "the same as looking and finding no target behaviour, so it is not judged")
+        return TruthResult([], False, unreproducible, window, notes)
 
     event = (ir_json.get("reward") or {}).get("event")
     args = None if event is None or event.get("node") != "call" else _by_position(event, ("condition",))
