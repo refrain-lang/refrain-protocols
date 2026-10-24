@@ -141,8 +141,10 @@ def test_compare_skips_unknown_controls(tmp_path):
 
 
 def test_applied_advice_sets_its_control_and_other_advice_does_not(tmp_path):
-    ok = {"type": "advice_event", "kind": "applied", "control": "gain", "engine_value": 7.0, "t_s": 0.4}
-    other = {"type": "advice_event", "kind": "suggested", "control": "gain", "engine_value": 9.0, "t_s": 0.8}
+    # the shape refrain's advisor emits: applied(control=, from=, to=, by=)
+    ok = {"type": "advice_event", "kind": "applied", "id": "a1", "control": "gain", "from": 1.0, "to": 7.0,
+          "by": "practitioner", "t_s": 0.4}
+    other = {"type": "advice_event", "kind": "suggested", "control": "gain", "from": 7.0, "to": 9.0, "t_s": 0.8}
     r = _replay(tmp_path, [(40, ok), (80, other)])
     assert _gain(r)[-1] == 7.0
 
@@ -191,3 +193,22 @@ def test_step_through_keeps_only_the_requested_streams(tmp_path):
     assert isinstance(r, ReplayResult) and list(r.streams) == ["scaled"] and len(r.streams["scaled"]) == 40
     full = step_through(ir, FS, CHANS, chunks, skip_warmup=True)
     assert {"scaled", "raw"} <= set(full.streams)
+
+
+def test_undeclared_control_is_a_mismatch_only_for_the_sessions_own_protocol(tmp_path):
+    recs = [(40, _change(0.4, name="not_in_this_protocol", engine=5.0))]
+    own = _replay(tmp_path / "own", recs)
+    assert [s["name"] for s in own.skipped] == ["not_in_this_protocol"]
+    assert len(own.mismatches) == 1 and "not_in_this_protocol" in own.mismatches[0]
+    assert len(own.taps_per_chunk) == 100                       # the replay still completed
+    assert _replay(tmp_path / "cmp", recs, follow_log=False).mismatches == []
+
+
+def test_phase_checks_record_agreement_and_flag_a_real_disagreement(tmp_path):
+    phase = {"type": "phase_change", "phase_index": 1, "phase_name": "work", "t_s": 2.0}
+    r = _replay(tmp_path / "ok", [(200, phase)])
+    assert r.phase_checks == [{"t_s": 2.0, "logged_index": 1, "replay_index": 0, "agrees": True}]
+    assert r.mismatches == []
+    far = {"type": "phase_change", "phase_index": 5, "phase_name": "x", "t_s": 0.2}
+    r = _replay(tmp_path / "far", [(20, far)])
+    assert r.phase_checks[0]["agrees"] is False and len(r.mismatches) == 1

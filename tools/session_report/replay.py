@@ -26,6 +26,11 @@ class ReplayResult:
     skipped: list[dict] = field(default_factory=list)
     control_timeline: dict[str, list[tuple[int, float]]] = field(default_factory=dict)
     chunk_sample_offsets: list[int] = field(default_factory=list)  # index of each chunk's first sample
+    # follow_log=True only. Facts that mean the protocol replayed is probably not the one
+    # that ran (a logged control it does not declare; a phase the replay is far from).
+    mismatches: list[str] = field(default_factory=list)
+    # one per logged phase_change: {t_s, logged_index, replay_index, agrees}
+    phase_checks: list[dict] = field(default_factory=list)
 
 
 def step_through(ir, fs: float, channel_names: Sequence[str], chunks: Iterable[np.ndarray], *,
@@ -74,10 +79,9 @@ def _control_record(rec: dict) -> tuple[str, float] | None:
     if t == "control_change" and rec.get("source") != "warmup_seed" and "engine_value" in rec:
         return rec["name"], float(rec["engine_value"])
     if t == "advice_event" and kind == "applied":
-        name = rec.get("control") or rec.get("name")
-        value = rec.get("engine_value", rec.get("value"))
-        if name is not None and value is not None:
-            return name, float(value)
+        # refrain's advisor emits applied(control=<name>, from=<old>, to=<new>) in engine units
+        if rec.get("control") is not None and rec.get("to") is not None:
+            return rec["control"], float(rec["to"])
     return None
 
 
@@ -131,6 +135,8 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
     for te in session.events:
         by_chunk.setdefault(te.after_chunk, []).append(te.record)
 
+    mismatches: list[str] = []
+    phase_checks: list[dict] = []
     applied: list[dict] = []
     skipped: list[dict] = []
     timeline: dict[str, list[tuple[int, float]]] = {n: [(0, v)] for n, v in defaults.items()}
@@ -140,6 +146,9 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
         if name not in defaults:
             skipped.append({"name": name, "value": value, "after_chunk": k - 1,
                             "reason": "control not declared by this protocol", "record": rec})
+            if follow_log:
+                mismatches.append(f"the log changes control {name!r}, which this protocol does not declare "
+                                  f"(t_s {rec.get('t_s')}); the protocol file replayed may not be the one that ran")
             return
         ev.set_control(name, value)
         timeline[name].append((k, value))
@@ -173,8 +182,20 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
                 ev.set_clock_frozen(rec["action"] == "pause")
             elif t == "phase_change" and follow_log:
                 target = int(rec["phase_index"])
+                # Wall-clock drift (seconds over a session) moves a phase edge by seconds, so the
+                # replay may sit one phase behind the log (its timer not yet fired) or one ahead
+                # (fired first). Only a gap of more than one phase is a real disagreement.
+                here = ev.current_phase()["index"]
+                agrees = target - 1 <= here <= target
+                phase_checks.append({"t_s": rec.get("t_s"), "logged_index": target,
+                                     "replay_index": here, "agrees": agrees})
+                if not agrees:
+                    mismatches.append(f"log enters phase {target} at t_s {rec.get('t_s')} but the replay "
+                                      f"is in phase {here}")
                 state["logged_phase"] = target
-                while 0 <= ev.current_phase()["index"] < target:
+                # never advance past the last phase: that stops the evaluator
+                last = len(ir.session.phases) - 1
+                while 0 <= ev.current_phase()["index"] < min(target, last):
                     ev.hold(False)
                     if not ev.advance_phase():
                         break
@@ -186,4 +207,5 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
 
     res = step_through(ir, session.fs, chans, matrices, skip_warmup=False, on_before_chunk=before)
     res.applied, res.skipped, res.control_timeline = applied, skipped, timeline
+    res.mismatches, res.phase_checks = mismatches, phase_checks
     return res
