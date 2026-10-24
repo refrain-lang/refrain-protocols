@@ -93,7 +93,7 @@ def envelopes(ir_json: dict) -> list[dict]:
     return out
 
 
-def _montage_channels(ir_json: dict, known: set[str]) -> set[str]:
+def montage_channels(ir_json: dict, known: set[str]) -> set[str]:
     found: set[str] = set()
 
     def walk(v):
@@ -163,7 +163,7 @@ def measure(path: Path, amp, recordings: list, chunk_s: float = 0.05) -> list[di
         return []
     fs = float(ir.requires.sample_rate_chosen_hz)
     chans = tuple(sorted(amp.channel_names()))
-    needed = _montage_channels(j, set(chans))
+    needed = montage_channels(j, set(chans))
     rows = []
     for case, rec in recordings:
         if not all(c.upper() in rec for c in needed):
