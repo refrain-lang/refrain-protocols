@@ -152,7 +152,7 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
     applied: list[dict] = []
     skipped: list[dict] = []
     timeline: dict[str, list[tuple[int, float]]] = {n: [(0, v)] for n, v in defaults.items()}
-    state = {"logged_phase": 0}
+    state = {"logged_phase": 0, "frozen": False}
 
     def set_control(ev, k, rec, name, value):
         if name not in defaults:
@@ -167,6 +167,18 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
         applied.append({"name": name, "value": value, "after_chunk": k - 1, "status": "applied", "record": rec})
         if layered:
             ev.reset_held_outputs()
+
+    def phase_now(ev) -> dict:
+        """The phase the evaluator is in right now.
+
+        `current_phase()` is a snapshot taken while the last chunk was processed, so it
+        misses an advance refrain's own timer made at the end of that chunk. Re-asserting
+        the clock state refreshes the snapshot without changing anything (it is skipped
+        while paused: no timer can fire then, and freezing resets held outputs).
+        """
+        if not state["frozen"]:
+            ev.set_clock_frozen(False)
+        return ev.current_phase()
 
     def before(k, ev):
         if k == 0:
@@ -195,14 +207,15 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
                     applied.append({"name": rec.get("name"), "value": rec.get("value"),
                                     "after_chunk": k - 1, "status": "compared", "record": rec})
             elif t == "session_state" and rec.get("action") in ("pause", "resume"):
-                ev.set_clock_frozen(rec["action"] == "pause")
+                state["frozen"] = rec["action"] == "pause"
+                ev.set_clock_frozen(state["frozen"])
             elif t == "phase_change" and follow_log:
                 target = int(rec["phase_index"])
                 # Wall-clock drift (seconds over a session) moves a phase edge by seconds, so the
                 # replay may sit one phase behind the log (its timer not yet fired) or one ahead
                 # (an unholdable `timed` phase fired first). Only a gap of more than one phase
                 # either way is a real disagreement.
-                here = ev.current_phase()["index"]
+                here = phase_now(ev)["index"]
                 agrees = target - 1 <= here <= target + 1
                 phase_checks.append({"t_s": rec.get("t_s"), "logged_index": target,
                                      "replay_index": here, "agrees": agrees})
@@ -212,13 +225,13 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
                 # never advance past the last phase: that stops the evaluator
                 last = len(ir.session.phases) - 1
                 state["logged_phase"] = min(target, last)
-                while 0 <= ev.current_phase()["index"] < min(target, last):
+                while 0 <= phase_now(ev)["index"] < min(target, last):
                     ev.hold(False)
                     if not ev.advance_phase():
                         break
         if follow_log:
             # Don't let the replay's phase end before the log shows it ending.
-            ph = ev.current_phase()
+            ph = phase_now(ev)
             if ph["index"] == state["logged_phase"] and ph["mode"] == "timed_with_floor" and not ph["held"]:
                 ev.hold(True)
 

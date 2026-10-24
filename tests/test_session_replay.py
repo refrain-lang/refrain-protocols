@@ -161,7 +161,10 @@ def test_pause_and_resume_freeze_the_phase_clock(tmp_path, monkeypatch):
     pause = {"type": "session_state", "action": "pause", "t_s": 0.2}
     resume = {"type": "session_state", "action": "resume", "t_s": 3.0}
     _replay(tmp_path, [(20, pause), (300, resume)])
-    assert calls == [True, False]
+    # the replay also re-asserts "not frozen" each chunk to refresh its view of the phase,
+    # so look at the transitions: running, paused at the pause record, running again at the resume
+    transitions = [c for i, c in enumerate(calls) if i == 0 or c != calls[i - 1]]
+    assert transitions == [False, True, False]
 
 
 def _spy_resets(monkeypatch):
@@ -284,3 +287,17 @@ def test_control_change_without_engine_value_is_listed_not_dropped(tmp_path):
     r = _replay(tmp_path, [(40, _change(0.4, engine=None))])
     assert [(s["name"], "engine_value" in s["reason"]) for s in r.skipped] == [("gain", True)]
     assert r.applied == [] and _gain(r)[-1] == 1.0
+
+
+TIMED_FIRST = PROTOCOL.replace("output_muted = true; mode = timed_with_floor", "output_muted = true")
+
+
+def test_logged_advance_right_after_the_replays_own_timer_does_not_advance_twice(tmp_path):
+    # settle is `timed` for 1 s, so refrain advances it at the end of chunk 24 (samples 96..99);
+    # the log records the same advance in the very next gap.
+    phase = {"type": "phase_change", "phase_index": 1, "phase_name": "work", "t_s": 1.0}
+    r = _replay(tmp_path, [(100, phase)], text=TIMED_FIRST)
+    assert r.chunks_unreplayed == 0 and len(r.taps_per_chunk) == 100
+    assert [t["phase/index"] for t in r.taps_per_chunk][24:27] == [0, 1, 1]
+    assert [c["agrees"] for c in r.phase_checks] == [True]
+    assert r.phase_checks[0]["replay_index"] == 1 and r.mismatches == []
