@@ -178,7 +178,7 @@ def build_report(folder: Path, *, protocol: Path | None = None, protocols_ref: s
         "tool": {
             "refrain_version": refrain.__version__,
             "live_refrain_version": None,       # REC-26: the recorder does not save it yet
-            "reconciliation_tolerance_samples": tolerance,
+            "reconciliation_tolerance_cap_samples": tolerance,
             "gates": {"events": EVENTS_MIN, "outputs": OUTPUTS_MIN, "telemetry": TELEMETRY_MIN,
                       "coverage_margin_s": COVERAGE_MARGIN_S},
         },
@@ -245,7 +245,8 @@ def _provenance(doc: dict) -> list[str]:
     lines = [
         f"  gates: dings >= {EVENTS_MIN:.0%}, output values >= {OUTPUTS_MIN:.0%}, "
         f"telemetry >= {TELEMETRY_MIN:.0%}, coverage within {COVERAGE_MARGIN_S:g} s of the end; "
-        f"match tolerance {tool['reconciliation_tolerance_samples']} sample(s)",
+        f"match tolerance at most {tool['reconciliation_tolerance_cap_samples']} sample(s), "
+        "and never more than the chunk an event sits in",
         f"Session: {session['folder']}",
         f"  protocol id {_say(session['protocol_id'])} on {_say(session['device_model'])} at "
         f"{fs:g} Hz, channels {', '.join(session['channels'])}, "

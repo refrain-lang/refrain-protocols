@@ -162,7 +162,7 @@ def test_cli_prints_reconciliation_first_and_writes_json(tmp_path):
     assert "no warmup excluded, according to the live telemetry's state field" in printed
     # the reconciliation notes that are not a failure are still printed, not dropped
     assert "Reconciliation detail:" in printed
-    assert "match tolerance" in printed and "dings:" in printed
+    assert "match tolerance at most" in printed and "never more than the chunk an event sits in" in printed and "dings:" in printed
     assert "None" not in printed
 
     doc = json.loads(out.read_text())

@@ -74,12 +74,12 @@ def _match_events(logged: list[dict], replayed: list[dict], tol, offsets: list[i
     return matched
 
 
-def _offset_note(what: str, offsets: list[int], fs: float) -> str:
+def _offset_note(what: str, offsets: list[int], fs: float, verb: str = "matched") -> str:
     """How far apart the matches were: a 100 % at median 0 is not a 100 % at median 25."""
     if not offsets:
-        return f"{what} matched at offset: no matches, so no offsets to report"
+        return f"{what} {verb} at offset: no {verb} pairs, so no offsets to report"
     med, top = median(offsets), max(offsets)
-    return (f"{what} matched at offset: median {med:g} sample(s) ({med / fs * 1000:.0f} ms), "
+    return (f"{what} {verb} at offset: median {med:g} sample(s) ({med / fs * 1000:.0f} ms), "
             f"maximum {top} sample(s) ({top / fs * 1000:.0f} ms), over {len(offsets)} match(es)")
 
 
@@ -262,7 +262,7 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     def tol_at(sample: int) -> int:
         k = bisect_right(chunk_offsets, sample) - 1      # an event exactly on a chunk boundary takes the later chunk
         if 0 <= k < len(session.chunks):
-            return min(chunk_len, len(session.chunks[k]))
+            return max(1, min(chunk_len, len(session.chunks[k])))   # never 0, even for an empty chunk
         return chunk_len
 
     notes = [f"match tolerance: {chunk_len} sample(s) ({chunk_len / fs * 1000:.0f} ms at {fs:g} Hz) at most; "
@@ -298,7 +298,7 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     notes.append(f"output values: {out_good} within {OUTPUT_REL_TOL:.0%}, out of {out_total} "
                  "(logged values, plus any channel only the replay produced)")
     notes.append(_offset_note("dings", ding_offsets, fs))
-    notes.append(_offset_note("output values", out_offsets, fs))
+    notes.append(_offset_note("output values", out_offsets, fs, "paired"))   # compared, not necessarily within 1 %
     notes.append(f"telemetry: {tel_good} of {tel_total} frames agree on every state they report")
     scores = (("dings", events, EVENTS_MIN), ("output values", outputs, OUTPUTS_MIN),
               ("telemetry", telemetry, TELEMETRY_MIN))

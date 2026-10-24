@@ -344,7 +344,7 @@ def test_offsets_of_matched_dings_are_reported(tmp_path):
 
 def test_offsets_of_matched_output_values_are_reported(tmp_path):
     rec = _plant_shift(tmp_path, 2)
-    note = next(n for n in rec.notes if n.startswith("output values matched at offset"))
+    note = next(n for n in rec.notes if n.startswith("output values paired at offset"))
     assert "median 2 sample(s) (20 ms)" in note and "maximum 2 sample(s) (20 ms)" in note
 
 
@@ -385,3 +385,12 @@ def test_a_sparsely_logged_channel_still_scores_one_and_is_reported_as_informati
     assert rec.outputs_within_1pct == 1.0
     note = next(n for n in rec.notes if n.startswith("information only"))
     assert "not counted as disagreement" in note
+
+
+def test_an_empty_chunk_still_allows_a_one_sample_tolerance(tmp_path):
+    from types import SimpleNamespace
+    s, r = _case(tmp_path, shift=1)
+    chunks = [c[:0] for c in s.chunks[:-1]] + [s.chunks[-1]]          # zero-sample chunks, as the XDF reader can produce
+    odd = SimpleNamespace(**{**vars(s), "chunks": chunks}) if hasattr(s, "__dict__") else s
+    rec = reconcile(odd, r, CHUNK)
+    assert rec.events_matched == 1.0
