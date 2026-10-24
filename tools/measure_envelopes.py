@@ -49,9 +49,9 @@ import scipy.signal as ss
 
 import refrain
 from refrain.amp_profile import load_amp_profile
-from refrain.eval_ import Evaluator
 from refrain.ir_json import ir_to_json_obj
 from refrain.resolver import resolve
+from session_report.replay import step_through
 
 ENVELOPE_SHAPES = {
     ("bandpass", "hilbert", "magnitude", "smooth"): "four-stage",
@@ -170,18 +170,10 @@ def measure(path: Path, amp, recordings: list, chunk_s: float = 0.05) -> list[di
             continue
         n = len(next(iter(rec.values())))
         X = np.column_stack([rec.get(c.upper(), np.zeros(n)) for c in chans])
-        ev = Evaluator.live(ir, sample_rate_hz=fs, channel_names=chans, record_streams=True)
-        ev.start(skip_warmup=True)
         cn = max(1, int(round(chunk_s * fs)))
-        acc: dict[str, list] = {k: [] for e in envs for k in (e["derive"], e["source"])}
-        acc.update({k: [] for k in ("reward.event", "reward.event.holds")})
-        for k in range(0, n - cn + 1, cn):
-            ev.step_chunk(X[k:k + cn])
-            s = ev.last_streams()
-            for key, parts in acc.items():
-                if key in s:
-                    parts.append(np.asarray(s[key], dtype=float))
-        streams = {k: np.concatenate(v) for k, v in acc.items() if v}
+        keep = {k for e in envs for k in (e["derive"], e["source"])} | {"reward.event", "reward.event.holds"}
+        streams = step_through(ir, fs, chans, (X[k:k + cn] for k in range(0, n - cn + 1, cn)),
+                               skip_warmup=True, keep_streams=keep).streams
         cut = slice(int(SKIP_HEAD_S * fs), -int(SKIP_TAIL_S * fs))
         if "reward.event.holds" in streams:
             held = streams["reward.event.holds"][cut] > 0.5

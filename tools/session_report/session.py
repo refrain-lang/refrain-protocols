@@ -48,6 +48,7 @@ class Session:
     history: list[dict]
     telemetry: list[dict]
     notes: list[str] = field(default_factory=list)
+    chunk_starts: list[float] = field(default_factory=list)   # XDF timestamp of each chunk's first sample
 
 
 def _read_history(path: Path, notes: list[str]) -> list[dict]:
@@ -93,10 +94,12 @@ def load_session(folder: Path) -> Session:
                      f"{float(declared):g} Hz; using the stream's")
 
     chunks: list[np.ndarray] = []
+    chunk_starts: list[float] = []
     events: list[TimedEvent] = []
     for it in items:
         if it.kind == "samples" and it.stream_id == stream.stream_id:
             chunks.append(it.data)
+            chunk_starts.append(float(it.timestamps[0]) if len(it.timestamps) else float("nan"))
         elif it.kind == "marker":
             events.append(TimedEvent(len(chunks) - 1, it.marker))
 
@@ -119,7 +122,8 @@ def load_session(folder: Path) -> Session:
 
     return Session(meta=meta, fs=fs, channel_names=list(stream.channel_names), chunks=chunks,
                    events=events, history=history,
-                   telemetry=[r for r in history if r.get("type") == "telemetry"], notes=notes)
+                   telemetry=[r for r in history if r.get("type") == "telemetry"], notes=notes,
+                   chunk_starts=chunk_starts)
 
 
 def _amp_for(session: Session) -> AmpProfile:
