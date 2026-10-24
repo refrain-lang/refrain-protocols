@@ -49,6 +49,15 @@ class Item:
     index: int                     # position in file order
 
 
+@dataclass
+class ReadNotes:
+    """What the read covered, so a caller can tell a clean end from an early stop."""
+    file_size: int
+    bytes_parsed: int
+    stopped_early: bool
+    reason: str | None             # short explanation when stopped_early
+
+
 def _varlen(buf: bytes, pos: int) -> tuple[int, int]:
     width = buf[pos]
     fmt = {1: "<B", 4: "<I", 8: "<Q"}[width]
@@ -112,11 +121,13 @@ def _parse_samples(content: bytes, info: StreamInfo, state: dict) -> list[Item]:
     return [Item("samples", info.stream_id, data, stamps, None, 0)]
 
 
-def read_xdf_items(path: Path) -> tuple[dict[int, StreamInfo], list[Item]]:
-    """Return the stream headers and every sample/marker item in file order.
+def read_xdf_items(path: Path) -> tuple[dict[int, StreamInfo], list[Item], ReadNotes]:
+    """Return the stream headers, every sample/marker item in file order, and read notes.
 
     A samples chunk yields one ``samples`` item; a marker chunk yields one
     ``marker`` item per marker sample. ``Item.index`` counts items in order.
+    ``ReadNotes.stopped_early`` is True when bytes remain that could not be
+    parsed as a chunk (corruption or a cut-off tail).
     """
     buf = Path(path).read_bytes()
     if buf[:4] != MAGIC:
@@ -125,13 +136,16 @@ def read_xdf_items(path: Path) -> tuple[dict[int, StreamInfo], list[Item]]:
     items: list[Item] = []
     state: dict[int, float] = {}
     pos = 4
+    reason = None
     while pos < len(buf):
         try:
             length, body = _varlen(buf, pos)
         except (IndexError, struct.error, KeyError):
-            break                                   # cut off inside a length field
+            reason = "unreadable chunk length"
+            break
         if length < 2 or body + length > len(buf):
-            break                                   # truncated final chunk
+            reason = "chunk length is invalid or runs past the end of the file"
+            break
         tag = struct.unpack_from("<H", buf, body)[0]
         content = buf[body + 2:body + length]
         pos = body + length
@@ -145,4 +159,4 @@ def read_xdf_items(path: Path) -> tuple[dict[int, StreamInfo], list[Item]]:
                     item.index = len(items)
                     items.append(item)
         # every other tag is stepped over by length
-    return infos, items
+    return infos, items, ReadNotes(len(buf), pos, reason is not None, reason)
