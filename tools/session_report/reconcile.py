@@ -90,12 +90,16 @@ def _close(logged: float, replayed: float) -> bool:
 
 def _output_scores(logged: list[dict], replayed: list[dict], tol, notes: list[str],
                    offsets: list[int] | None = None) -> tuple[int, int]:
-    """(values agreeing, values compared); the denominator is per channel, the larger of logged and replayed.
+    """(values agreeing, values compared).
 
-    Like the ding check, dividing by logged alone would let a replay that produces values the
-    log never recorded (say a protocol file that gained a feedback channel after the session
-    ran) still score 1.0, which is the silently-differing replay this check exists to catch.
-    Do not "simplify" it.
+    The denominator is the logged values, plus every value on a channel the replay produced and
+    the log never mentions. Unlike dings, output values are not enumerated events: the recorder
+    logs them on a coarse clock (about every 50 ms) while the replay produces them per chunk, so
+    on a channel the log does track the replay is expected to hold more values than the log, and
+    that thinning must not count against the score (dividing by max(logged, replayed) here scored
+    a real session 31 % for exactly this reason). A channel the log never mentions is different:
+    it is the sign that the protocol replayed is not the one that ran, and it counts as
+    disagreement. Do not "simplify" either half.
     """
     tol_at = tol if callable(tol) else (lambda _t: tol)
     pool: dict[str, tuple[list[int], list[float]]] = {}
@@ -123,21 +127,21 @@ def _output_scores(logged: list[dict], replayed: list[dict], tol, notes: list[st
         notes.append(f"output channel(s) in the log but never produced by the replay: {', '.join(sorted(absent))}")
     if no_counterpart:
         notes.append(f"{no_counterpart} logged output value(s) had no replay value within tolerance")
-    total = 0
-    extra, replay_only = 0, []
-    for ch in set(n_logged) | set(pool):
-        n_rep = len(pool[ch][0]) if ch in pool else 0
-        total += max(n_logged.get(ch, 0), n_rep)
-        if n_rep > n_logged.get(ch, 0):
-            extra += n_rep - n_logged.get(ch, 0)
-            if ch not in n_logged:
-                replay_only.append(ch)
+    total = len(logged)
+    thinned, replay_only = 0, {}
+    for ch, (times, _) in pool.items():
+        if ch not in n_logged:
+            replay_only[ch] = len(times)
+        elif len(times) > n_logged[ch]:
+            thinned += len(times) - n_logged[ch]
     if replay_only:
-        notes.append("output channel(s) the replay produced with no logged counterpart "
-                     "(the log never recorded them): " + ", ".join(sorted(replay_only)))
-    if extra:
-        notes.append(f"{extra} replay output value(s) have no logged counterpart (more values replayed than logged); "
-                     "they count against the output score")
+        total += sum(replay_only.values())
+        notes.append("output channel(s) the replay produced with no logged counterpart (the log never recorded "
+                     "them, so the protocol replayed may not be the one that ran); their values count against "
+                     "the output score: " + ", ".join(f"{c} ({n} values)" for c, n in sorted(replay_only.items())))
+    if thinned:
+        notes.append(f"information only: the replay holds {thinned} more output value(s) than the log on channels "
+                     "the log does track (the recorder logs values on a coarser clock); not counted as disagreement")
     return good, total
 
 
@@ -256,7 +260,7 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     chunk_offsets = list(replay.chunk_sample_offsets)
 
     def tol_at(sample: int) -> int:
-        k = bisect_right(chunk_offsets, sample) - 1
+        k = bisect_right(chunk_offsets, sample) - 1      # an event exactly on a chunk boundary takes the later chunk
         if 0 <= k < len(session.chunks):
             return min(chunk_len, len(session.chunks[k]))
         return chunk_len
@@ -292,7 +296,7 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     notes.append(f"dings: {ding_hits} matched, out of {ding_total} (the larger of {len(dings)} logged "
                  f"and {len(replay_dings)} replayed)")
     notes.append(f"output values: {out_good} within {OUTPUT_REL_TOL:.0%}, out of {out_total} "
-                 "(per channel, the larger of logged and replayed)")
+                 "(logged values, plus any channel only the replay produced)")
     notes.append(_offset_note("dings", ding_offsets, fs))
     notes.append(_offset_note("output values", out_offsets, fs))
     notes.append(f"telemetry: {tel_good} of {tel_total} frames agree on every state they report")
