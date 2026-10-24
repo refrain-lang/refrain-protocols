@@ -27,7 +27,8 @@ class Reconciliation:
     """A score is None when its check had nothing to compare; that is not a pass.
 
     ``evaluated`` says which of "events", "outputs", "telemetry" were actually checked.
-    ``reconciled`` means at least one check ran and none that ran fell short.
+    ``reconciled`` means the replay covered the whole recording, at least one check ran
+    and none that ran fell short. ``coverage`` is the share of samples replayed.
     """
     events_matched: float | None
     outputs_within_1pct: float | None
@@ -35,6 +36,7 @@ class Reconciliation:
     reconciled: bool
     notes: list[str] = field(default_factory=list)
     evaluated: dict[str, bool] = field(default_factory=dict)
+    coverage: float | None = None      # share of the recording's samples the replay stepped through
 
 
 def _ratio(good: int, total: int) -> float | None:
@@ -64,7 +66,8 @@ def _match_events(logged: list[dict], replayed: list[dict], tol: int) -> int:
 
 
 def _close(logged: float, replayed: float) -> bool:
-    return abs(logged - replayed) <= OUTPUT_REL_TOL * abs(replayed) + 1e-12
+    # the log is the reference; the replay is what is under test
+    return abs(logged - replayed) <= OUTPUT_REL_TOL * abs(logged) + 1e-12
 
 
 def _output_scores(logged: list[dict], replayed: list[dict], tol: int, notes: list[str]) -> tuple[int, int]:
@@ -134,11 +137,14 @@ def _frame_positions(session, notes: list[str]) -> list[tuple[dict, float]]:
     return out
 
 
-def _telemetry_scores(session, replay, notes: list[str]) -> tuple[int, int]:
+def _telemetry_scores(session, replay, replay_end: int, notes: list[str]) -> tuple[int, int]:
+    """(frames agreeing, frames compared). A frame agrees only if every non-null field does.
+
+    Frames past the end of the replay are not compared (they are reported as coverage).
+    """
     offsets = replay.chunk_sample_offsets
-    n = len(offsets)
-    end = offsets[-1] + len(session.chunks[n - 1]) if n and len(session.chunks) >= n else 0
     good = total = beyond = missing = 0
+    per_field: dict[str, list[int]] = {}
     for frame, t in _frame_positions(session, notes):
         fields = {k: frame.get(k) for k in ("reward_event_holds", "muted")}
         fields.update({f"inhibit/{k}": v for k, v in (frame.get("inhibits") or {}).items()})
@@ -146,23 +152,31 @@ def _telemetry_scores(session, replay, notes: list[str]) -> tuple[int, int]:
         if not fields:
             continue
         sample = int(round(t * session.fs))
-        if not n or sample >= end:
+        if sample >= replay_end:
             beyond += 1
-            total += len(fields)
             continue
         tap = replay.taps_per_chunk[max(bisect_right(offsets, sample) - 1, 0)]
+        agree = True
         for k, v in fields.items():
             key = {"reward_event_holds": "reward/event.holds", "muted": "muted"}.get(k, k)
+            tally = per_field.setdefault(k, [0, 0])
+            tally[1] += 1
             if key not in tap:
                 missing += 1
-                total += 1
+                agree = False
+            elif bool(v) == bool(tap[key]):
+                tally[0] += 1
             else:
-                total += 1
-                good += bool(v) == bool(tap[key])
+                agree = False
+        total += 1
+        good += agree
     if beyond:
-        notes.append(f"{beyond} telemetry frame(s) fall after the end of the replay and count as disagreements")
+        notes.append(f"{beyond} telemetry frame(s) lie past the end of the replay and were not compared")
     if missing:
         notes.append(f"{missing} logged telemetry value(s) have no matching tap in the replay and count as disagreements")
+    if per_field:
+        notes.append("telemetry by state, frames agreeing: " + "; ".join(
+            f"{k} {g}/{n}" for k, (g, n) in sorted(per_field.items())))
     return good, total
 
 
@@ -175,8 +189,16 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     """
     fs = session.fs
     notes = [f"match tolerance: {chunk_len} sample(s) ({chunk_len / fs * 1000:.0f} ms at {fs:g} Hz)"]
-    logged = [dict(r, _sample=int(round(r["t_s"] * fs))) for r in session.history
-              if r.get("type") == "reward_event" and isinstance(r.get("t_s"), (int, float))]
+    # Only the part of the recording the replay stepped through can be compared. Records and
+    # frames past its end are reported as coverage, never scored as disagreement.
+    total_samples = sum(len(c) for c in session.chunks)
+    n = len(replay.chunk_sample_offsets)
+    replay_end = replay.chunk_sample_offsets[-1] + len(session.chunks[n - 1]) if n and len(session.chunks) >= n else 0
+    coverage = replay_end / total_samples if total_samples else None
+    logged_all = [dict(r, _sample=int(round(r["t_s"] * fs))) for r in session.history
+                  if r.get("type") == "reward_event" and isinstance(r.get("t_s"), (int, float))]
+    logged = [r for r in logged_all if r["_sample"] < replay_end]
+    uncovered = len(logged_all) - len(logged)
     dings = [r for r in logged if r.get("kind") == "event"]
     values = [r for r in logged if r.get("kind") == "value" and isinstance(r.get("value"), (int, float))]
     replay_dings = [e for e in replay.events if e["kind"] == "event"]
@@ -188,13 +210,13 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     # silently-differing replay this check exists to catch. Do not "simplify" it.
     ding_total = max(len(dings), len(replay_dings))
     out_good, out_total = _output_scores(values, replay_values, chunk_len, notes)
-    tel_good, tel_total = _telemetry_scores(session, replay, notes)
+    tel_good, tel_total = _telemetry_scores(session, replay, replay_end, notes)
     events, outputs, telemetry = _ratio(ding_hits, ding_total), _ratio(out_good, out_total), _ratio(tel_good, tel_total)
 
     notes.append(f"dings: {ding_hits} matched, out of {ding_total} (the larger of {len(dings)} logged "
                  f"and {len(replay_dings)} replayed)")
     notes.append(f"output values: {out_good} within {OUTPUT_REL_TOL:.0%} of {out_total} logged")
-    notes.append(f"telemetry: {tel_good} of {tel_total} logged booleans agree")
+    notes.append(f"telemetry: {tel_good} of {tel_total} frames agree on every state they report")
     scores = (("dings", events, EVENTS_MIN), ("output values", outputs, OUTPUTS_MIN),
               ("telemetry", telemetry, TELEMETRY_MIN))
     for name, got, need in scores:
@@ -205,11 +227,17 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     ran = [got is not None for _, got, _ in scores]
     if not any(ran):
         notes.append("no check could be evaluated, so the replay is not reported as reconciled")
-    passed = any(ran) and all(got >= need for _, got, need in scores if got is not None)
+    complete = coverage is None or coverage >= 1.0
+    if not complete:
+        notes.append(f"FAILED coverage: the replay stepped through {coverage:.1%} of the recording; "
+                     f"{uncovered} logged reward record(s) and the telemetry frames noted above lie past its end "
+                     "and were not compared. The scores above describe only the covered part, so this is not a "
+                     "protocol disagreement but an incomplete replay")
+    passed = complete and any(ran) and all(got >= need for _, got, need in scores if got is not None)
     if replay.mismatches:
         notes.append("replay reported mismatches, so the protocol replayed may not be the one that ran: "
                      + "; ".join(replay.mismatches))
     if replay.chunks_unreplayed:
         notes.append(f"{replay.chunks_unreplayed} chunk(s) were never replayed because the phase plan ended first")
     return Reconciliation(events, outputs, telemetry, passed, notes,
-                          dict(zip(("events", "outputs", "telemetry"), ran)))
+                          dict(zip(("events", "outputs", "telemetry"), ran)), coverage)

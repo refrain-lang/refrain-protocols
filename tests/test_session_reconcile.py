@@ -31,6 +31,11 @@ protocol "tiny" {
   input "raw" { montage = referential(active: "Pz", reference: "A1") }
   derive "scaled" { formula = "raw" * gain }
   reward { event = dwell(condition: above("scaled", 0.5 uV), duration: 200 ms) }
+  inhibit "fast" {
+    metric    = bandpower(input: "raw", band: (15 Hz, 40 Hz), window: 250 ms)
+    threshold = percentile(target_pct: 90, window: 10 s)
+    action    = mute(release: 1 ms)
+  }
   output { level = "scaled"
     chime = reward.event }
   controls {
@@ -75,7 +80,7 @@ def _frames(replay, *, wall_skew=0.0, every=5):
         tap, pos = replay.taps_per_chunk[k], replay.chunk_sample_offsets[k]
         out.append((pos, {"type": "telemetry", "t_s": pos / FS + wall_skew * pos / (N * 1.0),
                           "reward_event_holds": bool(tap["reward/event.holds"]),
-                          "muted": bool(tap["muted"]), "inhibits": {}}))
+                          "muted": bool(tap["muted"]), "inhibits": {"fast": bool(tap["inhibit/fast"])}}))
     return out
 
 
@@ -119,24 +124,63 @@ def test_null_telemetry_fields_are_excluded_not_counted_against(tmp_path):
     assert rec.telemetry_agree == 1.0 and rec.reconciled is True
 
 
-def test_a_wrong_telemetry_boolean_is_counted(tmp_path):
+def test_a_state_wrong_on_every_frame_fails_the_telemetry_gate(tmp_path):
     def flip(markers, frames):
         return markers, [(p, dict(f, muted=not f["muted"])) for p, f in frames]
     s, r = _case(tmp_path, edit=flip)
     rec = reconcile(s, r, CHUNK)
-    assert rec.telemetry_agree == pytest.approx(0.5) and rec.reconciled is False
+    assert rec.telemetry_agree < 0.98 and rec.reconciled is False
     assert any(n.startswith("FAILED telemetry") for n in rec.notes)
 
 
-def test_output_values_just_inside_and_outside_one_percent(tmp_path):
+def test_one_state_wrong_on_a_few_frames_is_not_diluted_by_the_other_states(tmp_path):
+    def flip_some(markers, frames):      # muted wrong on 10 % of frames; two other states are right
+        return markers, [(p, dict(f, muted=not f["muted"]) if i % 10 == 0 else f) for i, (p, f) in enumerate(frames)]
+    s, r = _case(tmp_path, edit=flip_some)
+    rec = reconcile(s, r, CHUNK)
+    assert rec.telemetry_agree == pytest.approx(0.9) and rec.reconciled is False
+    assert any("muted 45/50" in n for n in rec.notes)
+
+
+def test_inhibits_are_compared_and_a_flipped_one_is_counted(tmp_path):
+    s, r = _case(tmp_path)
+    assert all("fast" in f["inhibits"] for f in s.telemetry)
+    assert reconcile(s, r, CHUNK).telemetry_agree == 1.0
+    for f in s.telemetry:
+        f["inhibits"]["fast"] = not f["inhibits"]["fast"]
+    rec = reconcile(s, r, CHUNK)
+    assert rec.telemetry_agree == 0.0 and rec.reconciled is False
+    assert any("inhibit/fast 0/" in n for n in rec.notes)
+    assert not any("no matching tap" in n for n in rec.notes)
+
+
+def test_a_logged_inhibit_the_replay_lacks_counts_as_disagreement(tmp_path):
+    s, r = _case(tmp_path)
+    for f in s.telemetry:
+        f["inhibits"]["ghost"] = False
+    rec = reconcile(s, r, CHUNK)
+    assert rec.telemetry_agree == 0.0 and any("no matching tap" in n for n in rec.notes)
+
+
+def test_output_values_clearly_inside_and_outside_one_percent(tmp_path):
     for sub in ("in", "out"):
         (tmp_path / sub).mkdir()
-    inside = reconcile(*_case(tmp_path / "in", scale=1.0099), CHUNK)
-    outside = reconcile(*_case(tmp_path / "out", scale=1.0101), CHUNK)
+    inside = reconcile(*_case(tmp_path / "in", scale=1.005), CHUNK)
+    outside = reconcile(*_case(tmp_path / "out", scale=1.02), CHUNK)
     # zero-valued samples agree at any scale, so only the non-zero ones tell the cases apart
     assert inside.outputs_within_1pct == 1.0 and inside.reconciled is True
     assert outside.outputs_within_1pct < 0.99 and outside.reconciled is False
     assert any(n.startswith("FAILED output values") for n in outside.notes)
+
+
+def test_a_logged_value_against_a_replayed_zero_is_a_disagreement(tmp_path):
+    s, r = _case(tmp_path)
+    zeroed = [e for e in r.events if e["kind"] == "value" and e["value"] != 0.0]
+    assert zeroed
+    for e in zeroed:
+        e["value"] = 0.0
+    rec = reconcile(s, r, CHUNK)
+    assert rec.outputs_within_1pct < 0.99 and rec.reconciled is False
 
 
 def test_frames_are_placed_by_file_position_not_their_own_clock(tmp_path):
@@ -169,7 +213,7 @@ def test_spurious_replay_dings_count_against_the_ding_score(tmp_path):
     s, r = _case(tmp_path, edit=lambda m, f: ([x for x in m if x[1]["kind"] != "event"], f))
     rec = reconcile(s, r, CHUNK)
     assert rec.events_matched == 0.0 and rec.reconciled is False
-    assert any("larger of 0 logged and 5 replayed" in n for n in rec.notes)
+    assert any("larger of 0 logged and 2 replayed" in n for n in rec.notes)
 
 
 def test_replay_mismatches_and_unreplayed_chunks_reach_the_notes(tmp_path):
@@ -178,3 +222,36 @@ def test_replay_mismatches_and_unreplayed_chunks_reach_the_notes(tmp_path):
     r.chunks_unreplayed = 7
     notes = " ".join(reconcile(s, r, CHUNK).notes)
     assert "phase 9" in notes and "7 chunk(s) were never replayed" in notes
+
+
+def _stopped_early(r, keep_chunks):
+    """The replay of ``r`` as if the phase plan had ended after ``keep_chunks`` chunks."""
+    end = r.chunk_sample_offsets[keep_chunks]
+    r.events[:] = [e for e in r.events if e["t_sample"] < end]
+    r.chunks_unreplayed = len(r.chunk_sample_offsets) - keep_chunks
+    del r.chunk_sample_offsets[keep_chunks:]
+    del r.taps_per_chunk[keep_chunks:]
+
+
+def test_an_incomplete_replay_fails_on_coverage_not_on_agreement(tmp_path):
+    s, r = _case(tmp_path)
+    _stopped_early(r, 200)                      # 800 of 1000 samples
+    rec = reconcile(s, r, CHUNK)
+    assert rec.coverage == pytest.approx(0.8)
+    assert (rec.events_matched, rec.outputs_within_1pct, rec.telemetry_agree) == (1.0, 1.0, 1.0)
+    assert rec.reconciled is False
+    assert any(n.startswith("FAILED coverage") and "80.0%" in n for n in rec.notes)
+    assert any("past the end of the replay and were not compared" in n for n in rec.notes)
+
+
+def test_a_tiny_covered_prefix_cannot_reconcile(tmp_path):
+    s, r = _case(tmp_path)
+    _stopped_early(r, 25)                       # a tenth of the recording, all of it agreeing
+    rec = reconcile(s, r, CHUNK)
+    assert rec.coverage == pytest.approx(0.1) and rec.reconciled is False
+
+
+def test_a_complete_replay_reports_full_coverage(tmp_path):
+    s, r = _case(tmp_path)
+    rec = reconcile(s, r, CHUNK)
+    assert rec.coverage == 1.0 and not any("coverage" in n for n in rec.notes)
