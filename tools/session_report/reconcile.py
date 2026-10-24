@@ -51,19 +51,36 @@ def _by_channel(records, key) -> dict[str, list]:
     return out
 
 
-def _match_events(logged: list[dict], replayed: list[dict], tol: int) -> int:
-    """Dings matched one-to-one on channel, within ``tol`` samples."""
+def _match_events(logged: list[dict], replayed: list[dict], tol, offsets: list[int] | None = None) -> int:
+    """Dings matched one-to-one on channel, each within ``tol`` samples of its logged sample.
+
+    ``tol`` is an int or a function of the logged sample. The distance of every match is
+    appended to ``offsets`` when given.
+    """
+    tol_at = tol if callable(tol) else (lambda _t: tol)
     mine = _by_channel(replayed, lambda e: e["t_sample"])
     matched = 0
     for ch, times in _by_channel(logged, lambda r: r["_sample"]).items():
         pool = sorted(mine.get(ch, []))
         for t in sorted(times):
             i = bisect_left(pool, t)
-            cands = [j for j in (i - 1, i) if 0 <= j < len(pool) and abs(pool[j] - t) <= tol]
+            cands = [j for j in (i - 1, i) if 0 <= j < len(pool) and abs(pool[j] - t) <= tol_at(t)]
             if cands:
-                pool.pop(min(cands, key=lambda j: abs(pool[j] - t)))
+                j = min(cands, key=lambda j: abs(pool[j] - t))
+                if offsets is not None:
+                    offsets.append(abs(pool[j] - t))
+                pool.pop(j)
                 matched += 1
     return matched
+
+
+def _offset_note(what: str, offsets: list[int], fs: float) -> str:
+    """How far apart the matches were: a 100 % at median 0 is not a 100 % at median 25."""
+    if not offsets:
+        return f"{what} matched at offset: no matches, so no offsets to report"
+    med, top = median(offsets), max(offsets)
+    return (f"{what} matched at offset: median {med:g} sample(s) ({med / fs * 1000:.0f} ms), "
+            f"maximum {top} sample(s) ({top / fs * 1000:.0f} ms), over {len(offsets)} match(es)")
 
 
 def _close(logged: float, replayed: float) -> bool:
@@ -71,29 +88,57 @@ def _close(logged: float, replayed: float) -> bool:
     return abs(logged - replayed) <= OUTPUT_REL_TOL * abs(logged) + 1e-12
 
 
-def _output_scores(logged: list[dict], replayed: list[dict], tol: int, notes: list[str]) -> tuple[int, int]:
+def _output_scores(logged: list[dict], replayed: list[dict], tol, notes: list[str],
+                   offsets: list[int] | None = None) -> tuple[int, int]:
+    """(values agreeing, values compared); the denominator is per channel, the larger of logged and replayed.
+
+    Like the ding check, dividing by logged alone would let a replay that produces values the
+    log never recorded (say a protocol file that gained a feedback channel after the session
+    ran) still score 1.0, which is the silently-differing replay this check exists to catch.
+    Do not "simplify" it.
+    """
+    tol_at = tol if callable(tol) else (lambda _t: tol)
     pool: dict[str, tuple[list[int], list[float]]] = {}
     for ch, rows in _by_channel(replayed, lambda e: (e["t_sample"], e["value"])).items():
         rows.sort()
         pool[ch] = ([t for t, _ in rows], [v for _, v in rows])
+    n_logged: dict[str, int] = {}
     good, no_counterpart = 0, 0
     absent = set()
     for r in logged:
+        n_logged[r["channel"]] = n_logged.get(r["channel"], 0) + 1
         times, values = pool.get(r["channel"], ([], []))
         if r["channel"] not in pool:
             absent.add(r["channel"])
         i = bisect_left(times, r["_sample"])
-        cands = [j for j in (i - 1, i) if 0 <= j < len(times) and abs(times[j] - r["_sample"]) <= tol]
+        cands = [j for j in (i - 1, i) if 0 <= j < len(times) and abs(times[j] - r["_sample"]) <= tol_at(r["_sample"])]
         if not cands:
             no_counterpart += 1
             continue
         j = min(cands, key=lambda j: abs(times[j] - r["_sample"]))
+        if offsets is not None:
+            offsets.append(abs(times[j] - r["_sample"]))
         good += _close(float(r["value"]), values[j])
     if absent:
         notes.append(f"output channel(s) in the log but never produced by the replay: {', '.join(sorted(absent))}")
     if no_counterpart:
-        notes.append(f"{no_counterpart} logged output value(s) had no replay value within {tol} samples")
-    return good, len(logged)
+        notes.append(f"{no_counterpart} logged output value(s) had no replay value within tolerance")
+    total = 0
+    extra, replay_only = 0, []
+    for ch in set(n_logged) | set(pool):
+        n_rep = len(pool[ch][0]) if ch in pool else 0
+        total += max(n_logged.get(ch, 0), n_rep)
+        if n_rep > n_logged.get(ch, 0):
+            extra += n_rep - n_logged.get(ch, 0)
+            if ch not in n_logged:
+                replay_only.append(ch)
+    if replay_only:
+        notes.append("output channel(s) the replay produced with no logged counterpart "
+                     "(the log never recorded them): " + ", ".join(sorted(replay_only)))
+    if extra:
+        notes.append(f"{extra} replay output value(s) have no logged counterpart (more values replayed than logged); "
+                     "they count against the output score")
+    return good, total
 
 
 def frame_positions(session, notes: list[str]) -> list[tuple[dict, float]]:
@@ -202,12 +247,22 @@ def _telemetry_scores(session, replay, replay_end: int, notes: list[str]) -> tup
 def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     """Compare ``replay`` with what ``session`` logged.
 
-    ``chunk_len`` is the match tolerance in samples ("within one chunk"); real
-    recordings have no single chunk size, so chunks are located through
-    ``replay.chunk_sample_offsets``.
+    Real recordings have no single chunk size (they run 1 to 32 samples), so each logged
+    event is matched within the length of the chunk that contains it, found through
+    ``replay.chunk_sample_offsets``. ``chunk_len`` is an upper bound on that tolerance
+    (and the tolerance outright where the chunk cannot be located).
     """
     fs = session.fs
-    notes = [f"match tolerance: {chunk_len} sample(s) ({chunk_len / fs * 1000:.0f} ms at {fs:g} Hz)"]
+    chunk_offsets = list(replay.chunk_sample_offsets)
+
+    def tol_at(sample: int) -> int:
+        k = bisect_right(chunk_offsets, sample) - 1
+        if 0 <= k < len(session.chunks):
+            return min(chunk_len, len(session.chunks[k]))
+        return chunk_len
+
+    notes = [f"match tolerance: {chunk_len} sample(s) ({chunk_len / fs * 1000:.0f} ms at {fs:g} Hz) at most; "
+             "each event is matched within the length of its own containing chunk, capped at that"]
     # Only the part of the recording the replay stepped through can be compared. Records and
     # frames past its end are reported as coverage, never scored as disagreement.
     total_samples = sum(len(c) for c in session.chunks)
@@ -223,18 +278,23 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     replay_dings = [e for e in replay.events if e["kind"] == "event"]
     replay_values = [e for e in replay.events if e["kind"] == "value"]
 
-    ding_hits = _match_events(dings, replay_dings, chunk_len)
+    ding_offsets: list[int] = []
+    out_offsets: list[int] = []
+    ding_hits = _match_events(dings, replay_dings, tol_at, ding_offsets)
     # Denominator is the larger of logged and replayed dings, not just logged: dividing by
     # logged alone would let a replay that fires many spurious dings still score 1.0, the
     # silently-differing replay this check exists to catch. Do not "simplify" it.
     ding_total = max(len(dings), len(replay_dings))
-    out_good, out_total = _output_scores(values, replay_values, chunk_len, notes)
+    out_good, out_total = _output_scores(values, replay_values, tol_at, notes, out_offsets)
     tel_good, tel_total = _telemetry_scores(session, replay, replay_end, notes)
     events, outputs, telemetry = _ratio(ding_hits, ding_total), _ratio(out_good, out_total), _ratio(tel_good, tel_total)
 
     notes.append(f"dings: {ding_hits} matched, out of {ding_total} (the larger of {len(dings)} logged "
                  f"and {len(replay_dings)} replayed)")
-    notes.append(f"output values: {out_good} within {OUTPUT_REL_TOL:.0%} of {out_total} logged")
+    notes.append(f"output values: {out_good} within {OUTPUT_REL_TOL:.0%}, out of {out_total} "
+                 "(per channel, the larger of logged and replayed)")
+    notes.append(_offset_note("dings", ding_offsets, fs))
+    notes.append(_offset_note("output values", out_offsets, fs))
     notes.append(f"telemetry: {tel_good} of {tel_total} frames agree on every state they report")
     scores = (("dings", events, EVENTS_MIN), ("output values", outputs, OUTPUTS_MIN),
               ("telemetry", telemetry, TELEMETRY_MIN))

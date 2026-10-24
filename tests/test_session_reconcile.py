@@ -305,7 +305,9 @@ def test_frames_before_the_first_ding_are_placed_by_their_own_clock_not_the_firs
     assert len({(f["muted"], f["inhibits"]["fast"]) for f in pre}) > 1       # the states really change there
     rec = reconcile(s, r, CHUNK)
     # collapsing every pre-ding frame onto the first ding's time scored this 0.96 and failed the gate
-    assert rec.telemetry_agree == 1.0 and rec.reconciled is True
+    # The fixture deletes reward records the replay still produces, so the output check now
+    # (correctly) objects to values nobody logged; this test is about where frames are placed.
+    assert rec.telemetry_agree == 1.0 and not any(n.startswith("FAILED telemetry") for n in rec.notes)
     assert any("before the first or after the last reward_event" in n for n in rec.notes)
 
 
@@ -315,7 +317,8 @@ def test_frames_after_the_last_ding_are_placed_the_same_way(tmp_path):
     post = [f for f in s.telemetry if f["t_s"] >= 6.4]
     assert len({(f["muted"], f["inhibits"]["fast"]) for f in post}) > 1
     rec = reconcile(s, r, CHUNK)
-    assert rec.telemetry_agree == 1.0 and rec.reconciled is True
+    # as above: the deleted records are values the replay still produces, so only telemetry is asserted
+    assert rec.telemetry_agree == 1.0 and not any(n.startswith("FAILED telemetry") for n in rec.notes)
 
 
 def test_edge_frames_still_agree_when_the_wall_clock_is_offset(tmp_path):
@@ -325,3 +328,61 @@ def test_edge_frames_still_agree_when_the_wall_clock_is_offset(tmp_path):
     for f in s.telemetry:
         f["t_s"] += 0.3
     assert reconcile(s, r, CHUNK).telemetry_agree == 1.0
+
+
+# --- final review: how much the matching forgave, and values the log never recorded ---
+
+def _plant_shift(tmp_path, shift):
+    return reconcile(*_case(tmp_path, shift=shift), CHUNK)
+
+
+def test_offsets_of_matched_dings_are_reported(tmp_path):
+    rec = _plant_shift(tmp_path, 3)
+    note = next(n for n in rec.notes if n.startswith("dings matched at offset"))
+    assert "median 3 sample(s) (30 ms)" in note and "maximum 3 sample(s) (30 ms)" in note
+    (tmp_path / "z").mkdir()
+    rec0 = _plant_shift(tmp_path / "z", 0)
+    assert "median 0 sample(s) (0 ms)" in next(n for n in rec0.notes if n.startswith("dings matched at offset"))
+
+
+def test_offsets_of_matched_output_values_are_reported(tmp_path):
+    rec = _plant_shift(tmp_path, 2)
+    note = next(n for n in rec.notes if n.startswith("output values matched at offset"))
+    assert "median 2 sample(s) (20 ms)" in note and "maximum 2 sample(s) (20 ms)" in note
+
+
+def test_an_event_is_matched_within_its_own_chunk_not_the_longest_chunk(tmp_path):
+    # chunks are 4 samples long; a cap of 32 (the longest chunk in some other part of the
+    # recording) must not forgive a 20-sample shift
+    s, r = _case(tmp_path, shift=20)
+    loose = reconcile(s, r, 32)
+    assert loose.events_matched < 0.99 and loose.reconciled is False
+    assert any("its own containing chunk" in n for n in loose.notes)
+
+
+def test_a_shift_inside_the_chunk_still_matches_under_a_large_cap(tmp_path):
+    rec = reconcile(*_case(tmp_path, shift=3), 32)
+    assert rec.events_matched == 1.0
+
+
+def test_a_replay_channel_the_log_never_recorded_scores_below_one(tmp_path):
+    # the protocol file gained a feedback channel after the session ran
+    s, _ = _case(tmp_path)
+    grown = tmp_path / "grown.refrain"
+    grown.write_text(PROTOCOL.replace("chime = reward.event }", 'chime = reward.event\n    extra = "scaled" }'))
+    r = replay_session(s, resolve(refrain.parse_file(str(grown)), None), CHANS, follow_log=False)
+    assert any(e["channel"] == "extra" for e in r.events)
+    rec = reconcile(s, r, CHUNK)
+    assert rec.outputs_within_1pct < 0.99
+    assert any("extra" in n and "no logged counterpart" in n for n in rec.notes)
+
+
+def test_extra_replay_values_on_a_logged_channel_score_below_one(tmp_path):
+    def thin(markers, frames):
+        vals = [i for i, (_, m) in enumerate(markers) if m["kind"] == "value"]
+        drop = set(vals[::2])
+        return [x for i, x in enumerate(markers) if i not in drop], frames
+    s, r = _case(tmp_path, edit=thin)
+    rec = reconcile(s, r, CHUNK)
+    assert rec.outputs_within_1pct < 0.99
+    assert any("replay" in n and "no logged counterpart" in n for n in rec.notes)

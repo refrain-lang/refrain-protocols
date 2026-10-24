@@ -156,6 +156,7 @@ def build_report(folder: Path, *, protocol: Path | None = None, protocols_ref: s
     band = muscle_band(session.fs)
 
     own, replay = _replay_protocol(session, Path(protocol), muscle, follow_log=True)
+    # an upper bound only: reconcile matches each event within its own containing chunk
     tolerance = max((len(c) for c in session.chunks), default=1)
     rec = reconcile(session, replay, tolerance)
 
