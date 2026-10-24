@@ -31,6 +31,8 @@ class ReplayResult:
     mismatches: list[str] = field(default_factory=list)
     # one per logged phase_change: {t_s, logged_index, replay_index, agrees}
     phase_checks: list[dict] = field(default_factory=list)
+    # chunks never stepped because the evaluator went terminal (the phase plan ended first)
+    chunks_unreplayed: int = 0
 
 
 def step_through(ir, fs: float, channel_names: Sequence[str], chunks: Iterable[np.ndarray], *,
@@ -48,9 +50,15 @@ def step_through(ir, fs: float, channel_names: Sequence[str], chunks: Iterable[n
     parts: dict[str, list[np.ndarray]] = {k: [] for k in keep} if keep is not None else {}
     res = ReplayResult()
     pos = 0
-    for k, chunk in enumerate(chunks):
-        if on_before_chunk is not None:
+    it = iter(chunks)
+    for k, chunk in enumerate(it):
+        if on_before_chunk is not None and ev.state != "stopped":
             on_before_chunk(k, ev)
+        if ev.state == "stopped":
+            # The phase plan ended before the recording did. Stepping now would raise;
+            # record how much of the recording went unreplayed instead.
+            res.chunks_unreplayed = 1 + sum(1 for _ in it)
+            break
         res.chunk_sample_offsets.append(pos)
         pos += len(chunk)
         for e in ev.step_chunk(chunk):
@@ -128,14 +136,18 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
     matrices = [np.column_stack([c[:, j] if j is not None else np.zeros(len(c)) for j in cols])
                 for c in session.chunks]
 
+    mismatches: list[str] = []
     # control_defaults keys are "control/<name>"; the log and set_control use the bare name
     defaults = {k.removeprefix("control/"): v for k, v in control_defaults(ir).items()}
     layered = _is_layered_texture(session, ir)
+    if follow_log and len(ir.session.phases) > 1 and not any(
+            te.record.get("type") == "phase_change" for te in session.events):
+        mismatches.append("the log has no phase_change record, so the replay holds its first phase "
+                          "as long as it can; phase markers may have been lost")
     by_chunk: dict[int, list[dict]] = {}
     for te in session.events:
         by_chunk.setdefault(te.after_chunk, []).append(te.record)
 
-    mismatches: list[str] = []
     phase_checks: list[dict] = []
     applied: list[dict] = []
     skipped: list[dict] = []
@@ -171,6 +183,10 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
                 ev.reset_held_outputs()
         for rec in by_chunk.get(k - 1, []):
             t = rec.get("type")
+            if (t == "control_change" and rec.get("source") != "warmup_seed" and "engine_value" not in rec):
+                skipped.append({"name": rec.get("name"), "after_chunk": k - 1,
+                                "reason": "control_change carries no engine_value", "record": rec})
+                continue
             ctl = _control_record(rec)
             if ctl is not None:
                 set_control(ev, k, rec, *ctl)
@@ -184,17 +200,18 @@ def replay_session(session, ir, channel_names: Sequence[str], *, follow_log: boo
                 target = int(rec["phase_index"])
                 # Wall-clock drift (seconds over a session) moves a phase edge by seconds, so the
                 # replay may sit one phase behind the log (its timer not yet fired) or one ahead
-                # (fired first). Only a gap of more than one phase is a real disagreement.
+                # (an unholdable `timed` phase fired first). Only a gap of more than one phase
+                # either way is a real disagreement.
                 here = ev.current_phase()["index"]
-                agrees = target - 1 <= here <= target
+                agrees = target - 1 <= here <= target + 1
                 phase_checks.append({"t_s": rec.get("t_s"), "logged_index": target,
                                      "replay_index": here, "agrees": agrees})
                 if not agrees:
                     mismatches.append(f"log enters phase {target} at t_s {rec.get('t_s')} but the replay "
                                       f"is in phase {here}")
-                state["logged_phase"] = target
                 # never advance past the last phase: that stops the evaluator
                 last = len(ir.session.phases) - 1
+                state["logged_phase"] = min(target, last)
                 while 0 <= ev.current_phase()["index"] < min(target, last):
                     ev.hold(False)
                     if not ev.advance_phase():

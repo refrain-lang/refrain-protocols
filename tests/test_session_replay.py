@@ -44,9 +44,9 @@ protocol "tiny" {
 '''
 
 
-def _ir(tmp_path):
+def _ir(tmp_path, text=None):
     path = tmp_path / "tiny.refrain"
-    path.write_text(PROTOCOL)
+    path.write_text(text or PROTOCOL)
     return resolve(refrain.parse_file(str(path)), None)
 
 
@@ -70,11 +70,16 @@ def _gain(result):
     return [t["derive/scaled"] for t in result.taps_per_chunk]
 
 
-def _replay(tmp_path, markers, *, follow_log=True, n=400, mutate=None):
+def _replay(tmp_path, markers, *, follow_log=True, n=400, mutate=None, text=None):
     s = _session(tmp_path, markers, n=n)
     if mutate:
         mutate(s)
-    return replay_session(s, _ir(tmp_path), CHANS, follow_log=follow_log)
+    return replay_session(s, _ir(tmp_path, text), CHANS, follow_log=follow_log)
+
+
+PLAN = "phase { name = \"work\"; duration = 1 min; mode = timed_with_floor },"
+SHORT_PLAN = PROTOCOL.replace(PLAN, "phase { name = \"work\"; duration = 2 s },")      # 3 s in all, last phase `timed`
+assert SHORT_PLAN != PROTOCOL
 
 
 def test_control_change_applies_before_the_next_chunk(tmp_path):
@@ -199,9 +204,9 @@ def test_undeclared_control_is_a_mismatch_only_for_the_sessions_own_protocol(tmp
     recs = [(40, _change(0.4, name="not_in_this_protocol", engine=5.0))]
     own = _replay(tmp_path / "own", recs)
     assert [s["name"] for s in own.skipped] == ["not_in_this_protocol"]
-    assert len(own.mismatches) == 1 and "not_in_this_protocol" in own.mismatches[0]
+    assert [m for m in own.mismatches if "not_in_this_protocol" in m] != []
     assert len(own.taps_per_chunk) == 100                       # the replay still completed
-    assert _replay(tmp_path / "cmp", recs, follow_log=False).mismatches == []
+    assert _replay(tmp_path / "cmp", recs, follow_log=False).mismatches == []   # comparison: never a mismatch
 
 
 def test_phase_checks_record_agreement_and_flag_a_real_disagreement(tmp_path):
@@ -212,3 +217,70 @@ def test_phase_checks_record_agreement_and_flag_a_real_disagreement(tmp_path):
     far = {"type": "phase_change", "phase_index": 5, "phase_name": "x", "t_s": 0.2}
     r = _replay(tmp_path / "far", [(20, far)])
     assert r.phase_checks[0]["agrees"] is False and len(r.mismatches) == 1
+
+
+def test_comparison_replay_survives_a_recording_longer_than_its_phase_plan(tmp_path):
+    r = _replay(tmp_path, [], follow_log=False, text=SHORT_PLAN)       # 4 s of EEG, 3 s plan
+    assert len(r.taps_per_chunk) == 75 and r.chunks_unreplayed == 25
+    assert len(r.streams["scaled"]) == 300
+
+
+def test_timed_last_phase_ending_early_is_recorded_not_raised(tmp_path):
+    phase = {"type": "phase_change", "phase_index": 1, "phase_name": "work", "t_s": 1.0}
+    r = _replay(tmp_path, [(100, phase)], text=SHORT_PLAN)
+    assert r.chunks_unreplayed == 25 and len(r.taps_per_chunk) == 75
+
+
+def test_logged_phase_beyond_the_plan_is_clamped_and_the_last_phase_is_held(tmp_path):
+    far = {"type": "phase_change", "phase_index": 5, "phase_name": "x", "t_s": 0.2}
+    r = _replay(tmp_path, [(20, far)], n=6400)                         # outlasts the 1 min last phase
+    assert r.chunks_unreplayed == 0 and len(r.taps_per_chunk) == 1600
+    assert r.taps_per_chunk[-1]["phase/index"] == 1
+
+
+THREE = PROTOCOL.replace(PLAN, "phase { name = \"a\"; duration = 1 s },\n      phase { name = \"b\"; duration = 1 s },\n      " + PLAN)
+
+
+def test_replay_one_phase_ahead_of_the_log_is_drift_not_a_mismatch(tmp_path):
+    # phases a and b are `timed` and cannot be held: the replay is already in phase 2 when the log says 1
+    phase = {"type": "phase_change", "phase_index": 1, "phase_name": "b", "t_s": 2.1}
+    r = _replay(tmp_path, [(210, phase)], n=400, text=THREE.replace("phase { name = \"settle\"; duration = 1 s; output_muted = true; mode = timed_with_floor },", ""))
+    assert r.phase_checks[0]["replay_index"] == 2 and r.phase_checks[0]["agrees"] is True
+    assert r.mismatches == []
+
+
+def test_a_log_with_no_phase_change_is_reported(tmp_path):
+    r = _replay(tmp_path, [])
+    assert len(r.mismatches) == 1 and "no phase_change" in r.mismatches[0]
+    assert _replay(tmp_path / "cmp", [], follow_log=False).mismatches == []
+
+
+def test_layered_texture_is_read_from_the_protocol_when_the_manifest_lacks_it(tmp_path, monkeypatch):
+    calls = _spy_resets(monkeypatch)
+    layered = PROTOCOL.replace('modality = "eeg" }', 'modality = "eeg" feedback_style = "layered_texture" }')
+    assert layered != PROTOCOL
+    s = _session(tmp_path, [(40, _change(0.4))])
+    assert "audio" not in s.meta
+    replay_session(s, _ir(tmp_path, layered), CHANS, follow_log=True)
+    assert len(calls) == 1
+
+
+def test_events_carry_absolute_sample_indexes(tmp_path):
+    text = (PROTOCOL.replace('above("scaled", 1000 uV), duration: 1000 ms', 'above("scaled", 0.5 uV), duration: 200 ms')
+            .replace('output { level = "scaled" }', 'output { level = "scaled"\n chime = reward.event }')
+            .replace("output_muted = true; ", ""))
+    X = np.column_stack([np.zeros(400), np.r_[np.zeros(100), np.ones(300)]])      # signal starts at sample 100
+    chunks = [X[i:i + CHUNK] for i in range(0, 400, CHUNK)]
+    r = step_through(_ir(tmp_path, text), FS, CHANS, chunks, skip_warmup=False)
+    chime = [e for e in r.events if e["channel"] == "chime"]
+    assert [e["kind"] for e in chime] == ["event"]
+    t = chime[0]["t_sample"]
+    assert t == 119                                                    # 200 ms (20 samples) after the signal starts
+    k = max(i for i, o in enumerate(r.chunk_sample_offsets) if o <= t)
+    assert r.chunk_sample_offsets[k] <= t < r.chunk_sample_offsets[k] + CHUNK and k == 29
+
+
+def test_control_change_without_engine_value_is_listed_not_dropped(tmp_path):
+    r = _replay(tmp_path, [(40, _change(0.4, engine=None))])
+    assert [(s["name"], "engine_value" in s["reason"]) for s in r.skipped] == [("gain", True)]
+    assert r.applied == [] and _gain(r)[-1] == 1.0
