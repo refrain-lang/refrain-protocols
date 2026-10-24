@@ -64,7 +64,10 @@ def build_session(dir: Path, *, fs: float, channel_names: list[str], eeg: np.nda
 
     ``markers`` are (sample_index, record) pairs, written into raw.xdf between
     EEG chunks at that sample position and into feedback-history.jsonl.
-    ``telemetry`` records go to feedback-history.jsonl only.
+    ``telemetry`` records go to feedback-history.jsonl only. An entry may be a
+    (sample_index, record) pair; if any is, the file keeps position order (markers
+    first, then telemetry at the same sample) instead of ``t_s`` order, so a test can
+    give telemetry a ``t_s`` that disagrees with where it sits in the file.
     """
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)
@@ -96,8 +99,12 @@ def build_session(dir: Path, *, fs: float, channel_names: list[str], eeg: np.nda
         out += _footer(MARKER_ID, min(times, default=0), max(times, default=0), len(markers), 0)
     (dir / "raw.xdf").write_bytes(bytes(out))
 
-    records = [rec for _, rec in markers] + list(telemetry)
-    records.sort(key=lambda r: r.get("t_s", 0.0))
+    if any(isinstance(t, tuple) for t in telemetry):
+        keyed = [(p, 0, rec) for p, rec in markers] + [(t[0], 1, t[1]) for t in telemetry]
+        records = [rec for _, _, rec in sorted(keyed, key=lambda x: x[:2])]
+    else:
+        records = [rec for _, rec in markers] + list(telemetry)
+        records.sort(key=lambda r: r.get("t_s", 0.0))
     (dir / "feedback-history.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
 
     session = {
