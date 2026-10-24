@@ -59,7 +59,8 @@ def _footer(stream_id, first, last, count, srate) -> bytes:
 def build_session(dir: Path, *, fs: float, channel_names: list[str], eeg: np.ndarray, chunk: int,
                   protocol_id: str, markers: list[tuple[int, dict]], telemetry: list[dict],
                   footer: bool = True, device_model: str = "BrainBit Flex",
-                  placements: dict | None = None, modes: dict | None = None) -> Path:
+                  placements: dict | None = None, modes: dict | None = None,
+                  audio: dict | None = None, manifest: dict | None = None) -> Path:
     """Write a session into ``dir`` and return ``dir``.
 
     ``markers`` are (sample_index, record) pairs, written into raw.xdf between
@@ -68,6 +69,9 @@ def build_session(dir: Path, *, fs: float, channel_names: list[str], eeg: np.nda
     (sample_index, record) pair; if any is, the file keeps position order (markers
     first, then telemetry at the same sample) instead of ``t_s`` order, so a test can
     give telemetry a ``t_s`` that disagrees with where it sits in the file.
+    ``audio`` and ``manifest`` are written into feedback-session.json only when
+    given, as the recorder writes them (``audio.feedback_style`` declares layered
+    texture; ``manifest.review_contract`` the ratio and target to review).
     """
     dir = Path(dir)
     dir.mkdir(parents=True, exist_ok=True)
@@ -116,5 +120,9 @@ def build_session(dir: Path, *, fs: float, channel_names: list[str], eeg: np.nda
         "initial_controls": {},
         "completed": footer,
     }
+    if audio is not None:
+        session["audio"] = audio
+    if manifest is not None:
+        session["manifest"] = manifest
     (dir / "feedback-session.json").write_text(json.dumps(session, indent=2))
     return dir

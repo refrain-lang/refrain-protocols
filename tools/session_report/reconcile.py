@@ -96,7 +96,7 @@ def _output_scores(logged: list[dict], replayed: list[dict], tol: int, notes: li
     return good, len(logged)
 
 
-def _frame_positions(session, notes: list[str]) -> list[tuple[dict, float]]:
+def frame_positions(session, notes: list[str]) -> list[tuple[dict, float]]:
     """(telemetry frame, its time on refrain's clock in seconds), mapped by file position.
 
     Telemetry t_s is wall-clock and drifts from refrain's sample clock; reward_event
@@ -146,7 +146,7 @@ def _telemetry_scores(session, replay, replay_end: int, notes: list[str]) -> tup
     offsets = replay.chunk_sample_offsets
     good = total = beyond = missing = 0
     per_field: dict[str, list[int]] = {}
-    for frame, t in _frame_positions(session, notes):
+    for frame, t in frame_positions(session, notes):
         fields = {k: frame.get(k) for k in ("reward_event_holds", "muted")}
         fields.update({f"inhibit/{k}": v for k, v in (frame.get("inhibits") or {}).items()})
         fields = {k: v for k, v in fields.items() if v is not None}     # null: not reported, not compared
