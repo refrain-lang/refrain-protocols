@@ -183,7 +183,7 @@ def _declared_warmup(ir_json, fs: float) -> int | None:
     return int(round(float(first.get("duration_ms") or 0.0) / 1000.0 * fs))
 
 
-def _logged_warmup(frames, n: int, fs: float) -> int | None:
+def _logged_warmup(telemetry, n: int, fs: float) -> int | None:
     """Where the live telemetry says warmup ended, in samples, or None if it never says.
 
     Warmup ends where the first frame that is not in it begins. A log that never reports
@@ -191,22 +191,35 @@ def _logged_warmup(frames, n: int, fs: float) -> int | None:
     "warmup ended when telemetry started", which would quietly drop the first frames of
     every session that had no warmup at all. A log whose frames are *all* warmup describes
     a session that never left it, so the whole replay is warmup.
+
+    This reads each frame's own ``t_s``, which is wall clock, and *not* the refrain-clock
+    placement ``reconcile.frame_positions`` computes (``_feedback_state_view`` makes the
+    same choice, and for the same reason; only the audio-mute mask uses the placement).
+    That placement interpolates a frame between the reward records around it and
+    has nothing before the first one, so every frame earlier than the first logged ding
+    collapses onto that ding's time. A warmup phase that is output-muted cannot produce a
+    ding, so on exactly the sessions that have a warmup there is never an anchor before it
+    ends, and the boundary would come back as the first ding instead: 126.7 s rather than
+    119.8 s on the real session, dropping seven seconds of training from every rate.
+    Wall clock drifts from refrain's by seconds over a session, but it drifts from zero,
+    and this boundary sits near the start where that drift is still a fraction of a second
+    -- far better than the error it replaces, and the declared phase below cross-checks it.
     """
-    states = [(int(round(t * fs)), frame.get("state")) for frame, t in frames
-              if frame.get("state") is not None]
+    states = [(float(record["t_s"]), record.get("state")) for record in telemetry
+              if record.get("state") is not None and isinstance(record.get("t_s"), (int, float))]
     if not states:
         return None
     if not any(state == "warmup" for _, state in states):
         return 0
     running = [at for at, state in states if state != "warmup"]
-    return min(running) if running else n
+    return int(round(min(running) * fs)) if running else n
 
 
-def _warmup_span(frames, ir_json, n: int, fs: float, notes: list[str]) -> dict:
+def _warmup_span(telemetry, ir_json, n: int, fs: float, notes: list[str]) -> dict:
     """The span excluded from every figure, and where that span was read from."""
-    declared, logged = _declared_warmup(ir_json, fs), _logged_warmup(frames, n, fs)
+    declared, logged = _declared_warmup(ir_json, fs), _logged_warmup(telemetry, n, fs)
     if logged is not None:
-        end, source = logged, "the live telemetry's state field"
+        end, source = logged, "the live telemetry's state field, on the log's own clock"
     elif declared is not None:
         end, source = declared, ("the protocol's own first phase, which is output_muted"
                                  if declared else "the protocol's own first phase, which is "
@@ -226,7 +239,9 @@ def _warmup_span(frames, ir_json, n: int, fs: float, notes: list[str]) -> dict:
     if declared is not None and logged is not None and abs(declared - logged) > WARMUP_DISAGREE_S * fs:
         notes.append(f"the log says warmup ended at {logged / fs:.1f} s but the protocol declares "
                      f"{declared / fs:.1f} s; the log is what actually ran, so it was used, and "
-                     "the difference is reported rather than resolved")
+                     "the difference is reported rather than resolved. The two are on different "
+                     "clocks (the log's own against refrain's samples), so a fraction of a second "
+                     "of any gap is drift rather than disagreement")
     return {"end_sample": end, "end_s": end / fs, "source": source,
             "logged_end_sample": logged, "declared_end_sample": declared}
 
@@ -583,13 +598,22 @@ def _layered(session, ir_json) -> bool:
     return style == "layered_texture"
 
 
-def _feedback_state_view(frames, begin: int, fs: float) -> dict | None:
+def _feedback_state_view(telemetry, begin: int, fs: float) -> dict | None:
     """Time in each logged feedback state, for a session whose audio is layered texture.
 
-    Counted over the frames after warmup, like every other share here.
+    Counted over the frames after warmup, like every other share here, and on the frames'
+    own clock for the same reason ``_logged_warmup`` uses it: the refrain-clock placement
+    collapses every frame before the first logged ding onto that ding, which on a session
+    whose warmup is output-muted would put the whole warmup *after* the boundary and
+    count all of it. A frame with no usable time of its own is kept rather than dropped,
+    since there is nothing to place it with and dropping it would shrink the denominator
+    silently; the frame counts are reported beside the shares either way.
     """
     counts: dict[str, int] = {}
-    after = [frame for frame, t in frames if int(round(t * fs)) >= begin]
+    begin_s = begin / fs
+    after = [record for record in telemetry
+             if not isinstance(record.get("t_s"), (int, float))
+             or float(record["t_s"]) >= begin_s]
     for frame in after:
         state = frame.get("feedback_state")
         if state is not None:
@@ -617,8 +641,11 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
     if n <= 0:
         notes.append("the replay stepped no samples, so nothing could be measured")
 
-    # The telemetry's clock mapping (ruling R15) is wanted by three things below, so it
-    # runs once; the reconciliation reports its drift, which is why the notes are dropped.
+    # The audio mute is a per-sample mask compared against per-sample masks, so its frames
+    # are placed on refrain's clock (ruling R15); the reconciliation reports that mapping's
+    # drift, which is why the notes are dropped here. The warmup boundary and the
+    # feedback-state view deliberately use the frames' own clock instead -- see
+    # _logged_warmup for what that mapping cannot see before a session's first ding.
     frames = frame_positions(session, [])
     mutes = {"artifact": _expand_tap(replay, "muted", n) > 0.5,
              "phase": _expand_tap(replay, "phase/output_muted", n) > 0.5,
@@ -658,7 +685,7 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
     in_window = (tracks.onsets >= window[0]) & (tracks.onsets < window[1])
     tracks.strays = tracks.onsets[in_window & ~covered[tracks.onsets]] if n else tracks.onsets
 
-    warmup = _warmup_span(frames, ir_json, n, fs, notes)
+    warmup = _warmup_span(session.telemetry, ir_json, n, fs, notes)
     begin = warmup["end_sample"]
     blocks = _phase_blocks(replay, ir_json, n)
     judged = truth.judged
@@ -680,8 +707,10 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
         "latency_from_episode_ms": _median_p90([r["ding_ms"] for r in rewarded]),
         "latency_from_condition_true_ms": _median_p90(
             [r["condition_ms"] for r in rewarded if r["condition_ms"] is not None]),
+        # like `episodes` and `reward_onsets`: a count over a span with no time in it would
+        # assert an observation that was never made
         "condition_already_true_at_start": (sum(r["condition_at_start"] for r in rewarded)
-                                            if judged else None),
+                                            if judged and n > begin else None),
         "deadline_curve": {
             int(deadline): (_share(sum(r["ding_ms"] is not None and r["ding_ms"] <= deadline
                                        for r in mine), len(mine)) if judged else None)
@@ -698,8 +727,13 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
         "derive_lag_r": _derive_lag_r(replay, ir_json, fs, (max(window[0], begin), window[1]),
                                       notes),
         "ding_decided_vs_rendered": _dings(session, replay, own),
+        # `start_s`/`end_s` are the phase's own span and `measured_from_s` is where its
+        # figures actually begin, which differ by whatever of the phase was warmup. The
+        # report labels the measured span, because a rate over the last fraction of a
+        # two-minute phase under a "0 to 120 s" label reads as a rate over two minutes.
         "per_phase": [{"index": b["index"], "name": b["name"], "block": b["block"],
                        "start_s": b["start"] / fs, "end_s": b["end"] / fs,
+                       "measured_from_s": max(b["start"], begin) / fs,
                        **_span_metrics(tracks, rows, max(b["start"], begin), b["end"])}
                       for b in blocks],
         "settings": {
@@ -720,6 +754,6 @@ def session_metrics(session, replay, truth, muscle, fs, *, ir_json=None, own: bo
     if ratio is not None:
         views["ratio"] = ratio
     if _layered(session, ir_json):
-        views["feedback_state"] = _feedback_state_view(frames, begin, fs)
+        views["feedback_state"] = _feedback_state_view(session.telemetry, begin, fs)
     out["protocol_views"] = views
     return out

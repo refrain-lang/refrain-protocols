@@ -429,13 +429,26 @@ def _lag_lines(entry: dict) -> list[str]:
     return out
 
 
+def _phase_span(phase: dict) -> str:
+    """A phase's own span, and the measured part of it when warmup took some away."""
+    span = f"{phase['start_s']:.1f}-{phase['end_s']:.1f} s"
+    measured = phase.get("measured_from_s")
+    if measured is not None and measured > phase["start_s"] + 0.05:
+        return f"{span} (measured from {measured:.1f} s, {_num(phase['elapsed_s'], '{:.1f}')} s)"
+    return f"{span} ({_num(phase['elapsed_s'], '{:.1f}')} s)"
+
+
 def _phase_lines(entry: dict) -> list[str]:
     if not entry["per_phase"]:
         return []
     out = ["  Per phase"]
     for phase in entry["per_phase"]:
-        out.append(f"    {_phase_label(phase)} {phase['start_s']:.1f}-{phase['end_s']:.1f} s: "
-                   f"rewards {_num(phase['rewards_per_min'], '{:.2f}')}/min, "
+        if not phase["elapsed_s"]:
+            out.append(f"    {_phase_label(phase)} {phase['start_s']:.1f}-{phase['end_s']:.1f} s:"
+                       " entirely warmup, so nothing in it was measured")
+            continue
+        head = f"    {_phase_label(phase)} {_phase_span(phase)}"
+        out.append(f"{head}: rewards {_num(phase['rewards_per_min'], '{:.2f}')}/min, "
                    f"reward share of unmuted {_pct(phase['reward_share_of_unmuted'])}, "
                    f"episodes {_num(phase['episodes'])} "
                    f"({_num(phase['episodes_per_min'], '{:.2f}')}/min), "

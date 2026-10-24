@@ -24,6 +24,7 @@ from refrain.resolver import resolve  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from session_fixture import build_session  # noqa: E402
+from session_report.__main__ import _phase_lines  # noqa: E402
 from session_report.metrics import session_metrics  # noqa: E402
 from session_report.muscle import (  # noqa: E402
     MUSCLE_FACTOR, NOISE_EPISODES_PER_MIN, muscle_band, muscle_episodes,
@@ -151,8 +152,21 @@ def _audio_frames(*, state_until=None) -> list[dict]:
     return out
 
 
+def _ding_records(times) -> list[tuple[int, dict]]:
+    """Logged dings, as the recorder writes them: refrain's clock, nothing rendered.
+
+    These are what ``reconcile.frame_positions`` uses to place telemetry frames on
+    refrain's clock, so a session whose first ding comes long after warmup -- which is
+    every session whose warmup phase is output-muted, the real one included -- has no
+    anchor at all before its warmup ends.
+    """
+    return [(int(t * FS), {"type": "reward_event", "channel": "audio_chime", "kind": "event",
+                           "value": None, "rendered_sound": False, "t_s": t}) for t in times]
+
+
 def _plant(tmp_path: Path, *, smr=(), muscle=(), paused=True, paused_throughout=False,
-           text=None, pz=None, phase_markers=None, telemetry=None, audio=None, manifest=None):
+           text=None, pz=None, phase_markers=None, telemetry=None, audio=None, manifest=None,
+           dings=()):
     """Build, replay and measure a planted session; return (metrics, extras)."""
     tmp_path.mkdir(parents=True, exist_ok=True)
     path = tmp_path / "p.refrain"
@@ -171,6 +185,7 @@ def _plant(tmp_path: Path, *, smr=(), muscle=(), paused=True, paused_throughout=
     elif paused:
         markers += [(int(PAUSE_S * FS), {"type": "session_state", "action": "pause", "t_s": PAUSE_S}),
                     (int(RESUME_S * FS), {"type": "session_state", "action": "resume", "t_s": RESUME_S})]
+    markers += _ding_records(dings)
     folder = build_session(tmp_path / "s", fs=FS, channel_names=list(CHANS),
                            eeg=np.column_stack([np.zeros(N), pz]), chunk=CHUNK,
                            protocol_id="metrics_smr", markers=markers,
@@ -375,13 +390,17 @@ def _crossover_eeg() -> np.ndarray:
     return pz
 
 
-def _state_frames() -> list[dict]:
+def _state_frames(*, state_until=None) -> list[dict]:
     """Telemetry carrying the layered-texture feedback state, as the recorder logs it."""
     out, k = [], 0
     for state, count in STATE_FRAMES:
         for _ in range(count):
-            out.append({"type": "telemetry", "t_s": k / 10.0, "audio_muted": False,
-                        "feedback_state": state})
+            t = k / 10.0
+            frame = {"type": "telemetry", "t_s": t, "audio_muted": False,
+                     "feedback_state": state}
+            if state_until is not None:
+                frame["state"] = "warmup" if t < state_until else "run"
+            out.append(frame)
             k += 1
     return out
 
@@ -409,6 +428,21 @@ def test_protocol_views_follow_the_contract_a_protocol_declares(tmp_path):
     assert state["frames"] == dict(sorted(STATE_FRAMES))
     assert state["reported_frames"] == sum(n for _, n in STATE_FRAMES)
     assert state["share"]["approach"] == pytest.approx(600 / 900)
+
+    # The same view on a session with a warmup and a first ding well after it: the warmup
+    # frames are excluded. Placing them on refrain's clock instead would collapse every
+    # frame before that ding onto it, putting the whole warmup after the boundary and
+    # counting all of it -- the same defect as reading the warmup boundary that way.
+    warm = 20.0
+    m_warm, _ = _plant(tmp_path / "warm", text=RATIO, pz=_crossover_eeg(), paused=False,
+                       phase_markers=[], telemetry=_state_frames(state_until=warm),
+                       dings=(30.2,), audio={"feedback_style": "layered_texture"})
+    assert m_warm["warmup"]["end_sample"] == int(warm * FS)
+    state = m_warm["protocol_views"]["feedback_state"]
+    assert state["measured_from_s"] == pytest.approx(warm)
+    # the first 200 frames are warmup, and all of them were "approach"
+    assert state["frames"] == {"approach": 400, "crossover": 200, "sustained": 100}
+    assert m_warm["protocol_views"]["ratio"]["share_measured_from_s"] == pytest.approx(warm)
 
     # the same contract read from the session manifest instead, for a protocol that
     # does not declare it itself
@@ -444,7 +478,7 @@ def test_warmup_comes_from_the_log_when_it_says_and_a_clash_is_named(tmp_path):
     # the log says warmup ended at 14.5 s, the protocol declares 15 s: close enough that
     # only the source is worth reporting
     m, _ = _plant(tmp_path / "agree", smr=SMR_ONSETS, telemetry=_audio_frames(state_until=14.5))
-    assert m["warmup"]["source"] == "the live telemetry's state field"
+    assert m["warmup"]["source"] == "the live telemetry's state field, on the log's own clock"
     assert m["warmup"]["end_sample"] == int(14.5 * FS)
     assert m["warmup"]["declared_end_sample"] == WARMUP_END
     assert m["elapsed_s"] == pytest.approx((N - 14.5 * FS) / FS, abs=0.1)
@@ -457,6 +491,16 @@ def test_warmup_comes_from_the_log_when_it_says_and_a_clash_is_named(tmp_path):
     assert any("but the protocol declares" in note for note in m["notes"])
     assert any("20.0 s" in note and "15.0 s" in note for note in m["notes"])
 
+    # The real session's shape: warmup is output-muted, so no ding can be logged during
+    # it and the first one lands seconds later. Reading the boundary through the ding
+    # anchors would collapse every warmup frame onto that first ding and exclude the
+    # seconds between -- 126.7 s instead of 119.8 s on the real session.
+    m, _ = _plant(tmp_path / "late-ding", smr=SMR_ONSETS,
+                  telemetry=_audio_frames(state_until=14.5), dings=(25.2, 40.2, 75.2))
+    assert m["warmup"]["logged_end_sample"] == int(14.5 * FS)
+    assert m["warmup"]["end_sample"] == int(14.5 * FS)
+    assert m["elapsed_s"] == pytest.approx((N - 14.5 * FS) / FS, abs=0.1)
+
     # a session the log says never left warmup: there is no time after it to measure, so
     # every figure is unmeasured -- including the counts, which would otherwise read as
     # "we looked and found none"
@@ -466,6 +510,30 @@ def test_warmup_comes_from_the_log_when_it_says_and_a_clash_is_named(tmp_path):
     assert m["episodes"] is None and m["reward_onsets"] is None
     assert m["rewards_per_min"] is None and m["mute_share"]["phase"] is None
     assert any("warmup covers the whole replay" in note for note in m["notes"])
+    assert m["condition_already_true_at_start"] is None       # nothing was looked at
+    assert all("entirely warmup, so nothing in it was measured" in line
+               for line in _phase_lines(m)[1:])
+
+
+def test_a_phase_warmup_cut_into_is_labelled_by_what_was_measured(tmp_path):
+    """A rate over the tail of a phase must not be printed under the whole phase's span.
+
+    The real session's warmup ends at 119.71 s against a declared 120 s settle phase, so
+    its settle row covers the last third of a second of a two-minute phase -- and one
+    reward decision landing in that sliver is a three-digit rewards-per-minute if the row
+    is read as covering the two minutes.
+    """
+    m, _ = _plant(tmp_path, smr=SMR_ONSETS, telemetry=_audio_frames(state_until=14.5))
+
+    settle, work = m["per_phase"][0], m["per_phase"][1]
+    assert (settle["start_s"], settle["end_s"]) == (0.0, pytest.approx(SETTLE_S, abs=0.05))
+    assert settle["measured_from_s"] == pytest.approx(14.5, abs=0.05)
+    assert settle["elapsed_s"] == pytest.approx(SETTLE_S - 14.5, abs=0.05)
+    assert work["measured_from_s"] == work["start_s"]          # warmup ended before it began
+    # and the report says which span each figure covers
+    printed = _phase_lines(m)
+    assert "settle 0.0-15.0 s (measured from 14.5 s, 0.5 s)" in printed[1], printed
+    assert "work 15.0-60.1 s (45.1 s)" in printed[2], printed
 
 
 def test_the_documented_noise_floor_still_describes_the_detector():
