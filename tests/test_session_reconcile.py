@@ -84,17 +84,17 @@ def _frames(replay, *, wall_skew=0.0, every=5):
     return out
 
 
-def _case(tmp_path, *, shift=0, scale=1.0, wall_skew=0.0, edit=None):
+def _case(tmp_path, *, shift=0, scale=1.0, wall_skew=0.0, edit=None, eeg=None):
     """Replay the protocol, log what it did, load that log, and replay it again as the report would."""
     ir = _ir(tmp_path)
-    base = load_session(build_session(tmp_path / "a", fs=FS, channel_names=list(CHANS), eeg=_eeg(), chunk=CHUNK,
+    base = load_session(build_session(tmp_path / "a", fs=FS, channel_names=list(CHANS), eeg=_eeg() if eeg is None else eeg, chunk=CHUNK,
                                       protocol_id="tiny", markers=[], telemetry=[]))
     first = replay_session(base, ir, CHANS, follow_log=False)
     markers = _reward_records(first.events, shift=shift, scale=scale)
     frames = _frames(first, wall_skew=wall_skew)
     if edit:
         markers, frames = edit(markers, frames)
-    s = load_session(build_session(tmp_path / "b", fs=FS, channel_names=list(CHANS), eeg=_eeg(), chunk=CHUNK,
+    s = load_session(build_session(tmp_path / "b", fs=FS, channel_names=list(CHANS), eeg=_eeg() if eeg is None else eeg, chunk=CHUNK,
                                    protocol_id="tiny", markers=markers, telemetry=frames))
     return s, replay_session(s, ir, CHANS, follow_log=False)
 
@@ -283,3 +283,45 @@ def test_reward_records_past_the_last_sample_are_always_noted(tmp_path):
     rec = reconcile(s, r, CHUNK)
     assert rec.coverage == 1.0 and rec.reconciled is True
     assert any(n.startswith("1 logged reward record(s) lie past the end") for n in rec.notes)
+
+
+def _edge_eeg(*, pre=True, post=True):
+    """High-frequency bursts (which toggle the inhibit) before the first ding and after the last."""
+    i = np.arange(N)
+    burst = ((i // 40) % 2 == 1) & (((i < 300) & pre) | ((i >= 640) & post))
+    on = (i >= 400) & (i < 500)
+    return np.column_stack([np.zeros(N), 5 * np.sin(2 * np.pi * 30 * i / FS) * burst + 1.5 * on])
+
+
+def _quiet_edges(first=400, last=500):
+    """A log with no reward records before ``first`` or after ``last``, as when output is muted there."""
+    return lambda m, f: ([x for x in m if first <= x[0] <= last], f)
+
+
+def test_frames_before_the_first_ding_are_placed_by_their_own_clock_not_the_first_dings(tmp_path):
+    eeg = _edge_eeg(post=False)
+    s, r = _case(tmp_path, eeg=eeg, edit=_quiet_edges(last=N))
+    pre = [f for f in s.telemetry if f["t_s"] < 3.0]
+    assert len({(f["muted"], f["inhibits"]["fast"]) for f in pre}) > 1       # the states really change there
+    rec = reconcile(s, r, CHUNK)
+    # collapsing every pre-ding frame onto the first ding's time scored this 0.96 and failed the gate
+    assert rec.telemetry_agree == 1.0 and rec.reconciled is True
+    assert any("before the first or after the last reward_event" in n for n in rec.notes)
+
+
+def test_frames_after_the_last_ding_are_placed_the_same_way(tmp_path):
+    eeg = _edge_eeg(pre=False)
+    s, r = _case(tmp_path, eeg=eeg, edit=_quiet_edges(first=0))
+    post = [f for f in s.telemetry if f["t_s"] >= 6.4]
+    assert len({(f["muted"], f["inhibits"]["fast"]) for f in post}) > 1
+    rec = reconcile(s, r, CHUNK)
+    assert rec.telemetry_agree == 1.0 and rec.reconciled is True
+
+
+def test_edge_frames_still_agree_when_the_wall_clock_is_offset(tmp_path):
+    # wall clock 0.3 s ahead of refrain at the first ding: the correction uses that measured offset
+    eeg = _edge_eeg(post=False)
+    s, r = _case(tmp_path, eeg=eeg, wall_skew=0.0, edit=_quiet_edges(last=N))
+    for f in s.telemetry:
+        f["t_s"] += 0.3
+    assert reconcile(s, r, CHUNK).telemetry_agree == 1.0

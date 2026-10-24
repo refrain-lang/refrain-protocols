@@ -106,34 +106,52 @@ def frame_positions(session, notes: list[str]) -> list[tuple[dict, float]]:
     anchors = [(i, float(r["t_s"])) for i, r in enumerate(session.history)
                if r.get("type") == "reward_event" and isinstance(r.get("t_s"), (int, float))]
     idx = [i for i, _ in anchors]
-    out, drifts, fallback = [], [], 0
+    placed: list[tuple[int, dict, float | None]] = []     # (history index, frame, t if bracketed else None)
     for i, r in enumerate(session.history):
         if r.get("type") != "telemetry":
             continue
-        wall = r.get("t_s")
         p = bisect_left(idx, i) - 1            # last anchor before the frame
         q = bisect_right(idx, i)               # first anchor after it
         before = anchors[p] if p >= 0 else None
         after = anchors[q] if q < len(anchors) else None
+        t = None
         if before and after:
-            frac = (i - before[0]) / (after[0] - before[0])
-            t = before[1] + frac * (after[1] - before[1])
-        elif before or after:
-            t = (before or after)[1]
-        elif isinstance(wall, (int, float)):
-            t, fallback = float(wall), fallback + 1
-        else:
-            continue
-        if (before or after) and isinstance(wall, (int, float)):
-            drifts.append(float(wall) - t)
+            t = before[1] + (i - before[0]) / (after[0] - before[0]) * (after[1] - before[1])
+        placed.append((i, r, t))
+
+    def wall_of(r):
+        w = r.get("t_s")
+        return float(w) if isinstance(w, (int, float)) else None
+
+    drifts = [(i, wall_of(r) - t) for i, r, t in placed if t is not None and wall_of(r) is not None]
+    # Frames before the first anchor or after the last cannot be bracketed (a warmup phase that
+    # mutes its output logs no reward_event records at all). Place them by their own wall clock
+    # minus the drift measured at the nearest bracketed frame: still refrain's clock, and exact
+    # if the drift is locally constant, which over a stretch of seconds it is.
+    out, edge, unanchored = [], 0, 0
+    for i, r, t in placed:
+        if t is None:
+            w = wall_of(r)
+            if w is None:
+                continue
+            if drifts:
+                nearest = drifts[0] if i < drifts[0][0] else drifts[-1]
+                t, edge = w - nearest[1], edge + 1
+            else:
+                t, unanchored = w, unanchored + 1
         out.append((r, t))
-    if fallback:
-        notes.append(f"{fallback} telemetry frame(s) had no reward_event record to place them; "
-                     "their own wall-clock t_s was used")
+    if edge:
+        notes.append(f"{edge} telemetry frame(s) lay before the first or after the last reward_event record; "
+                     "they were placed by their own wall-clock t_s corrected by the drift measured at the "
+                     "nearest frame that could be bracketed")
+    if unanchored:
+        notes.append(f"{unanchored} telemetry frame(s) had no bracketing reward_event records; "
+                     "their own wall-clock t_s was used uncorrected")
     if drifts:
-        head, tail = median(drifts[:50]), median(drifts[-50:])
+        ds = [d for _, d in drifts]
+        head, tail = median(ds[:50]), median(ds[-50:])
         notes.append(f"telemetry wall clock minus refrain clock: {head:+.2f} s at the start, "
-                     f"{tail:+.2f} s at the end (largest {max(drifts, key=abs):+.2f} s over {len(drifts)} frames); "
+                     f"{tail:+.2f} s at the end (largest {max(ds, key=abs):+.2f} s over {len(ds)} frames); "
                      "frames were placed by file position, not by their own t_s")
     return out
 
