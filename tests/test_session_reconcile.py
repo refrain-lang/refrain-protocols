@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from session_fixture import build_session  # noqa: E402
 from session_report.reconcile import reconcile  # noqa: E402
-from session_report.replay import replay_session  # noqa: E402
+from session_report.replay import ReplayResult, replay_session  # noqa: E402
 from session_report.session import load_session  # noqa: E402
 
 FS = 100.0
@@ -147,12 +147,29 @@ def test_frames_are_placed_by_file_position_not_their_own_clock(tmp_path):
     assert any("wall clock minus refrain clock" in n and "+2." in n for n in rec.notes)
 
 
-def test_a_session_with_nothing_logged_gets_a_defined_result(tmp_path):
-    s, r = _case(tmp_path, edit=lambda m, f: ([], []))
+def test_a_check_with_nothing_to_compare_is_unevaluated_not_perfect(tmp_path):
+    s, _ = _case(tmp_path, edit=lambda m, f: ([], []))
+    rec = reconcile(s, ReplayResult(), CHUNK)                 # nothing logged, nothing replayed
+    assert (rec.events_matched, rec.outputs_within_1pct, rec.telemetry_agree) == (None, None, None)
+    assert rec.evaluated == {"events": False, "outputs": False, "telemetry": False}
+    assert rec.reconciled is False
+    assert sum(n.startswith("NOT EVALUATED") for n in rec.notes) == 3
+
+
+def test_a_protocol_with_no_dings_reconciles_on_the_checks_that_ran(tmp_path):
+    s, r = _case(tmp_path)
+    s.history[:] = [h for h in s.history if h.get("kind") != "event"]
+    r.events[:] = [e for e in r.events if e["kind"] != "event"]
     rec = reconcile(s, r, CHUNK)
-    assert rec.telemetry_agree == 1.0 and rec.outputs_within_1pct == 1.0
-    assert rec.events_matched == 0.0 and rec.reconciled is False        # the replay dinged, the log never did
-    assert any("passes vacuously" in n for n in rec.notes)
+    assert rec.events_matched is None and rec.evaluated["events"] is False
+    assert rec.outputs_within_1pct == 1.0 and rec.telemetry_agree == 1.0 and rec.reconciled is True
+
+
+def test_spurious_replay_dings_count_against_the_ding_score(tmp_path):
+    s, r = _case(tmp_path, edit=lambda m, f: ([x for x in m if x[1]["kind"] != "event"], f))
+    rec = reconcile(s, r, CHUNK)
+    assert rec.events_matched == 0.0 and rec.reconciled is False
+    assert any("larger of 0 logged and 5 replayed" in n for n in rec.notes)
 
 
 def test_replay_mismatches_and_unreplayed_chunks_reach_the_notes(tmp_path):

@@ -24,15 +24,21 @@ OUTPUT_REL_TOL = 0.01
 
 @dataclass
 class Reconciliation:
-    events_matched: float
-    outputs_within_1pct: float
-    telemetry_agree: float
+    """A score is None when its check had nothing to compare; that is not a pass.
+
+    ``evaluated`` says which of "events", "outputs", "telemetry" were actually checked.
+    ``reconciled`` means at least one check ran and none that ran fell short.
+    """
+    events_matched: float | None
+    outputs_within_1pct: float | None
+    telemetry_agree: float | None
     reconciled: bool
     notes: list[str] = field(default_factory=list)
+    evaluated: dict[str, bool] = field(default_factory=dict)
 
 
-def _ratio(good: int, total: int) -> float:
-    return good / total if total else 1.0      # nothing to compare: vacuously agrees (and says so)
+def _ratio(good: int, total: int) -> float | None:
+    return good / total if total else None
 
 
 def _by_channel(records, key) -> dict[str, list]:
@@ -177,25 +183,33 @@ def reconcile(session, replay, chunk_len: int) -> Reconciliation:
     replay_values = [e for e in replay.events if e["kind"] == "value"]
 
     ding_hits = _match_events(dings, replay_dings, chunk_len)
+    # Denominator is the larger of logged and replayed dings, not just logged: dividing by
+    # logged alone would let a replay that fires many spurious dings still score 1.0, the
+    # silently-differing replay this check exists to catch. Do not "simplify" it.
     ding_total = max(len(dings), len(replay_dings))
     out_good, out_total = _output_scores(values, replay_values, chunk_len, notes)
     tel_good, tel_total = _telemetry_scores(session, replay, notes)
     events, outputs, telemetry = _ratio(ding_hits, ding_total), _ratio(out_good, out_total), _ratio(tel_good, tel_total)
 
-    notes.append(f"dings: {ding_hits} matched of {len(dings)} logged and {len(replay_dings)} replayed")
+    notes.append(f"dings: {ding_hits} matched, out of {ding_total} (the larger of {len(dings)} logged "
+                 f"and {len(replay_dings)} replayed)")
     notes.append(f"output values: {out_good} within {OUTPUT_REL_TOL:.0%} of {out_total} logged")
     notes.append(f"telemetry: {tel_good} of {tel_total} logged booleans agree")
-    for name, got, need, count in (("dings", events, EVENTS_MIN, ding_total),
-                                   ("output values", outputs, OUTPUTS_MIN, out_total),
-                                   ("telemetry", telemetry, TELEMETRY_MIN, tel_total)):
-        if count == 0:
-            notes.append(f"no {name} to compare, so that check passes vacuously")
+    scores = (("dings", events, EVENTS_MIN), ("output values", outputs, OUTPUTS_MIN),
+              ("telemetry", telemetry, TELEMETRY_MIN))
+    for name, got, need in scores:
+        if got is None:
+            notes.append(f"NOT EVALUATED {name}: nothing to compare, so this check says nothing either way")
         elif got < need:
             notes.append(f"FAILED {name}: {got:.1%} against a required {need:.0%} (short by {(need - got) * 100:.1f} points)")
+    ran = [got is not None for _, got, _ in scores]
+    if not any(ran):
+        notes.append("no check could be evaluated, so the replay is not reported as reconciled")
+    passed = any(ran) and all(got >= need for _, got, need in scores if got is not None)
     if replay.mismatches:
         notes.append("replay reported mismatches, so the protocol replayed may not be the one that ran: "
                      + "; ".join(replay.mismatches))
     if replay.chunks_unreplayed:
         notes.append(f"{replay.chunks_unreplayed} chunk(s) were never replayed because the phase plan ended first")
-    return Reconciliation(events, outputs, telemetry,
-                          events >= EVENTS_MIN and outputs >= OUTPUTS_MIN and telemetry >= TELEMETRY_MIN, notes)
+    return Reconciliation(events, outputs, telemetry, passed, notes,
+                          dict(zip(("events", "outputs", "telemetry"), ran)))
