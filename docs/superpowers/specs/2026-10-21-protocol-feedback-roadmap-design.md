@@ -145,7 +145,8 @@ later refrain release; those families are not urgent.
 Owned by the coherence-recorder session (agreed 2026-10-21).
 
 The recorder's audio renderer smooths gain asymmetrically (`_GAIN_ATTACK_TAU_S = 0.05`,
-`_GAIN_RELEASE_TAU_S = 0.30`, `recorder/backend/nf/audio_renderer.py:70-71`). For an always-on
+`_GAIN_RELEASE_TAU_S = 0.30`, `recorder/backend/feedback/audio_renderer.py:70-71`; the package was
+`backend/nf` before). For an always-on
 tone tracking SMR the slow release adds roughly 250 ms to every "SMR has dropped" change.
 
 **Constraint: do not retune the module constants.** The 0.30 s release exists to stop a
@@ -154,28 +155,54 @@ rate (the audible "warble"), and every existing dwell protocol still needs it. S
 property of the gain source: fast and symmetric for a continuous channel, asymmetric as now for a
 reward-gated one.
 
-**Not verified:** the renderer's mute is a hard zero and un-mute fades in over the attack
-constant, so the "declared 200 ms mute release delivered as ~300 ms" recorded on REC-15 is not
-renderer behaviour. If it is real it comes from the engine-level inhibit path, not yet located.
-Do not carry the 300 ms figure as fact until the recorder session reports the measured value.
+**Verified (recorder session, 2026-10-21):** a mute's declared release is not honoured. refrain
+zeroes `audio_gain`, and the renderer then applies `_GAIN_RELEASE_TAU_S = 0.30`, so a declared
+200 ms release is delivered as ~300 ms. The per-source smoothing above is where this gets fixed.
 
 Sequencing: after the recorder's pin bump; blocks no Stage 3 PR; lands before Stage 4.
 
-### Stage 2c — measure the delay model before Stage 3 (recorder session)
+### Stage 2c — measure the delay model before Stage 3 (done 2026-10-21)
 
-The recorder session re-runs `measure_nf_latency.py` for its pin bump and will report real values
-for the poll wait, the cFIR threshold-crossing time and audio output. That validates or breaks the
-delay model below while Stage 3 is still cheap to re-sequence.
+Measured by the recorder session on the recorder with refrain 0.24.0 (coherence-recorder PR #265,
+gate green, 2063 passed). The model holds; Stage 3 is not blocked and needs no re-sequencing.
 
-The amplifier's Bluetooth hop (modelled at 20–50 ms) cannot be measured by that harness and is
-the one hop that could invalidate the model: at 120 ms the strong-burst total passes 400 ms and
-the Stage 4 gate gets tight. It needs hardware and a new method (for example a physical event at
-the electrode captured on the same clock as the speaker output). Scheduled with the user's
-recordings in Stage 4, earlier if the hardware is to hand.
+| Hop | Model | Measured |
+|---|---|---|
+| Recorder poll (mean, 10 ms interval) | 5 ms | 5 ms |
+| cFIR 360 ms on 12–15 Hz, threshold at 1.2× background, strong (5×) burst | 188 ms | 184 ms |
+| Same, weak (1.5×) burst | 332 ms | 332 ms |
+| Audio out, laptop speakers / dedicated interface | 65 / 7 ms | 64.9 / 7.1 ms |
+
+The 4 ms strong-burst difference is one sample at 250 Hz. The model's figures came from refrain
+0.24.0's own `BandEnvelopeImpl`; the recorder's harness models cFIR separately, so the filter has
+been measured twice by independent code. Strong-burst end to end reconciles to ~300–330 ms on
+speakers against ~885 ms today. The old chain in the same harness: 352 ms strong, 568 ms weak.
+
+Declared-latency sweep on 12–15 Hz, same conditions (for Stage 3's latency choice):
+
+| Declared latency | Strong burst | Weak burst | Note |
+|---|---|---|---|
+| 260 ms | 120 ms | 240 ms | below the 333 ms floor; 14 % alpha leakage vs 2 % at 360 |
+| 300 ms | 144 ms | 276 ms | below the floor |
+| 360 ms | 184 ms | 332 ms | current pick |
+| 420 ms | 232 ms | 392 ms | |
+| 500 ms | 300 ms | 468 ms | |
+
+Respecting the bandwidth floor costs about 64 ms on a strong burst against the 260 ms option.
+
+**Still unmeasured: the amplifier's Bluetooth hop** (modelled at 20–50 ms; at 120 ms the
+strong-burst total passes 400 ms and the Stage 4 gate gets tight). The method already exists:
+§5 of `coherence-recorder/recorder/docs/feedback-latency-measurement.md` (a throwaway probe
+protocol with an absolute threshold, no smoothing and no dwell, timing tap to chime on a room
+recording). It needs hardware, not design. Scheduled with the user's recordings in Stage 4.
 
 Gate: refrain suite and drift gate green; fuzzer scenarios covering the new hold (dip shorter
 than tolerance keeps the hold, longer resets it, chunk-boundary cases); editor round-trip of an
-example protocol using each new primitive.
+example protocol using each new primitive (the editor parity gate covers only the corpus, so a
+new declarable field round-trips away silently until a corpus protocol uses it); and **the
+vendored `protocol-model.schema.json` in refrain-editor updated for every new slot shape and the
+fixtures validated against it**. Nothing validates fixtures against that schema today: refrain#114's
+`{expr}` slot shape sat missing from it for two releases until refrain-editor#29.
 
 ## Stage 3 — protocol families, one PR each, in this order
 
@@ -268,8 +295,8 @@ REC-15 itself, updated to this design. Each family gets its own detailed plan
 1. Dip tolerance and two-line-threshold values: no study gives them. Choose by replay against the
    25–40 % target, then check on live sessions.
 2. Whether `high_beta_down` stays (Stage 3, family 5).
-3. Whole-system delay on the recorder is unmeasured; Stage 2c measures most hops, Stage 4 the
-   amplifier's Bluetooth hop.
+3. The amplifier's Bluetooth hop is the one delay still unmeasured; Stage 4 measures it with the
+   recorder's existing probe method. Every other hop was measured in Stage 2c.
 
 Resolved 2026-10-21 by the recorder session: corpus **0.2.0 is cut from Stage 1** (same protocols,
 refrain floor >= 0.24.0, new tooling), so the recorder bumps refrain, refrain-core and
