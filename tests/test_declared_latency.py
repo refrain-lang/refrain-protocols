@@ -69,6 +69,7 @@ WAITING = {
     "alpha_theta.refrain": _ALPHA_THETA,
     "alpha_theta_narrowband.refrain": _ALPHA_THETA,
     "alpha_theta_narrowband_melodic.refrain": _ALPHA_THETA,
+    "alpha_theta_narrowband_theta_rise.refrain": _ALPHA_THETA,
     "high_beta_down.refrain": "Stage 3 #5 high_beta_down (keep or retire)",
 }
 
