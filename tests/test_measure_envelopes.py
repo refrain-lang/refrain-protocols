@@ -60,3 +60,21 @@ def test_envelopes_finds_four_stage_and_band_envelope_in_shipped_smr():
     assert found["smr_envelope"] == ("four-stage", (12.0, 15.0))
     assert found["theta_envelope"][0] == "four-stage"
     assert found["high_beta_envelope"][0] == "four-stage"
+
+
+def test_measure_pins_its_rows_on_a_synthetic_recording():
+    """Guards the stepping loop that measure() shares with the session replay."""
+    from measure_envelopes import measure
+
+    amp = load_amp_profile(Path(refrain.__file__).parent / "amp_profiles" / "brainbit_flex.json")
+    rng = np.random.default_rng(1)
+    fs, n = 250, 250 * 60
+    rec = {c.upper(): rng.standard_normal(n) * 10 + np.sin(np.arange(n) / fs * 2 * np.pi * (6 + i % 7)) * 5
+           for i, c in enumerate(sorted(amp.channel_names()))}
+    rows = {r["derive"]: r for r in measure(ROOT / "protocols/eeg/smr.refrain", amp, [("c", rec)])}
+    assert set(rows) == {"(reward)", "smr_envelope", "theta_envelope", "high_beta_envelope"}
+    assert rows["(reward)"]["onsets_per_min"] == pytest.approx(42.272727, rel=1e-5)
+    assert rows["(reward)"]["held_pct"] == pytest.approx(17.727273, rel=1e-5)
+    for name, lag, r in [("smr_envelope", 568.0, 0.899012), ("theta_envelope", 548.0, 0.832804),
+                         ("high_beta_envelope", 276.0, 0.669947)]:
+        assert rows[name]["lag_ms"] == lag and rows[name]["r"] == pytest.approx(r, rel=1e-5)

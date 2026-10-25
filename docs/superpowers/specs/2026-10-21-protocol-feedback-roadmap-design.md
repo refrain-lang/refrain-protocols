@@ -106,6 +106,29 @@ Contents:
 Gate: refrain-protocols suite green, catalog unchanged, refrain's suite and drift gate green, and
 `gen_editor_fixtures.py` unchanged against the branch.
 
+## Stage 1b — session report (done; inserted before Stage 2)
+
+Built first because it makes every later step measurable: choosing the dip tolerance in Stage 2,
+each family's gate in Stage 3, and reading the live sessions in Stage 4 all need to say, for a
+saved session, whether the protocol did what it was meant to. Design:
+`docs/superpowers/specs/2026-10-22-session-report-design.md`.
+
+- `python -m tools.session_report <session_folder>` replays a saved recorder session's EEG through
+  refrain, following the session's own log (clinician control changes, applied advice, pause and
+  resume, phase advances), and reconciles the replay against what ran live. The disagreement is
+  the report's headline, ahead of every other number.
+- Reward is judged against an offline zero-phase version of the protocol's own reward condition,
+  not against its laggy envelope, so it works for any protocol. Mutes are judged against a
+  muscle measure the protocol did not produce.
+- The shared replay stepping core now lives in `tools/measure_envelopes.py`, and the session
+  report imports it.
+- Smoke run on the one real session on disk: it runs clean and reports "did not reconcile",
+  a near-miss on the telemetry check only (dings, output values and coverage agree fully). The
+  disagreeing frames are spread across all phases and sit at the fast guard's boundaries, which
+  is boundary timing in the noisiest envelope, not a structural divergence. The session's own
+  measurements are clinical data and are not recorded here.
+- No protocol changes; the catalog is unchanged.
+
 ## Stage 2 — refrain primitives (decided: before any protocol redesign)
 
 One refrain PR, one release, then the protocols repo pins it.

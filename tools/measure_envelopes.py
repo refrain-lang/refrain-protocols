@@ -49,9 +49,9 @@ import scipy.signal as ss
 
 import refrain
 from refrain.amp_profile import load_amp_profile
-from refrain.eval_ import Evaluator
 from refrain.ir_json import ir_to_json_obj
 from refrain.resolver import resolve
+from session_report.replay import step_through
 
 ENVELOPE_SHAPES = {
     ("bandpass", "hilbert", "magnitude", "smooth"): "four-stage",
@@ -64,11 +64,12 @@ MAX_LAG_MS = 2000.0
 
 
 def _chain(expr: dict) -> tuple[list[str], dict, dict | None]:
-    """Callee names innermost-first, the call carrying `band`, and the source ref."""
+    """Callee names innermost-first, the call naming the band, and the source ref."""
     names, band_call, node = [], None, expr
     while node.get("node") == "call":
         names.append(node["callee"])
-        if any(a.get("name") == "band" for a in node["args"]):
+        named = {a.get("name") for a in node["args"]}
+        if "band" in named or {"center", "bandwidth"} <= named:
             band_call = node
         node = node["args"][0]["value"]
     return names[::-1], band_call, (node if node.get("node") == "stream_ref" else None)
@@ -78,7 +79,44 @@ def _num(v: dict) -> float:
     return float(v["value"] if v["node"] == "number" else v["default"])
 
 
+def _edge_controls(nodes: list[dict]) -> dict[str, float]:
+    """The controls a band's edges came from, each mapped to the default it was baked at.
+
+    A band edge written as a control is frozen into the IR at that control's default, so a
+    caller that needs the real band has to check what the control actually held.
+    """
+    return {n["target"]: float(n["default"]) for n in nodes if n.get("node") == "control_ref"}
+
+
+def _band(args: dict) -> tuple[tuple[float, float], dict[str, float]] | None:
+    """((low, high) edge in Hz, the controls those edges came from).
+
+    The band is either `band: (lo, hi)` or `center` + `bandwidth: ratio(r)`. `bandwidth`
+    in any other form is refused rather than guessed at: a bandwidth given in Hz would
+    mean center +/- w/2, a different band from the same two numbers.
+    """
+    if "band" in args:
+        edges = args["band"]["elements"]
+        lo, hi = (_num(e) for e in edges)
+        return (lo, hi), _edge_controls(edges)
+    width = args["bandwidth"]
+    if width.get("node") != "call" or width["callee"] != "ratio" or len(width["args"]) != 1:
+        return None
+    ratio = width["args"][0]["value"]
+    root = float(np.sqrt(_num(ratio)))
+    center = _num(args["center"])
+    return (center / root, center * root), _edge_controls([args["center"], ratio])
+
+
 def envelopes(ir_json: dict) -> list[dict]:
+    """Every derive whose pipeline is a band envelope, with the band it filters at.
+
+    `source` is the bare stream name the derive reads, as refrain keys its live streams;
+    `source_kind` ("input", "derive", ...) says which kind of stream that name belongs to,
+    because refrain keys inputs, derives and thresholds alike and the name alone cannot
+    tell them apart. `band_controls` names the controls the band edges came from, empty
+    when the band is literal.
+    """
     out = []
     for name, d in ir_json["derives"].items():
         names, call, src = _chain(d["expression"])
@@ -86,14 +124,18 @@ def envelopes(ir_json: dict) -> list[dict]:
         if shape is None or call is None or src is None:
             continue
         args = {a["name"]: a["value"] for a in call["args"] if a["name"]}
-        lo, hi = (_num(e) for e in args["band"]["elements"])
+        found = _band(args)
+        if found is None:
+            continue
+        band, band_controls = found
+        kind, _, source = src["target"].rpartition("/")
         latency = _num(args["latency"]) if "latency" in args else None
-        out.append(dict(derive=name, shape=shape, band=(lo, hi), latency_ms=latency,
-                        source=src["target"].split("/", 1)[-1]))
+        out.append(dict(derive=name, shape=shape, band=band, latency_ms=latency,
+                        source=source, source_kind=kind, band_controls=band_controls))
     return out
 
 
-def _montage_channels(ir_json: dict, known: set[str]) -> set[str]:
+def montage_channels(ir_json: dict, known: set[str]) -> set[str]:
     found: set[str] = set()
 
     def walk(v):
@@ -163,25 +205,17 @@ def measure(path: Path, amp, recordings: list, chunk_s: float = 0.05) -> list[di
         return []
     fs = float(ir.requires.sample_rate_chosen_hz)
     chans = tuple(sorted(amp.channel_names()))
-    needed = _montage_channels(j, set(chans))
+    needed = montage_channels(j, set(chans))
     rows = []
     for case, rec in recordings:
         if not all(c.upper() in rec for c in needed):
             continue
         n = len(next(iter(rec.values())))
         X = np.column_stack([rec.get(c.upper(), np.zeros(n)) for c in chans])
-        ev = Evaluator.live(ir, sample_rate_hz=fs, channel_names=chans, record_streams=True)
-        ev.start(skip_warmup=True)
         cn = max(1, int(round(chunk_s * fs)))
-        acc: dict[str, list] = {k: [] for e in envs for k in (e["derive"], e["source"])}
-        acc.update({k: [] for k in ("reward.event", "reward.event.holds")})
-        for k in range(0, n - cn + 1, cn):
-            ev.step_chunk(X[k:k + cn])
-            s = ev.last_streams()
-            for key, parts in acc.items():
-                if key in s:
-                    parts.append(np.asarray(s[key], dtype=float))
-        streams = {k: np.concatenate(v) for k, v in acc.items() if v}
+        keep = {k for e in envs for k in (e["derive"], e["source"])} | {"reward.event", "reward.event.holds"}
+        streams = step_through(ir, fs, chans, (X[k:k + cn] for k in range(0, n - cn + 1, cn)),
+                               skip_warmup=True, keep_streams=keep).streams
         cut = slice(int(SKIP_HEAD_S * fs), -int(SKIP_TAIL_S * fs))
         if "reward.event.holds" in streams:
             held = streams["reward.event.holds"][cut] > 0.5
