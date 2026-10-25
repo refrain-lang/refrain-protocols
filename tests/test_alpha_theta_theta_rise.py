@@ -65,7 +65,7 @@ def test_alpha_drop_alone_does_not_brighten_theta_approach(backend):
 
 
 @pytest.mark.parametrize("backend", ["python", "rust"])
-def test_modest_ten_percent_theta_rise_is_audibly_graded(backend):
+def test_modest_ten_percent_theta_rise_increases_emitted_approach(backend):
     before, after, ratio, crossover = _run_case(
         theta_after=5.5, alpha_after=20.0, backend=backend,
     )
