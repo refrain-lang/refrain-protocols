@@ -133,6 +133,22 @@ MINUTES = 4.0
 CHUNK_S = 0.05
 # A recording whose band has essentially no signal cannot rank a filter.
 MIN_SHIPPED_R = 0.50
+# Impulsive-artifact guard: p99(|x|) / std(x), the crest factor of the raw trace.
+#
+# This corpus exists to exercise FILE FORMAT handling, so several recordings are
+# not physiological -- six of fourteen have a 99th percentile above 500 uV and two
+# peak at 16384 (2^14, an ADC or scaling ceiling). A uniform scale error is
+# harmless here, because correlation is scale-invariant; what actually breaks a
+# measurement is a few enormous transients, which dominate the variance so the
+# correlation tracks spike alignment rather than ongoing rhythm.
+#
+# Measured on this corpus, crest factor separates the two failure modes cleanly:
+# the two recordings whose accuracy oscillates with declared latency (0.79 at
+# 280 ms, 0.14 at 300, 0.91 at 320 -- not a curve, an artifact) score 23.9 and
+# 10.8, while every other recording, including the mis-scaled ones, scores 6.3 or
+# below. Without this guard those two set the worst case in the band comparison
+# and reversed its conclusion.
+MAX_CREST_FACTOR = 8.0
 
 
 def _chunks(x: np.ndarray, fs: float, chunk_s: float):
@@ -180,6 +196,12 @@ def _score(est: np.ndarray, ref: np.ndarray, fs: float) -> tuple[float, float]:
     return lag_and_r(est[head : n - tail], ref[head : n - tail], fs, max_lag_ms=900.0)
 
 
+def _crest_factor(x: np.ndarray) -> float:
+    """p99(|x|) / std(x). High means a few huge transients, not a loud signal."""
+    sd = float(np.std(x))
+    return float(np.percentile(np.abs(x), 99)) / sd if sd > 0 else float("inf")
+
+
 def _pick_site(channels: dict) -> str | None:
     for name in SITE_PREFERENCE:
         if name in channels:
@@ -199,6 +221,13 @@ def section_band(recordings: list, fs: float) -> dict:
             degenerate.append({"case": case, "reason": "no Cz/C3/C4 channel by name"})
             continue
         x = channels[site]
+        crest = _crest_factor(x)
+        if crest > MAX_CREST_FACTOR:
+            degenerate.append(
+                {"case": case, "site": site,
+                 "reason": f"impulsive artifact: crest factor {crest:.1f} > {MAX_CREST_FACTOR:g}"}
+            )
+            continue
 
         # The bar: the shipped chain on the band it ships with.
         ref_shipped = reference_envelope(x, fs, SHIPPED_BAND)
@@ -264,6 +293,13 @@ def section_gradient(recordings: list, fs: float, band, latency_ms: float) -> di
             degenerate.append({"case": case, "reason": "no Cz/C3/C4 channel by name"})
             continue
         x = channels[site]
+        crest = _crest_factor(x)
+        if crest > MAX_CREST_FACTOR:
+            degenerate.append(
+                {"case": case, "site": site,
+                 "reason": f"impulsive artifact: crest factor {crest:.1f} > {MAX_CREST_FACTOR:g}"}
+            )
+            continue
         env = one_stage(x, fs, band, latency_ms)
         head, tail = int(SKIP_HEAD_S * fs), int(SKIP_TAIL_S * fs)
         env = env[head : len(env) - tail]
@@ -334,6 +370,13 @@ def section_continuous(recordings: list, fs: float) -> dict:
             degenerate.append({"case": case, "reason": "no Cz/C3/C4 channel by name"})
             continue
         x = channels[site]
+        crest = _crest_factor(x)
+        if crest > MAX_CREST_FACTOR:
+            degenerate.append(
+                {"case": case, "site": site,
+                 "reason": f"impulsive artifact: crest factor {crest:.1f} > {MAX_CREST_FACTOR:g}"}
+            )
+            continue
         smr_ref = reference_envelope(x, fs, SHIPPED_BAND)
         if smr_ref.std() < 1e-9:
             degenerate.append({"case": case, "site": site, "reason": "flat 12-15 Hz reference"})
@@ -370,11 +413,88 @@ def section_continuous(recordings: list, fs: float) -> dict:
     return {"recordings": rows, "degenerate": degenerate, "summary": summary}
 
 
+def section_curve(recordings: list, fs: float, band) -> dict:
+    """Accuracy as a function of declared latency — the trade curve, not one point.
+
+    The `band` section finds the single latency at which one filter matches the
+    shipped four-stage chain's accuracy. That answers "how do I lose nothing",
+    which presumes today's accuracy is the accuracy training needs. Nobody
+    established that. The one study that varied feedback delay directly found
+    SHORTER won: sustained alpha gains were significant at 244 ms end-to-end,
+    partial at 494 ms, absent at 744 ms. So the useful question is what a
+    shorter declaration actually costs, and whether there is a knee.
+
+    Two curves per latency, because the protocol has two audio channels and
+    they ask different questions (§7.5 of the design):
+
+      r_own   -- against a zero-phase reference of the SAME band. Fidelity:
+                 how well the filter tracks what it is pointed at. This is what
+                 the `band` section's matched point is measured on.
+      r_smr   -- against a zero-phase 12-15 Hz reference. Specificity: whether
+                 the always-on tone still rises and falls with SMR.
+
+    Reported as the median across recordings AND the worst single recording,
+    because one file carries one declared latency and the worst case is what a
+    default has to serve (§11.2).
+    """
+    sweep = [float(v) for v in np.arange(100.0, 420.0, 20.0)]
+    per: dict[float, dict[str, list[float]]] = {L: {"own": [], "smr": []} for L in sweep}
+    bars: list[float] = []
+    degenerate: list[dict] = []
+
+    for case, channels in recordings:
+        site = _pick_site(channels)
+        if site is None:
+            degenerate.append({"case": case, "reason": "no Cz/C3/C4 channel by name"})
+            continue
+        x = channels[site]
+        crest = _crest_factor(x)
+        if crest > MAX_CREST_FACTOR:
+            degenerate.append(
+                {"case": case, "site": site,
+                 "reason": f"impulsive artifact: crest factor {crest:.1f} > {MAX_CREST_FACTOR:g}"}
+            )
+            continue
+        ref_own = reference_envelope(x, fs, band)
+        ref_smr = reference_envelope(x, fs, SHIPPED_BAND)
+        _, bar_r = _score(shipped_chain(x, fs, SHIPPED_BAND), ref_smr, fs)
+        if not np.isfinite(bar_r) or bar_r < MIN_SHIPPED_R:
+            degenerate.append({"case": case, "site": site, "reason": f"shipped-chain r={bar_r:.3f}"})
+            continue
+        bars.append(bar_r)
+        for L in sweep:
+            env = one_stage(x, fs, band, L)
+            per[L]["own"].append(_score(env, ref_own, fs)[1])
+            per[L]["smr"].append(_score(env, ref_smr, fs)[1])
+
+    rows = []
+    for L in sweep:
+        own, smr = per[L]["own"], per[L]["smr"]
+        if not own:
+            continue
+        rows.append({
+            "latency_ms": L,
+            "r_own_median": statistics.median(own),
+            "r_own_worst": min(own),
+            "r_smr_median": statistics.median(smr),
+            "r_smr_worst": min(smr),
+        })
+    return {
+        "band": list(band),
+        "shipped_chain_r_median": statistics.median(bars) if bars else None,
+        "curve": rows,
+        "degenerate": degenerate,
+        "n": len(bars),
+    }
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--corpus", required=True, help="file-I/O corpus root")
     ap.add_argument(
-        "--section", choices=("band", "gradient", "continuous", "all"), default="all"
+        "--section",
+        choices=("band", "gradient", "continuous", "curve", "all"),
+        default="all",
     )
     ap.add_argument("--json", help="write results here")
     ap.add_argument("--minutes", type=float, default=MINUTES)
@@ -445,6 +565,20 @@ def main(argv=None) -> int:
         for key in ("12-16", "12-17", "11-16"):
             v = s.get(f"non_smr_power_share_{key}_median")
             print(f"    {key + ' Hz':<12} {('%.1f%%' % (100 * v)) if v is not None else '--'}")
+        print()
+
+    if args.section in ("curve", "all"):
+        lo, hi = (float(v) for v in args.gradient_band.split("-"))
+        out["curve"] = section_curve(recordings, FS, (lo, hi))
+        c = out["curve"]
+        print(f"=== accuracy vs declared latency at {lo:g}-{hi:g} Hz ===")
+        print(f"recordings kept: {c['n']}   "
+              f"shipped four-stage chain, r vs true SMR: {c['shipped_chain_r_median']:.3f}")
+        print(f"{'declared':>9} {'r own med':>10} {'r own worst':>12} "
+              f"{'r SMR med':>10} {'r SMR worst':>12}")
+        for r in c["curve"]:
+            print(f"{r['latency_ms']:>7.0f}ms {r['r_own_median']:>10.3f} {r['r_own_worst']:>12.3f} "
+                  f"{r['r_smr_median']:>10.3f} {r['r_smr_worst']:>12.3f}")
         print()
 
     if args.json:
