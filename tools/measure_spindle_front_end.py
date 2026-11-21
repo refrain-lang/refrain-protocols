@@ -110,7 +110,13 @@ SITE_PREFERENCE = ("CZ", "C3", "C4")
 # same 5 Hz of bandwidth as the sleep literature's 11-16 Hz sigma band, but
 # placed upward, where Cz's fast centroparietal spindles live and where the
 # contaminant admitted is high beta the protocol already vetoes.
-CANDIDATE_BANDS = ((12.0, 15.0), (12.0, 17.0), (11.0, 16.0))
+CANDIDATE_BANDS = (
+    (12.0, 15.0),  # ships today
+    (13.0, 16.0),  # the literal fast centroparietal spindle band
+    (12.0, 16.0),  # fast-spindle range with a margin below
+    (12.0, 17.0),  # first proposal
+    (11.0, 16.0),  # the AASM sigma band
+)
 SHIPPED_BAND = (12.0, 15.0)
 
 # The shipped chain's shape, read off protocols/eeg/smr.refrain.
@@ -287,10 +293,89 @@ def section_gradient(recordings: list, fs: float, band, latency_ms: float) -> di
     return {"recordings": rows, "degenerate": degenerate, "summary": summary}
 
 
+def section_continuous(recordings: list, fs: float) -> dict:
+    """What widening costs the ALWAYS-ON tone, which no morphology gates.
+
+    REC-15 keeps a continuous tone tracking SMR alongside the discrete ding.
+    The spindle criteria gate the ding; nothing gates the tone. So a wider band
+    makes the tone faster AND less selective, and this section measures the
+    second half of that trade, which the `band` section is blind to by
+    construction (it scores each band against its own reference).
+
+    Two numbers per candidate band:
+
+      tracks_smr_r  -- correlation of the candidate envelope, at its matched
+                       latency, against a zero-phase 12-15 Hz reference. This
+                       asks the tone's actual question: does it still rise and
+                       fall with SMR? Scored against 12-15 Hz on purpose, which
+                       is the opposite choice from the `band` section and for
+                       the opposite reason.
+      power shares  -- mean band power in narrow slices, so the composition of
+                       any candidate band can be read off: how much of what the
+                       tone hears is SMR and how much is the territory widening
+                       let in.
+    """
+    # Narrow slices, so any candidate band's composition is computable.
+    SLICES = ((11.0, 12.0), (12.0, 15.0), (15.0, 16.0), (16.0, 17.0))
+    # Each candidate at the matched-accuracy latency the band section measured.
+    AT = {
+        (12.0, 15.0): 340.0,
+        (13.0, 16.0): 340.0,
+        (12.0, 16.0): 280.0,
+        (12.0, 17.0): 240.0,
+        (11.0, 16.0): 240.0,
+    }
+
+    rows: list[dict] = []
+    degenerate: list[dict] = []
+    for case, channels in recordings:
+        site = _pick_site(channels)
+        if site is None:
+            degenerate.append({"case": case, "reason": "no Cz/C3/C4 channel by name"})
+            continue
+        x = channels[site]
+        smr_ref = reference_envelope(x, fs, SHIPPED_BAND)
+        if smr_ref.std() < 1e-9:
+            degenerate.append({"case": case, "site": site, "reason": "flat 12-15 Hz reference"})
+            continue
+
+        row = {"case": case, "site": site, "tracks_smr_r": {}, "power": {}}
+        for band, latency_ms in AT.items():
+            _, r = _score(one_stage(x, fs, band, latency_ms), smr_ref, fs)
+            row["tracks_smr_r"][f"{band[0]:g}-{band[1]:g}"] = r
+        for lo, hi in SLICES:
+            e = reference_envelope(x, fs, (lo, hi))
+            row["power"][f"{lo:g}-{hi:g}"] = float(np.mean(e**2))
+        rows.append(row)
+
+    summary: dict = {"n": len(rows)}
+    for key in (f"{b[0]:g}-{b[1]:g}" for b in AT):
+        vals = [r["tracks_smr_r"][key] for r in rows]
+        summary[f"tracks_smr_r_{key}_median"] = statistics.median(vals) if vals else None
+    # Share of each candidate band's power that is NOT 12-15 Hz SMR.
+    for name, extra in (
+        ("12-16", ("15-16",)),
+        ("12-17", ("15-16", "16-17")),
+        ("11-16", ("11-12", "15-16")),
+    ):
+        shares = []
+        for r in rows:
+            core = r["power"]["12-15"]
+            added = sum(r["power"][k] for k in extra)
+            if core + added > 0:
+                shares.append(added / (core + added))
+        summary[f"non_smr_power_share_{name}_median"] = (
+            statistics.median(shares) if shares else None
+        )
+    return {"recordings": rows, "degenerate": degenerate, "summary": summary}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--corpus", required=True, help="file-I/O corpus root")
-    ap.add_argument("--section", choices=("band", "gradient", "all"), default="all")
+    ap.add_argument(
+        "--section", choices=("band", "gradient", "continuous", "all"), default="all"
+    )
     ap.add_argument("--json", help="write results here")
     ap.add_argument("--minutes", type=float, default=MINUTES)
     ap.add_argument(
@@ -345,6 +430,21 @@ def main(argv=None) -> int:
         for key in ("env_uv_p50", "slope_uv_per_s_p90", "slope_uv_per_s_p99", "rising_fraction"):
             v = s.get(f"{key}_median")
             print(f"  {key + ' (median)':<32} {('%.3f' % v) if v is not None else '--'}")
+        print()
+
+    if args.section in ("continuous", "all"):
+        out["continuous"] = section_continuous(recordings, FS)
+        s = out["continuous"]["summary"]
+        print("=== the always-on tone: does it still track SMR? ===")
+        print(f"recordings kept: {s['n']}   degenerate: {len(out['continuous']['degenerate'])}")
+        print("  correlation against a zero-phase 12-15 Hz reference, at each band's matched latency:")
+        for key in ("12-15", "13-16", "12-16", "12-17", "11-16"):
+            v = s.get(f"tracks_smr_r_{key}_median")
+            print(f"    {key + ' Hz':<12} r = {('%.3f' % v) if v is not None else '--'}")
+        print("  share of the band's power that is NOT 12-15 Hz:")
+        for key in ("12-16", "12-17", "11-16"):
+            v = s.get(f"non_smr_power_share_{key}_median")
+            print(f"    {key + ' Hz':<12} {('%.1f%%' % (100 * v)) if v is not None else '--'}")
         print()
 
     if args.json:
