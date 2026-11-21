@@ -158,11 +158,20 @@ def reference_envelope(x: np.ndarray, fs: float, band) -> np.ndarray:
     return np.abs(ss.hilbert(ss.sosfiltfilt(sos, x)))
 
 
-def lag_and_r(est: np.ndarray, ref: np.ndarray, fs: float) -> tuple[float, float]:
+def lag_and_r(
+    est: np.ndarray, ref: np.ndarray, fs: float, max_lag_ms: float = MAX_LAG_MS
+) -> tuple[float, float]:
+    """Best alignment shift and the correlation there.
+
+    `max_lag_ms` bounds the search. The default is the module's own 2 s, which is
+    generous enough for the slow families; a caller that already knows its
+    envelope lands well inside that can pass a tighter bound and pay less for it,
+    which matters when sweeping a declared latency over many candidates.
+    """
     a = (est - est.mean()) / (est.std() + 1e-12)
     b = (ref - ref.mean()) / (ref.std() + 1e-12)
     best_lag, best_r = 0, -1.0
-    for lag in range(int(MAX_LAG_MS / 1000 * fs)):
+    for lag in range(int(max_lag_ms / 1000 * fs)):
         n = len(a) - lag
         if n < 10 * fs:
             break
