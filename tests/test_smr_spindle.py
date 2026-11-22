@@ -128,9 +128,11 @@ def test_high_beta_is_an_inhibit_that_mutes():
     assert ir["inhibits"]["emg"]["action_kind"] == "mute"
     # It watches the high-beta derive, with its own percentile threshold fed
     # by the hbeta_inhibit_rate control (not the emg inhibit's strictness).
-    # (the metric must be a primitive call, so the derive sits inside rectify)
-    assert hb["metric"]["callee"] == "rectify"
-    assert hb["metric"]["args"][0]["value"]["target"] == "derive/high_beta_envelope"
+    # (the metric must be a primitive call, so the derive sits inside
+    # passthrough(input: ...), the documented form for an inhibit on a derive)
+    assert hb["metric"]["callee"] == "passthrough"
+    arg = next(a["value"] for a in hb["metric"]["args"] if a["name"] == "input")
+    assert arg["target"] == "derive/high_beta_envelope"
     assert hb["threshold"]["callee"] == "percentile"
     target_pct = next(a["value"] for a in hb["threshold"]["args"] if a["name"] == "target_pct")
     assert target_pct["target"] == "control/hbeta_inhibit_rate"

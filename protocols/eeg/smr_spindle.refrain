@@ -195,12 +195,12 @@ protocol "smr_spindle" {
   // High-beta guard - mutes the output rather than gating the reward (see
   // header). The threshold must be a literal constructor call; its own rate
   // control keeps it independent of the theta and low-band vetoes. An inhibit's
-  // metric must be a primitive call, so the envelope goes through `rectify`,
-  // an identity on a non-negative envelope (same idiom as
-  // critical_fluctuation.refrain) - the guard reads the declared-latency
-  // derive, not a second bandpower stage with its own unchosen delay.
+  // metric must be a primitive call, so the derive is wrapped in
+  // `passthrough(input: ...)`, refrain's documented form for an inhibit that
+  // reads one derive. The guard reads the declared-latency derive rather than
+  // a second bandpower stage with its own unchosen delay.
   inhibit "hbeta" {
-    metric    = rectify("high_beta_envelope")
+    metric    = passthrough(input: "high_beta_envelope")
     threshold = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
     action    = mute(release: 200 ms)
   }
