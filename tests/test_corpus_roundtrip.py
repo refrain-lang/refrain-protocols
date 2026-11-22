@@ -96,6 +96,10 @@ KNOWN_GAPS = {
     # runnable, but catalog v1 cannot render them back through the visual
     # editor. Keep saves fail-closed until the editor supports this graph.
     "alpha_theta_narrowband_theta_rise.refrain",
+    # Every envelope is a one-stage `band_envelope(band:, latency:)`, a derive
+    # shape catalog v1's `_match_derive` does not recognise. Runnable, but the
+    # visual editor must fail closed rather than drop the declared latency.
+    "smr_spindle.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now

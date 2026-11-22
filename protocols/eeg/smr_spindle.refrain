@@ -1,0 +1,348 @@
+// SMR spindle up-training - 12-16 Hz sensorimotor spindles, one declared delay.
+//
+// A structural copy of smr.refrain (read its header for the shared design:
+// `site` placement, `threshold_style` mode, paired band-edge controls, the
+// `artifact_guard` mode, amp-portable reference). This file changes only what
+// the spindle design needs, and each change has a reason:
+//
+//   - EVERY envelope is a single `band_envelope(band:, latency:)` stage, not
+//     the four-stage bandpass -> hilbert -> magnitude -> smooth chain. The
+//     four-stage chain's delay is the sum of four filters nobody chose
+//     (~566 ms on a narrow SMR band); `band_envelope` makes the delay a
+//     number in the source. This file is not in test_declared_latency.py's
+//     WAITING list, so it must stay a bare `band_envelope` everywhere.
+//   - SMR band is 12-16 Hz (smr.refrain: 12-15). Settled by measurement, not
+//     literature: 11-16 is the worst option (its alpha shoulder is 2.2x denser
+//     than the core); 12-17 is 20 ms faster, inside the sweep's own step, for
+//     twice the contamination.
+//   - The SMR latency is the one declared delay exposed as a control
+//     (`smr_latency`, 320 ms, `live_tunable = false`: it bakes into the
+//     filter at resolve time, like the band edges). The floor is
+//     1000 / bandwidth = 250 ms on 4 Hz; 320 ms sits above it. The other
+//     three delays are literals in their `band_envelope` calls, each at or
+//     above its own band's floor:
+//         theta     4-7  Hz  floor 334 ms   declared 340 ms
+//         low band  8-12 Hz  floor 250 ms   declared 320 ms
+//         high-beta 16-30 Hz floor  72 ms   declared 120 ms
+//   - A new LOW-BAND (8-12 Hz) inhibit. The alpha shoulder sits directly
+//     below the SMR band and leaks into it; the reward is withheld while that
+//     rhythm is high, so alpha/mu activity is not rewarded as spindle.
+//   - High-beta band starts at 16 Hz (smr.refrain: 20 Hz) so the veto's lower
+//     edge meets the reward band's upper edge with nothing open between. The
+//     shipped 20 Hz leaves 16-20 Hz unwatched.
+//   - There is deliberately no `hbeta_t` threshold or `hbeta_threshold_uv`
+//     control yet: the reward conjunction gives the high-beta veto its own
+//     literal threshold (a later change), so copying them would leave dead,
+//     unreferenced declarations. `high_beta_envelope` and its band and rate
+//     controls are here for that change to use.
+//   - Spindle duration: the reward dwell is a literal 500 ms for now; it
+//     becomes a control with the reward rewiring.
+//
+// Research Use Only.
+
+protocol "smr_spindle" {
+
+  meta {
+    version           = "1.0.0"
+    evidence          = "established"
+    description       = "SMR spindle (12-16 Hz) up-training on declared-latency envelopes - practitioner-selected site, bands, and thresholds"
+    title             = "SMR spindle training"
+    summary           = "Rewards 12-16 Hz sensorimotor spindles while inhibiting theta, the 8-12 Hz band and high-beta, at a chosen site, with adaptive or baseline-fixed thresholds."
+    family            = "smr_spindle"
+    threshold_style   = "selectable"
+    status            = "draft"
+    modality          = "eeg"
+    goals             = ["focus_attention", "sleep_quality"]
+    author            = "Peak Mind"
+    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    control_ref       = "library/operant/smr_sham@1.0"
+    advanced_controls = [
+      "site",
+      "smr_lo_hz", "smr_hi_hz",
+      "theta_lo_hz", "theta_hi_hz",
+      "low_lo_hz", "low_hi_hz",
+      "hbeta_lo_hz", "hbeta_hi_hz",
+      "smr_latency",
+      "theta_inhibit_rate", "low_inhibit_rate", "hbeta_inhibit_rate",
+      "artifact_guard", "artifact_strictness",
+      "smr_threshold_uv", "theta_threshold_uv", "low_threshold_uv",
+    ]
+  }
+
+  requires {
+    coupling    = "ac"
+    sample_rate = ">= 250 Hz"
+    impedance   = "not_required"
+    markers     = "not_required"
+  }
+
+
+  // The chosen site substitutes here; reference resolves per the connected
+  // amp's profile, not a hardcoded scheme.
+  input "raw" {
+    montage = referential(active: site, reference: amp.reference)
+  }
+
+  derive "smr_envelope" {
+    from = "raw"
+    pipeline = [
+      band_envelope(band: (smr_lo_hz, smr_hi_hz), latency: smr_latency),
+    ]
+  }
+
+  derive "theta_envelope" {
+    from = "raw"
+    pipeline = [
+      band_envelope(band: (theta_lo_hz, theta_hi_hz), latency: 340 ms),
+    ]
+  }
+
+  // Low-band (8-12 Hz) guard - the alpha shoulder directly below the SMR band.
+  derive "low_envelope" {
+    from = "raw"
+    pipeline = [
+      band_envelope(band: (low_lo_hz, low_hi_hz), latency: 320 ms),
+    ]
+  }
+
+  // High-beta artifact/arousal guard - EMG bleed and hyperarousal. The band
+  // is wide (16-30 Hz), so its delay floor is small: 120 ms.
+  derive "high_beta_envelope" {
+    from = "raw"
+    pipeline = [
+      band_envelope(band: (hbeta_lo_hz, hbeta_hi_hz), latency: 120 ms),
+    ]
+  }
+
+  // SMR reward threshold — an adaptive percentile of the trainee's own
+  // signal by default; a baseline-fixed absolute µV value when
+  // `threshold_style` is switched to "baseline" (seeded from the live
+  // signal so the switch isn't a cold start).
+  threshold "smr_t" {
+    signal       = "smr_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: smr_threshold_uv)
+                     : percentile(target_pct: smr_reward_pct, window: 2 min)
+    live_tunable = true
+  }
+
+  // Theta INHIBIT threshold — loose veto by default (80th pct): blocks
+  // reward only during genuine drowsiness, not as a constant co-target.
+  threshold "theta_t" {
+    signal       = "theta_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: theta_threshold_uv)
+                     : percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  // Low-band INHIBIT threshold - same loose veto as theta, on the 8-12 Hz
+  // shoulder that leaks into the SMR band.
+  threshold "low_t" {
+    signal       = "low_envelope"
+    type         = threshold_style == "baseline"
+                     ? absolute(value: low_threshold_uv)
+                     : percentile(target_pct: low_inhibit_rate, window: 2 min)
+    live_tunable = true
+  }
+
+  // EMG artifact guard — muscle (jaw/neck) shows up 50-100 Hz. `artifact_guard`
+  // toggles the guard on/off; refrain's inhibit resolver requires `threshold`
+  // to be a literal constructor call (no top-level mode fold there, unlike
+  // threshold.type above), so on/off is folded one level down, inside the
+  // `target_pct` ARGUMENT: "on" uses the tunable `artifact_strictness`
+  // percentile floor a burst must cross before muting; "off" pins it to 100
+  // (the window's own historical max), which in practice never trips.
+  inhibit "emg" {
+    metric    = bandpower(input: "raw", band: (50 Hz, 100 Hz), window: 100 ms)
+    threshold = percentile(
+      target_pct: artifact_guard == "on" ? artifact_strictness : 100,
+      window: 2 min
+    )
+    action    = mute(release: 200 ms)
+  }
+
+  reward {
+    event = dwell(
+      condition: all_of([
+        above("smr_envelope",       "smr_t"),
+        below("theta_envelope",     "theta_t"),
+        below("low_envelope",       "low_t"),
+      ]),
+      duration: 500 ms
+    )
+    continuous = sigmoid("smr_envelope" / "smr_t",
+                         midpoint: 1.0, steepness: 3)
+  }
+
+  output {
+    audio_chime = reward.event
+    audio_gain  = reward.event.holds ? reward.continuous : 0
+  }
+
+  controls {
+    // --- Basic: the only two controls NOT listed in advanced_controls ---
+    threshold_style = mode {
+      choices = ["adaptive", "baseline"]
+      default = "adaptive"
+      label   = "Threshold style"
+    }
+    smr_reward_pct = percent {
+      default      = 40
+      range        = (15, 70)
+      label        = "SMR reward rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: site ---
+    site = placement {
+      kind    = "active"
+      default = "Cz"
+      label   = "Training site"
+    }
+
+    // --- Advanced: band edges (resolve-time only — see header) ---
+    smr_lo_hz = frequency {
+      default      = 12 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "SMR band low edge"
+      live_tunable = false
+    }
+    smr_hi_hz = frequency {
+      default      = 16 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "SMR band high edge"
+      live_tunable = false
+    }
+    theta_lo_hz = frequency {
+      default      = 4 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "Theta inhibit band low edge"
+      live_tunable = false
+    }
+    theta_hi_hz = frequency {
+      default      = 7 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "Theta inhibit band high edge"
+      live_tunable = false
+    }
+    low_lo_hz = frequency {
+      default      = 8 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "Low-band inhibit low edge"
+      live_tunable = false
+    }
+    low_hi_hz = frequency {
+      default      = 12 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "Low-band inhibit high edge"
+      live_tunable = false
+    }
+    hbeta_lo_hz = frequency {
+      default      = 16 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "High-beta inhibit band low edge"
+      live_tunable = false
+    }
+    hbeta_hi_hz = frequency {
+      default      = 30 Hz
+      range        = (1 Hz, 45 Hz)
+      label        = "High-beta inhibit band high edge"
+      live_tunable = false
+    }
+
+    // --- Advanced: SMR envelope delay (resolve-time only - see header) ---
+    smr_latency = duration {
+      default      = 320 ms
+      range        = (250 ms, 600 ms)
+      label        = "SMR envelope latency"
+      live_tunable = false
+    }
+
+    // --- Advanced: inhibit rates ---
+    theta_inhibit_rate = percent {
+      default      = 80
+      range        = (50, 95)
+      label        = "Theta inhibit rate"
+      live_tunable = true
+    }
+    low_inhibit_rate = percent {
+      default      = 80
+      range        = (50, 95)
+      label        = "Low-band inhibit rate"
+      live_tunable = true
+    }
+    hbeta_inhibit_rate = percent {
+      default      = 75
+      range        = (50, 95)
+      label        = "High-beta inhibit rate"
+      live_tunable = true
+    }
+
+    // --- Advanced: artifact guard ---
+    artifact_guard = mode {
+      choices = ["on", "off"]
+      default = "on"
+      label   = "Artifact guard (EMG)"
+    }
+    artifact_strictness = percent {
+      default      = 95
+      range        = (50, 99)
+      label        = "Artifact guard strictness"
+      live_tunable = true
+    }
+
+    // --- Advanced: baseline-mode absolute thresholds (seeded) ---
+    smr_threshold_uv = voltage {
+      default      = 2.0 uV
+      range        = (0.5 uV, 10.0 uV)
+      label        = "SMR threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "smr_envelope"
+        window     = 60 s
+        target_pct = smr_reward_pct
+      }
+    }
+    theta_threshold_uv = voltage {
+      default      = 8.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "Theta threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "theta_envelope"
+        window     = 60 s
+        target_pct = theta_inhibit_rate
+      }
+    }
+    low_threshold_uv = voltage {
+      default      = 8.0 uV
+      range        = (2.0 uV, 30.0 uV)
+      label        = "Low-band threshold"
+      live_tunable = true
+      seed = percentile {
+        from       = "low_envelope"
+        window     = 60 s
+        target_pct = low_inhibit_rate
+      }
+    }
+  }
+
+  // Full staged session: the canonical shape per docs/fork-audit-2026-07.md
+  // (top-level's mode-toggle + seed + staged session beats a single
+  // continuous block). Warmup matches the percentile window (2 min) so the
+  // adaptive threshold buffer is fully baseline-trained at run start.
+  session {
+    phases = [
+      phase { name = "warmup";   duration = 120 s; output_muted = true },
+      phase { name = "block1";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest1";    duration = 2 min; output_muted = true },
+      phase { name = "block2";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest2";    duration = 2 min; output_muted = true },
+      phase { name = "block3";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "rest3";    duration = 2 min; output_muted = true },
+      phase { name = "block4";   duration = 5 min; mode = timed_with_floor },
+      phase { name = "cooldown"; duration = 30 s;  output_muted = true },
+    ]
+  }
+}
