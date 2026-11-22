@@ -26,9 +26,14 @@
 //     one. One file carries one declared latency and it bakes at resolve
 //     time, so a median default would train whoever needs more than the
 //     median on an envelope LESS accurate than the chain this file replaced.
-//     40 ms over the median degrades nobody. Do not tighten it to 280
-//     without re-measuring the spread (tools/measure_spindle_front_end.py
-//     holds the median in its `AT` table).
+//     40 ms over the median degrades nobody IN THE CORPUS, and the corpus is
+//     as far as the measurement reaches: the eleven recordings of fourteen
+//     that were usable (one flat, two carrying impulsive artifact, excluded
+//     and reported), four minutes each, none of those subjects performing
+//     this task. It is not a general property of the filter. Do not tighten it
+//     to 280 without re-measuring the spread
+//     (tools/measure_spindle_front_end.py holds the median in its `AT`
+//     table).
 //     The other three delays are literals in their `band_envelope` calls,
 //     each at or above its own band's floor, 1000 / bandwidth ms:
 //         theta     4-7  Hz  floor 334 ms   declared 340 ms
@@ -90,13 +95,14 @@
 //     the EMG guard's `artifact_strictness` sits - because a guard that takes
 //     the SOUND away should fire on something rare, and with a percentile
 //     threshold how often it fires is set by the percentile, not by the
-//     trainee. At 75 it would mute a quarter of every block by construction
-//     on a perfectly clean recording. That it is looser than theta (80) and
-//     low band (85) is deliberate and the opposite way round from
-//     smr.refrain, where 75 governed a conjunction veto that cost one reward:
-//     those two withhold a reward, this one silences the channel that carries
-//     the whole latency improvement, so it has to be the most reluctant of
-//     the three, not the quickest.
+//     trainee. At 75 it would mute AT LEAST a quarter of every block by
+//     construction on a perfectly clean recording - a quarter is the raw
+//     crossing rate, and the release only adds to it. That it is looser than
+//     theta (80) and low band (85) is deliberate, and the opposite way round
+//     from smr.refrain, where 75 governed a conjunction veto that cost one
+//     reward: those two withhold a reward, this one silences the channel
+//     that carries the whole latency improvement, so it has to be the most
+//     reluctant of the three, not the quickest.
 //   - The high-beta envelope declares 320 ms for STABILITY, not speed - the
 //     only envelope in this file where that is the right trade, and the one
 //     place "faster is better" is wrong. Everywhere else a declared latency
