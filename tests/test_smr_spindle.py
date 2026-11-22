@@ -27,6 +27,10 @@ _ENVELOPES = {
     "low_envelope":      (8.0, 12.0, 320.0),
     "high_beta_envelope": (16.0, 30.0, 120.0),
 }
+_PREFIX = {
+    "smr_envelope": "smr", "theta_envelope": "theta",
+    "low_envelope": "low", "high_beta_envelope": "hbeta",
+}
 
 
 def _dwell_terms(ir):
@@ -52,6 +56,15 @@ def test_band_edge_defaults_are_the_measured_ones():
     for name, hz in _BAND_EDGES.items():
         assert ir["controls"][name]["default"]["value"] == hz
 
+def test_reward_is_smr_up_with_theta_and_low_band_vetoes():
+    # `below` on the inhibit bands: `above` there would reward high alpha.
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    assert _dwell_terms(ir) == [
+        ("above", "smr_envelope"),
+        ("below", "theta_envelope"),
+        ("below", "low_envelope"),
+    ]
+
 def test_every_envelope_is_one_stage_with_its_declared_latency():
     ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
     for derive, (_, _, want_ms) in _ENVELOPES.items():
@@ -59,10 +72,18 @@ def test_every_envelope_is_one_stage_with_its_declared_latency():
         assert names == ["band_envelope"], f"{derive} is {names}"
         args = {a["name"]: a["value"] for a in call["args"] if a["name"]}
         assert _num(args["latency"]) == want_ms
+        # The band is wired to this derive's own control pair, not another
+        # band of the same width.
+        lo, hi, _ = _ENVELOPES[derive]
+        lo_el, hi_el = args["band"]["elements"]
+        assert (_num(lo_el), _num(hi_el)) == (lo, hi), derive
+        prefix = _PREFIX[derive]
+        assert lo_el["target"] == f"control/{prefix}_lo_hz", derive
+        assert hi_el["target"] == f"control/{prefix}_hi_hz", derive
 
-def test_each_declared_latency_clears_its_bandwidth_floor():
-    for derive, (lo, hi, ms) in _ENVELOPES.items():
-        assert ms >= 1000.0 / (hi - lo), derive
+# The bandwidth-floor check lives in test_declared_latency.py, which reads the
+# real bands and latencies from every protocol on disk; do not re-add it here
+# against local constants.
 
 def test_band_edges_and_latency_are_not_live_tunable():
     # They bake at resolve time; a tunable edge is silently ignored by the
