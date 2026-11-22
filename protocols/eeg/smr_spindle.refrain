@@ -101,7 +101,10 @@
 //     continuous channel, asymmetric as now for a reward-gated one), as
 //     recorder/docs/feedback-latency-measurement.md section 9 describes. A
 //     module-level retune would bring back the warble the 0.30 s release was
-//     added to remove.
+//     added to remove. That warble is a gate toggling the gain at the chime
+//     rate (audio_renderer.py:120-124): gated protocols still have it, and
+//     this ungated one structurally cannot, which is why the fix belongs on
+//     the gain source rather than in the module constant.
 //
 // Research Use Only.
 
