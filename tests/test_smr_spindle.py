@@ -192,6 +192,7 @@ def test_the_tone_is_ungated():
     ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
     gain = ir["output"]["audio_gain"]
     assert gain["node"] != "conditional", "the tone is still gated on reward.event.holds"
+    assert gain["node"] == "reward_field"
     assert gain["field_path"] == "continuous"
 
 
