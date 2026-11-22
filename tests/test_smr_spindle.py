@@ -180,3 +180,22 @@ def test_veto_rates_are_not_flagged_as_reward_rates():
     terms = dict((s, c) for c, s in _dwell_terms(ir))
     assert terms["theta_envelope"] == "below"
     assert terms["low_envelope"] == "below"
+
+
+def test_the_tone_is_ungated():
+    # The shipped protocol has audio_gain = reward.event.holds ? continuous : 0,
+    # audible only while a reward is held, so the tone and the ding fire at the
+    # same instant and there is really only ONE feedback moment. Ungating it is
+    # how the latency saving reaches the trainee at all: the tone carries no
+    # duration criterion, so it arrives ~500 ms before the ding.
+    # The IR key is `output`, singular.
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    gain = ir["output"]["audio_gain"]
+    assert gain["node"] != "conditional", "the tone is still gated on reward.event.holds"
+    assert gain["field_path"] == "continuous"
+
+
+def test_the_ding_is_the_reward_event():
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    chime = ir["output"]["audio_chime"]
+    assert (chime["node"], chime["field_path"]) == ("reward_field", "event")

@@ -67,6 +67,39 @@
 //     measurements and published spindle criteria and has never been trialled
 //     as a whole. The citation covers only the lineage (spindle conditioning),
 //     not this band or criterion.
+//   - TWO feedback channels, not one. smr.refrain gates its tone on the reward
+//     holding (`audio_gain = reward.event.holds ? reward.continuous : 0`), so
+//     the tone and the ding fire at the same instant and there is really only
+//     one feedback moment, at roughly 910-950 ms end to end. Here the tone is
+//     ungated (`audio_gain = reward.continuous`) and carries no duration
+//     criterion, so it arrives about 500 ms earlier, at roughly 410-450 ms
+//     (envelope + transport + audio). That is how this protocol's latency
+//     improvement reaches the trainee. The ding (`audio_chime = reward.event`)
+//     then marks "that was a real spindle" on the published 500 ms criterion.
+//     Both inhibits MUTE: an ungated tone tracks raw amplitude, so without the
+//     mutes a jaw clench would become a loud tone, the inverse of the
+//     contingency.
+//   - KNOWN LIMITATION, as delivered: the renderer smooths the tone
+//     asymmetrically. recorder/backend/feedback/audio_renderer.py:125-126 sets
+//     _GAIN_ATTACK_TAU_S = 0.05 and _GAIN_RELEASE_TAU_S = 0.30, so the ~410-450
+//     ms figure above holds on RISING edges only. Falling, the gain carries a
+//     300 ms time constant: roughly 620 ms effective against roughly 370 ms
+//     rising, a six-fold asymmetry applied after everything this protocol
+//     controls. Two consequences, worse for spindles than for a sustained
+//     amplitude: it blurs the end of every burst (against a 562 ms median
+//     burst the gain is still near 15% of peak when the burst has been over
+//     for as long as it lasted, so the tone trails into the silence); and it
+//     is a one-sided low-pass on the shaping signal, so downward movements
+//     ("you are losing it") arrive about 250 ms later than upward ones, which
+//     is the half a trainee needs to learn what not to do. The shipped
+//     protocol hides this because its tone is gated, so the release only
+//     shapes the tail of an already-finished reward; an ungated tone runs
+//     through it continuously. The fix is not in this repository: make the
+//     smoothing a property of the gain source (fast and symmetric for a
+//     continuous channel, asymmetric as now for a reward-gated one), as
+//     recorder/docs/feedback-latency-measurement.md section 9 describes. A
+//     module-level retune would bring back the warble the 0.30 s release was
+//     added to remove.
 //
 // Research Use Only.
 
@@ -220,7 +253,7 @@ protocol "smr_spindle" {
 
   output {
     audio_chime = reward.event
-    audio_gain  = reward.event.holds ? reward.continuous : 0
+    audio_gain  = reward.continuous
   }
 
   controls {
