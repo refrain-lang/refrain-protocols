@@ -23,7 +23,7 @@
 //     above its own band's floor:
 //         theta     4-7  Hz  floor 334 ms   declared 340 ms
 //         low band  8-12 Hz  floor 250 ms   declared 320 ms
-//         high-beta 16-30 Hz floor  72 ms   declared 120 ms
+//         high-beta 16-30 Hz floor  72 ms   declared 320 ms
 //   - A new LOW-BAND (8-12 Hz) inhibit. The alpha shoulder sits directly
 //     below the SMR band and leaks into it; the reward is withheld while that
 //     rhythm is high, so alpha/mu activity is not rewarded as spindle.
@@ -173,12 +173,14 @@ protocol "smr_spindle" {
     ]
   }
 
-  // High-beta artifact/arousal guard - EMG bleed and hyperarousal. The band
-  // is wide (16-30 Hz), so its delay floor is small: 120 ms.
+  // High-beta artifact/arousal guard - EMG bleed and hyperarousal. 320 ms is
+  // chosen for STABILITY, not speed: it feeds a mute, and the wide band's
+  // 72 ms floor would let this be the twitchiest signal in the file. See the
+  // header.
   derive "high_beta_envelope" {
     from = "raw"
     pipeline = [
-      band_envelope(band: (hbeta_lo_hz, hbeta_hi_hz), latency: 120 ms),
+      band_envelope(band: (hbeta_lo_hz, hbeta_hi_hz), latency: 320 ms),
     ]
   }
 
@@ -370,7 +372,7 @@ protocol "smr_spindle" {
       live_tunable = true
     }
     hbeta_inhibit_rate = percent {
-      default      = 75
+      default      = 95
       range        = (50, 95)
       label        = "High-beta inhibit rate"
       live_tunable = true

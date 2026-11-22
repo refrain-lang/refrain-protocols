@@ -21,11 +21,15 @@ _BAND_EDGES = {
     "hbeta_lo_hz": 16.0, "hbeta_hi_hz": 30.0,
 }
 # derive -> (lo, hi, declared ms). Floors: 250, 334, 250, 72.
+# high_beta is the one latency NOT chosen for speed: it feeds a mute, where a
+# twitchy estimate is the failure mode, so it declares 320 ms - four and a half
+# times its own floor - to fire on sustained contamination rather than on every
+# excursion.
 _ENVELOPES = {
     "smr_envelope":      (12.0, 16.0, 320.0),
     "theta_envelope":    (4.0, 7.0, 340.0),
     "low_envelope":      (8.0, 12.0, 320.0),
-    "high_beta_envelope": (16.0, 30.0, 120.0),
+    "high_beta_envelope": (16.0, 30.0, 320.0),
 }
 _PREFIX = {
     "smr_envelope": "smr", "theta_envelope": "theta",
