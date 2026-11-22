@@ -212,6 +212,7 @@ def measure(path: Path, amp, recordings: list, chunk_s: float = 0.05) -> list[di
     envs = envelopes(j)
     if not envs:
         return []
+    inhibit_names = sorted(j.get("inhibits") or {})
     fs = float(ir.requires.sample_rate_chosen_hz)
     chans = tuple(sorted(amp.channel_names()))
     needed = montage_channels(j, set(chans))
@@ -222,16 +223,56 @@ def measure(path: Path, amp, recordings: list, chunk_s: float = 0.05) -> list[di
         n = len(next(iter(rec.values())))
         X = np.column_stack([rec.get(c.upper(), np.zeros(n)) for c in chans])
         cn = max(1, int(round(chunk_s * fs)))
-        keep = {k for e in envs for k in (e["derive"], e["source"])} | {"reward.event", "reward.event.holds"}
-        streams = step_through(ir, fs, chans, (X[k:k + cn] for k in range(0, n - cn + 1, cn)),
-                               skip_warmup=True, keep_streams=keep).streams
-        cut = slice(int(SKIP_HEAD_S * fs), -int(SKIP_TAIL_S * fs))
+        keep = ({k for e in envs for k in (e["derive"], e["source"])}
+                | {"reward.event", "reward.event.holds", "output/audio_gain"})
+        res = step_through(ir, fs, chans, (X[k:k + cn] for k in range(0, n - cn + 1, cn)),
+                           skip_warmup=True, keep_streams=keep)
+        streams = res.streams
+        lo, hi = int(SKIP_HEAD_S * fs), n - int(SKIP_TAIL_S * fs)
+        cut = slice(lo, -int(SKIP_TAIL_S * fs))
+        # Muting is a per-CHUNK tap, not a per-sample stream (refrain exposes `muted` and
+        # `inhibit/<name>` through last_taps). Asking keep_streams for them silently
+        # returns nothing, so they are read from the taps at chunk resolution instead.
+        in_cut = [i for i, off in enumerate(res.chunk_sample_offsets) if lo <= off < hi]
+        def tap_share(key):
+            vals = [res.taps_per_chunk[i].get(key) for i in in_cut
+                    if i < len(res.taps_per_chunk)]
+            vals = [v for v in vals if v is not None]
+            return (100.0 * float(np.mean([bool(v) for v in vals]))) if vals else None
         if "reward.event.holds" in streams:
             held = streams["reward.event.holds"][cut] > 0.5
             onsets = int(np.sum(held[1:] & ~held[:-1]))
-            rows.append(dict(protocol=path.name, case=case, fs=fs, derive="(reward)",
-                             onsets_per_min=onsets / (len(held) / fs / 60.0),
-                             held_pct=100.0 * float(held.mean())))
+            minutes = len(held) / fs / 60.0
+            # Reward time is reported twice because a mute zeroes audio_gain: `held_pct` is
+            # what the protocol's own condition did, `heard_pct` the part of it the trainee
+            # could hear. An inhibit that fires often makes these two diverge.
+            row = dict(protocol=path.name, case=case, fs=fs, derive="(reward)",
+                       onsets_per_min=onsets / minutes,
+                       held_pct=100.0 * float(held.mean()),
+                       muted_pct=tap_share("muted"),
+                       # Separates the three ways output goes quiet: a phase that mutes
+                       # by design, an inhibit crossing its threshold, and the 200 ms
+                       # release tail each crossing drags behind it. Without this split,
+                       # `muted_pct` cannot be attributed and the release is invisible.
+                       phase_muted_pct=tap_share("phase/output_muted"))
+            # Decomposes the reward: each conjunction term's own share, then all terms
+            # true at once, then `held_pct` after the duration criterion. The step that
+            # loses the most is the one starving the reward.
+            terms = sorted(k for k in res.taps_per_chunk[0] if k.startswith("reward/condition["))
+            for k in terms:
+                row[f"term{k[len('reward/condition['):-1]}_pct"] = tap_share(k)
+            if terms:
+                conj = [i for i in in_cut if i < len(res.taps_per_chunk)
+                        and all(res.taps_per_chunk[i].get(k) for k in terms)]
+                row["all_terms_pct"] = 100.0 * len(conj) / max(1, len(in_cut))
+            gain = streams.get("output/audio_gain")
+            if gain is not None:
+                audible = gain[cut] > 0.0
+                row["silent_pct"] = 100.0 * float((~audible).mean())
+                row["heard_pct"] = 100.0 * float((held & audible).mean())
+            for nm in inhibit_names:
+                row[f"mute_{nm}_pct"] = tap_share(f"inhibit/{nm}")
+            rows.append(row)
         for e in envs:
             src = streams[e["source"]]
             if np.std(src[cut]) < 1e-9:
@@ -240,6 +281,16 @@ def measure(path: Path, amp, recordings: list, chunk_s: float = 0.05) -> list[di
             lag, r = lag_and_r(streams[e["derive"]][cut], ref[cut], fs)
             rows.append(dict(protocol=path.name, case=case, fs=fs, lag_ms=lag, r=r, **e))
     return rows
+
+
+def _med(rows: list, key: str) -> str:
+    """Median of a reported figure, or "--" when nothing measured it.
+
+    A tap or stream the evaluator does not expose comes back as None. Printing that
+    as 0.0% would read as a measurement; it is the absence of one.
+    """
+    vals = [r[key] for r in rows if r.get(key) is not None]
+    return f"{np.median(vals):5.1f}%" if vals else "   --"
 
 
 def main(argv=None) -> int:
@@ -269,7 +320,20 @@ def main(argv=None) -> int:
         if rw:
             print(f"{p.name:40s} {'(reward)':20s} n={len(rw):2d} onsets median "
                   f"{np.median([r['onsets_per_min'] for r in rw]):5.1f}/min | held median "
-                  f"{np.median([r['held_pct'] for r in rw]):5.1f}%")
+                  f"{np.median([r['held_pct'] for r in rw]):5.1f}% | heard median "
+                  f"{_med(rw, 'heard_pct')} | silent median {_med(rw, 'silent_pct')}"
+                  f" | muted median {_med(rw, 'muted_pct')}"
+                  f" (phase {_med(rw, 'phase_muted_pct')})")
+            tk = sorted({k for r in rw for k in r
+                         if k.startswith("term") and k.endswith("_pct")})
+            if tk:
+                print(f"{'':40s} {'  reward decompose':20s} "
+                      + "  ".join(f"{k[:-4]} {_med(rw, k)}" for k in tk)
+                      + f"  all-at-once {_med(rw, 'all_terms_pct')}"
+                      + f"  after 500ms hold {_med(rw, 'held_pct')}")
+            for nm in sorted({k[5:-4] for r in rw for k in r
+                              if k.startswith("mute_") and k.endswith("_pct")}):
+                print(f"{'':40s} {'  mute ' + nm:20s} median {_med(rw, f'mute_{nm}_pct')}")
         got = [r for r in got if r["derive"] != "(reward)"]
         for e in sorted({(r["derive"], r["shape"], r["band"], r["latency_ms"]) for r in got}):
             sel = [r for r in got if r["derive"] == e[0]]
