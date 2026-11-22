@@ -1308,6 +1308,7 @@
           "hbeta_lo_hz",
           "hbeta_hi_hz",
           "smr_latency",
+          "spindle_duration",
           "theta_inhibit_rate",
           "low_inhibit_rate",
           "hbeta_inhibit_rate",

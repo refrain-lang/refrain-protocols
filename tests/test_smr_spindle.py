@@ -33,16 +33,26 @@ _PREFIX = {
 }
 
 
-def _dwell_terms(ir):
-    """[(callee, derive name)] for each term of reward.event's all_of."""
+def _dwell_wiring(ir):
+    """[(callee, derive name, threshold name)] for each term of reward.event's all_of."""
     ev = ir["reward"]["event"]
     assert ev["callee"] == "dwell"
     cond = next(a["value"] for a in ev["args"] if a["name"] == "condition")
     assert cond["callee"] == "all_of"
     return [
-        (t["callee"], t["args"][0]["value"]["target"].split("/", 1)[1])
+        (
+            t["callee"],
+            t["args"][0]["value"]["target"].split("/", 1)[1],
+            t["args"][1]["value"]["target"].split("/", 1)[1],
+        )
         for t in cond["args"][0]["value"]["elements"]
     ]
+
+
+def _dwell_terms(ir):
+    """[(callee, derive name)] - which derive each reward term reads."""
+    return [(c, d) for c, d, _ in _dwell_wiring(ir)]
+
 
 def test_resolves_on_both_amps_with_no_bindings():
     for amp in (Q21, BRAINBIT):
@@ -58,11 +68,13 @@ def test_band_edge_defaults_are_the_measured_ones():
 
 def test_reward_is_smr_up_with_theta_and_low_band_vetoes():
     # `below` on the inhibit bands: `above` there would reward high alpha.
+    # Each term also reads its OWN threshold: `below(low_envelope, theta_t)`
+    # would resolve and pass a derive-only check, but vetoes on the wrong band.
     ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
-    assert _dwell_terms(ir) == [
-        ("above", "smr_envelope"),
-        ("below", "theta_envelope"),
-        ("below", "low_envelope"),
+    assert _dwell_wiring(ir) == [
+        ("above", "smr_envelope", "smr_t"),
+        ("below", "theta_envelope", "theta_t"),
+        ("below", "low_envelope", "low_t"),
     ]
 
 def test_every_envelope_is_one_stage_with_its_declared_latency():
@@ -91,3 +103,60 @@ def test_band_edges_and_latency_are_not_live_tunable():
     ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
     for name in list(_BAND_EDGES) + ["smr_latency"]:
         assert ir["controls"][name]["live_tunable"] is False
+
+
+def test_reward_conjunction_is_smr_above_with_two_loose_vetoes():
+    # High-beta LEAVES the reward and becomes a mute, so high_beta_envelope
+    # must not appear in the conjunction.
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    terms = _dwell_terms(ir)
+    assert ("above", "smr_envelope") in terms
+    assert ("below", "theta_envelope") in terms
+    assert ("below", "low_envelope") in terms
+    assert not any(s == "high_beta_envelope" for _, s in terms)
+
+
+def test_high_beta_is_an_inhibit_that_mutes():
+    # An inhibit's action lands in the IR as action_kind/action_release_ms,
+    # not as a nested call node.
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    hb = ir["inhibits"]["hbeta"]
+    assert hb["action_kind"] == "mute"
+    assert hb["action_release_ms"] == 200.0
+    assert ir["inhibits"]["emg"]["action_kind"] == "mute"
+    # It watches the high-beta derive, with its own percentile threshold fed
+    # by the hbeta_inhibit_rate control (not the emg inhibit's strictness).
+    # (the metric must be a primitive call, so the derive sits inside rectify)
+    assert hb["metric"]["callee"] == "rectify"
+    assert hb["metric"]["args"][0]["value"]["target"] == "derive/high_beta_envelope"
+    assert hb["threshold"]["callee"] == "percentile"
+    target_pct = next(a["value"] for a in hb["threshold"]["args"] if a["name"] == "target_pct")
+    assert target_pct["target"] == "control/hbeta_inhibit_rate"
+
+
+def test_duration_criterion_is_the_published_floor():
+    # AASM defines a spindle as >= 0.5 s. Replaces the shipped 250 ms dwell,
+    # and the dwell reads the control rather than a literal.
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    assert _num(ir["controls"]["spindle_duration"]["default"]) == 500.0
+    ev = ir["reward"]["event"]
+    dur = next(a["value"] for a in ev["args"] if a["name"] == "duration")
+    assert dur["target"] == "control/spindle_duration"
+
+
+def test_vetoes_default_loose_enough_not_to_deadlock():
+    # A trainee whose alpha peak is 12 Hz has the low-band veto sitting inside
+    # the reward band. Loose defaults make that degrade, not deadlock.
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    assert ir["controls"]["theta_inhibit_rate"]["default"]["value"] >= 80
+    assert ir["controls"]["low_inhibit_rate"]["default"]["value"] >= 85
+
+
+def test_veto_rates_are_not_flagged_as_reward_rates():
+    # manifest.py:_is_reward_rate_control decides the inverted slider
+    # STRUCTURALLY, "regardless of its name": a below(...) veto is excluded by
+    # construction. This pins that the vetoes feed below(), not above().
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    terms = dict((s, c) for c, s in _dwell_terms(ir))
+    assert terms["theta_envelope"] == "below"
+    assert terms["low_envelope"] == "below"

@@ -30,13 +30,23 @@
 //   - High-beta band starts at 16 Hz (smr.refrain: 20 Hz) so the veto's lower
 //     edge meets the reward band's upper edge with nothing open between. The
 //     shipped 20 Hz leaves 16-20 Hz unwatched.
-//   - There is deliberately no `hbeta_t` threshold or `hbeta_threshold_uv`
-//     control yet: the reward conjunction gives the high-beta veto its own
-//     literal threshold (a later change), so copying them would leave dead,
-//     unreferenced declarations. `high_beta_envelope` and its band and rate
-//     controls are here for that change to use.
-//   - Spindle duration: the reward dwell is a literal 500 ms for now; it
-//     becomes a control with the reward rewiring.
+//   - High-beta MUTES; it does not withhold. smr.refrain makes high-beta a
+//     `below` term inside the reward conjunction, so a high-beta burst
+//     silently resets the dwell. Here it is an `inhibit "hbeta"` with a
+//     `mute(release: 200 ms)` action, the same arrangement as the EMG guard:
+//     the output goes quiet while it is high and comes back 200 ms after, and
+//     the dwell is not what pays for it. That is why there is no `hbeta_t`
+//     threshold: an inhibit takes its own literal `percentile(...)` fed by
+//     `hbeta_inhibit_rate`, so a shared threshold would be a dead declaration.
+//   - The two remaining vetoes (theta, low band) stay in the conjunction as
+//     loose `below` terms: 80th and 85th percentile defaults. The low band is
+//     looser because a trainee whose alpha peak sits at 12 Hz has that veto
+//     overlapping the reward band's edge; at a tight setting it would trip
+//     whenever the reward band is high and nothing would ever be rewarded. At
+//     85 it degrades the reward instead of deadlocking it.
+//   - Spindle duration is the control `spindle_duration`, default 500 ms: the
+//     published minimum for a spindle (AASM, >= 0.5 s). smr.refrain's 250 ms
+//     is a reaction-time dwell, not a spindle criterion. Range 250-1500 ms.
 //
 //   - Evidence tier is "exploratory", not smr.refrain's "established". That
 //     tier rests on the Sterman/Lubar SMR recipe, and this is a different
@@ -70,7 +80,7 @@ protocol "smr_spindle" {
       "theta_lo_hz", "theta_hi_hz",
       "low_lo_hz", "low_hi_hz",
       "hbeta_lo_hz", "hbeta_hi_hz",
-      "smr_latency",
+      "smr_latency", "spindle_duration",
       "theta_inhibit_rate", "low_inhibit_rate", "hbeta_inhibit_rate",
       "artifact_guard", "artifact_strictness",
       "smr_threshold_uv", "theta_threshold_uv", "low_threshold_uv",
@@ -170,6 +180,19 @@ protocol "smr_spindle" {
     action    = mute(release: 200 ms)
   }
 
+  // High-beta guard - mutes the output rather than gating the reward (see
+  // header). The threshold must be a literal constructor call; its own rate
+  // control keeps it independent of the theta and low-band vetoes. An inhibit's
+  // metric must be a primitive call, so the envelope goes through `rectify`,
+  // an identity on a non-negative envelope (same idiom as
+  // critical_fluctuation.refrain) - the guard reads the declared-latency
+  // derive, not a second bandpower stage with its own unchosen delay.
+  inhibit "hbeta" {
+    metric    = rectify("high_beta_envelope")
+    threshold = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
+    action    = mute(release: 200 ms)
+  }
+
   reward {
     event = dwell(
       condition: all_of([
@@ -177,7 +200,7 @@ protocol "smr_spindle" {
         below("theta_envelope",     "theta_t"),
         below("low_envelope",       "low_t"),
       ]),
-      duration: 500 ms
+      duration: spindle_duration
     )
     continuous = sigmoid("smr_envelope" / "smr_t",
                          midpoint: 1.0, steepness: 3)
@@ -267,6 +290,14 @@ protocol "smr_spindle" {
       live_tunable = false
     }
 
+    // --- Advanced: spindle duration (live: the dwell reads it each frame) ---
+    spindle_duration = duration {
+      default      = 500 ms
+      range        = (250 ms, 1500 ms)
+      label        = "Spindle duration"
+      live_tunable = true
+    }
+
     // --- Advanced: inhibit rates ---
     theta_inhibit_rate = percent {
       default      = 80
@@ -275,7 +306,7 @@ protocol "smr_spindle" {
       live_tunable = true
     }
     low_inhibit_rate = percent {
-      default      = 80
+      default      = 85
       range        = (50, 95)
       label        = "Low-band inhibit rate"
       live_tunable = true
