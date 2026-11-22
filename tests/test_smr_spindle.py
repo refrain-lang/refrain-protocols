@@ -134,6 +134,22 @@ def test_high_beta_is_an_inhibit_that_mutes():
     assert hb["threshold"]["callee"] == "percentile"
     target_pct = next(a["value"] for a in hb["threshold"]["args"] if a["name"] == "target_pct")
     assert target_pct["target"] == "control/hbeta_inhibit_rate"
+    # The window is pinned too: a drift to 10 s would chase short-term noise.
+    window = next(a["value"] for a in hb["threshold"]["args"] if a["name"] == "window")
+    assert (window["value"], window["unit"]) == (2.0, "min")
+
+
+def test_high_beta_guard_is_percentile_only_in_baseline_mode_too():
+    # An inhibit's threshold must be a literal constructor call, so the
+    # threshold_style switch cannot reach it. In baseline mode the other three
+    # bands go absolute while this one keeps chasing a rolling percentile.
+    # Pinned so the asymmetry is explicit, not incidental.
+    ir = ir_to_json_obj(
+        resolve(refrain.parse_file(str(PATH)), Q21, bindings={"threshold_style": "baseline"})
+    )
+    assert ir["inhibits"]["hbeta"]["threshold"]["callee"] == "percentile"
+    for t in ("smr_t", "theta_t", "low_t"):
+        assert ir["thresholds"][t]["threshold_call"]["callee"] == "absolute", t
 
 
 def test_duration_criterion_is_the_published_floor():

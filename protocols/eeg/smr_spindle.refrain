@@ -38,6 +38,18 @@
 //     the dwell is not what pays for it. That is why there is no `hbeta_t`
 //     threshold: an inhibit takes its own literal `percentile(...)` fed by
 //     `hbeta_inhibit_rate`, so a shared threshold would be a dead declaration.
+//     COST: that literal cannot take the `threshold_style` switch, so the
+//     high-beta guard is percentile-only in BOTH modes. In "baseline" mode the
+//     other three bands sit at fixed operator-set microvolt values while this
+//     one keeps chasing a 2-minute rolling percentile. At the default 75 it
+//     trips about a quarter of the time by construction, so a baseline session
+//     is muted in frequent ~200 ms bursts while reward events are still
+//     logged that the trainee did not hear. Judge muted time alongside reward
+//     time (the replay gate reports both) before relying on baseline mode.
+//     The default is 75, tighter than theta (80) and low band (85), because
+//     high-beta is the only guard that silences audio rather than withholding
+//     one reward: a burst of muscle or arousal should cut sound promptly, and
+//     a mute is released 200 ms later, so it costs little to be quick.
 //   - The two remaining vetoes (theta, low band) stay in the conjunction as
 //     loose `below` terms: 80th and 85th percentile defaults. The low band is
 //     looser because a trainee whose alpha peak sits at 12 Hz has that veto
