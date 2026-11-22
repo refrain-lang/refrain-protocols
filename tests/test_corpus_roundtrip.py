@@ -96,9 +96,14 @@ KNOWN_GAPS = {
     # runnable, but catalog v1 cannot render them back through the visual
     # editor. Keep saves fail-closed until the editor supports this graph.
     "alpha_theta_narrowband_theta_rise.refrain",
-    # Every envelope is a one-stage `band_envelope(band:, latency:)`, a derive
-    # shape catalog v1's `_match_derive` does not recognise. Runnable, but the
-    # visual editor must fail closed rather than drop the declared latency.
+    # Out of subset for ONE reason: `smr_latency` is a `duration` control, and
+    # `duration` is not in the editor's RENDERABLE_CONTROL_KINDS
+    # (describe: "control kind 'duration' not renderable"). Nothing else
+    # blocks it: the four one-stage `band_envelope` derives, the all_of reward
+    # and the low-band threshold all round-trip (swap the control for a literal
+    # and it is in subset). Closes when upstream adds `duration` to
+    # RENDERABLE_CONTROL_KINDS. That would NOT unlock the alpha_theta entries
+    # above, which have a second, graph-shape blocker.
     "smr_spindle.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and

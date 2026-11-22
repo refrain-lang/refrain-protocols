@@ -38,13 +38,21 @@
 //   - Spindle duration: the reward dwell is a literal 500 ms for now; it
 //     becomes a control with the reward rewiring.
 //
+//   - Evidence tier is "exploratory", not smr.refrain's "established". That
+//     tier rests on the Sterman/Lubar SMR recipe, and this is a different
+//     configuration: 12-16 Hz reward, an added 8-12 Hz inhibit, a 16 Hz
+//     high-beta edge, a spindle-length dwell. It is assembled from our own
+//     measurements and published spindle criteria and has never been trialled
+//     as a whole. The citation covers only the lineage (spindle conditioning),
+//     not this band or criterion.
+//
 // Research Use Only.
 
 protocol "smr_spindle" {
 
   meta {
     version           = "1.0.0"
-    evidence          = "established"
+    evidence          = "exploratory"
     description       = "SMR spindle (12-16 Hz) up-training on declared-latency envelopes - practitioner-selected site, bands, and thresholds"
     title             = "SMR spindle training"
     summary           = "Rewards 12-16 Hz sensorimotor spindles while inhibiting theta, the 8-12 Hz band and high-beta, at a chosen site, with adaptive or baseline-fixed thresholds."
@@ -54,7 +62,7 @@ protocol "smr_spindle" {
     modality          = "eeg"
     goals             = ["focus_attention", "sleep_quality"]
     author            = "Peak Mind"
-    citation          = "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)"
+    citation          = "Wyrwicka W. & Sterman M.B. (1968), conditioning of sensorimotor spindles; the band, criterion and inhibits here are not from that work"
     control_ref       = "library/operant/smr_sham@1.0"
     advanced_controls = [
       "site",

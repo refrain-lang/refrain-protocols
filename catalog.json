@@ -1282,7 +1282,7 @@
       "draft": true,
       "meta": {
         "version": "1.0.0",
-        "evidence": "established",
+        "evidence": "exploratory",
         "description": "SMR spindle (12-16 Hz) up-training on declared-latency envelopes - practitioner-selected site, bands, and thresholds",
         "title": "SMR spindle training",
         "summary": "Rewards 12-16 Hz sensorimotor spindles while inhibiting theta, the 8-12 Hz band and high-beta, at a chosen site, with adaptive or baseline-fixed thresholds.",
@@ -1295,7 +1295,7 @@
           "sleep_quality"
         ],
         "author": "Peak Mind",
-        "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
+        "citation": "Wyrwicka W. & Sterman M.B. (1968), conditioning of sensorimotor spindles; the band, criterion and inhibits here are not from that work",
         "control_ref": "library/operant/smr_sham@1.0",
         "advanced_controls": [
           "site",
