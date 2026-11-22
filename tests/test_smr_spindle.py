@@ -101,7 +101,9 @@ def test_band_edges_and_latency_are_not_live_tunable():
     # They bake at resolve time; a tunable edge is silently ignored by the
     # engine and refused a caption by the recorder.
     ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
-    for name in list(_BAND_EDGES) + ["smr_latency"]:
+    # spindle_duration too: the plain dwell() has no update_control hook, so a
+    # live change would be a silent no-op.
+    for name in list(_BAND_EDGES) + ["smr_latency", "spindle_duration"]:
         assert ir["controls"][name]["live_tunable"] is False
 
 

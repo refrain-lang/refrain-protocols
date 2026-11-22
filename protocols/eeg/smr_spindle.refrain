@@ -290,12 +290,20 @@ protocol "smr_spindle" {
       live_tunable = false
     }
 
-    // --- Advanced: spindle duration (live: the dwell reads it each frame) ---
+    // --- Advanced: spindle duration (resolve-time only) ---
+    // Bakes into the dwell when the protocol starts, like the band edges: the
+    // plain `dwell(...)` the reward must use (DwellImpl) computes its sample
+    // count once in __init__ and has no `update_control` hook, so a live
+    // change would be silently discarded. DwellRearmImpl and HoldForImpl do
+    // carry that hook; if this is ever wanted live, the upstream fix is to
+    // copy it onto DwellImpl. (Pinned to refrain v0.24.0; not done here.)
+    // Kept in `advanced_controls` with the band edges and smr_latency, which
+    // are resolve-time too: it is an advanced setting either way.
     spindle_duration = duration {
       default      = 500 ms
       range        = (250 ms, 1500 ms)
       label        = "Spindle duration"
-      live_tunable = true
+      live_tunable = false
     }
 
     // --- Advanced: inhibit rates ---
