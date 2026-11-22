@@ -1,3 +1,29 @@
+"""Structural gates for smr_spindle.refrain - and they are the ONLY gates.
+
+Everything here reads the resolved IR: wiring, bands, declared latencies,
+defaults, which output channel carries what. Nothing here runs the engine.
+
+That matters because the repo's behavioural gate does not cover this file
+either. `refrain fuzz` decides whether it can represent a protocol by looking
+for bandpass SOS coefficients on the reward derive (refrain/fuzz/surface.py:453
+`if derive.sos is None`); a one-stage `band_envelope` has none, so the fuzzer
+reports
+
+    SKIPPED (unsupported: non-bandpass (coherence) reward signal)
+
+which names the wrong cause - there is no coherence reward here - and, per
+.github/workflows/ci.yml, a typed SKIP does not fail the build. Verified at
+refrain v0.24.0: this protocol SKIPs where smr.refrain and
+high_beta_down.refrain both PASS.
+
+So no automated check in this repository confirms that the engine behaves the
+way the protocol header says it does. Green CI on this file means it parses,
+resolves, carries valid metadata and is wired as written. It is also not
+specific to this file: test_declared_latency.py's WAITING list says every
+family migrates to `band_envelope`, and each migration drops its protocol out
+of the fuzz gate the same way. Upstream `refrain` has to classify a
+band_envelope reward before that gate means anything here.
+"""
 from pathlib import Path
 
 import pytest
@@ -168,12 +194,49 @@ def test_duration_criterion_is_the_published_floor():
     assert dur["target"] == "control/spindle_duration"
 
 
-def test_vetoes_default_loose_enough_not_to_deadlock():
-    # A trainee whose alpha peak is 12 Hz has the low-band veto sitting inside
-    # the reward band. Loose defaults make that degrade, not deadlock.
+def test_veto_defaults_stay_at_their_loose_settings():
+    # What this establishes: the two conjunction vetoes keep MARGINALLY loose
+    # defaults. That is necessary and NOT sufficient for the case it was
+    # written for - a trainee whose alpha peak sits at 12 Hz, inside the
+    # low-band veto and the reward band at once.
+    #
+    # It cannot see that case at all. Every threshold here is a rolling
+    # percentile, so it self-normalises: the rate at which any ONE condition
+    # passes is fixed by its target_pct whatever the spectrum looks like, and
+    # these numbers cannot move. What collapses for that trainee is the JOINT
+    # satisfaction of three correlated conditions held continuously for
+    # 500 ms. Measured once on a synthetic 20 uV 12 Hz peak: the marginals
+    # stayed within a few points of baseline while reward events fell about
+    # 13-fold (26 -> 2 per 150 s). So do not read a pass here as "degrades,
+    # not deadlocks" - that claim needs a behavioural test on an authored
+    # 12 Hz signal (the pattern in test_alpha_theta_narrowband.py), or the
+    # corpus replay's reward time.
     ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
     assert ir["controls"]["theta_inhibit_rate"]["default"]["value"] >= 80
     assert ir["controls"]["low_inhibit_rate"]["default"]["value"] >= 85
+
+
+def test_the_mute_guard_sits_at_the_rare_end_of_its_range():
+    # The high-beta guard takes the SOUND away rather than withholding one
+    # reward, and with a percentile threshold how often it fires is set by the
+    # percentile, not by the trainee: at target P it is above itself
+    # (100 - P)% of samples by construction. So the one guard that can silence
+    # the tone must sit where crossings are RARE. 95 is the loosest its range
+    # allows and matches the EMG guard's artifact_strictness; the inherited 75
+    # would have muted a quarter of every block on a clean recording.
+    #
+    # Pinned because nothing else does: the two conjunction vetoes have the
+    # test above, and this control is the one whose default decides how much
+    # of the ungated tone a trainee hears.
+    ir = ir_to_json_obj(resolve(refrain.parse_file(str(PATH)), Q21))
+    hbeta = ir["controls"]["hbeta_inhibit_rate"]
+    assert hbeta["default"]["value"] == 95
+    # ...and that is the loose END, not a value with room above it.
+    assert hbeta["range_high"]["value"] == 95
+    # Looser than both conjunction vetoes, the opposite way round from
+    # smr.refrain's 75, where high-beta cost one reward instead of the tone.
+    for veto in ("theta_inhibit_rate", "low_inhibit_rate"):
+        assert hbeta["default"]["value"] > ir["controls"][veto]["default"]["value"], veto
 
 
 def test_veto_rates_are_not_flagged_as_reward_rates():
