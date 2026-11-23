@@ -374,18 +374,49 @@ protocol "smr_spindle" {
 
   // High-beta guard - mutes the output rather than gating the reward (see
   // header). The threshold must be a literal constructor call; its own rate
-  // control keeps it independent of the theta and low-band vetoes. An inhibit's
-  // metric must be a primitive call, so the derive is wrapped in
-  // `passthrough(input: ...)`, refrain's documented form for an inhibit that
-  // reads one derive. The guard reads the declared-latency derive rather than
-  // a second bandpower stage with its own unchosen delay. That idiom costs
-  // the editor: it is the one shape here that catalog v1's matcher cannot
-  // read (see tests/test_corpus_roundtrip.py's KNOWN_GAPS entry).
+  // control keeps it independent of the theta and low-band vetoes.
+  //
+  // WHY `linear(..., midpoint: 0 uV, slope: 1)` AND NOT `passthrough`. An
+  // inhibit's metric must be a primitive call, so a guard that watches an
+  // existing derive needs some primitive to carry it through - reading the
+  // declared-latency envelope rather than adding a second bandpower stage with
+  // its own unchosen delay. This file used `passthrough(input: ...)` and called
+  // it refrain's documented form for that. BOTH HALVES OF THAT WERE WRONG.
+  // `PassthroughImpl`'s own docstring calls it a "first-class identity
+  // MONTAGE" that "requires exactly one source channel" - it is the sanctioned
+  // replacement for the `referential(reference: "device")` workaround, not a
+  // compute node. And `refrain-core` never implemented it as one: its compute
+  // dispatch ends `other => panic!("PoC: unsupported compute primitive")`, and
+  // `passthrough` appears in that crate only as a montage. The Python resolver
+  // accepts it because it checks only that the metric IS a call.
+  // So the protocol ran on the Python reference backend and FAILED TO START on
+  // the Rust one - and the recorder resolves its default `auto` to Rust
+  // whenever the wheel is importable, which it is, so this protocol could not
+  // have run a session. Measured: 46 of the 47 protocols in this library build
+  // and step on both backends; this was the one that did not.
+  // `linear(x, midpoint, slope)` is an affine map, so slope 1 about 0 is the
+  // identity, and Rust implements it. Verified bit-identical, not assumed. On
+  // one recording, same chunking: `reward.event.holds` and `muted` hash
+  // identical between the two metrics on Python AND between Python and Rust
+  // with this metric, while `output/audio_gain` differs by at most 8.3e-15 -
+  // last-bit rounding in the sigmoid, on the continuous tone value and not on
+  // the reward or the gate. Then over the whole twelve-recording corpus on the
+  // RUST backend: 27.8% reward time, 6.8% audible, 65.8% silent, 10.7 onsets
+  // per minute, theta muting 19.0% and the low band 14.3% - every figure
+  // identical to the Python replay of the `passthrough` version. So the
+  // numbers in this header are production-backend numbers, and the metric
+  // change moved none of them.
+  // The proper fix is upstream - either implement `passthrough` as a compute
+  // primitive in refrain-core, or give the language a way for an inhibit to
+  // name a derive directly. Revert this to whichever lands.
+  // The idiom still costs the editor: a wrapped derive is the one shape here
+  // that catalog v1's matcher cannot read (see tests/test_corpus_roundtrip.py's
+  // KNOWN_GAPS entry), and that is unchanged by which primitive wraps it.
   // 95 is the loosest the rate control allows, on purpose: this is the guard
   // that takes the SOUND away, and a percentile decides how often it fires
   // regardless of the signal. See the header.
   inhibit "hbeta" {
-    metric    = passthrough(input: "high_beta_envelope")
+    metric    = linear("high_beta_envelope", midpoint: 0 uV, slope: 1)
     threshold = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
     action    = mute(release: 200 ms)
   }
@@ -397,16 +428,17 @@ protocol "smr_spindle" {
   // resetting them. Without the label a contaminated stretch longer than the
   // tolerance would reset the streak through the dip path and the move would
   // buy nothing. Percentile-only in both threshold styles - see the header's
-  // second cost.
+  // second cost. The `linear(..., slope: 1)` identity is how a guard reads an
+  // existing derive at all; the header says why it is not `passthrough`.
   inhibit "theta" {
-    metric    = passthrough(input: "theta_envelope")
+    metric    = linear("theta_envelope", midpoint: 0 uV, slope: 1)
     threshold = percentile(target_pct: theta_inhibit_rate, window: 2 min)
     action    = mute(release: 200 ms)
     kind      = "artifact"
   }
 
   inhibit "low" {
-    metric    = passthrough(input: "low_envelope")
+    metric    = linear("low_envelope", midpoint: 0 uV, slope: 1)
     threshold = percentile(target_pct: low_inhibit_rate, window: 2 min)
     action    = mute(release: 200 ms)
     kind      = "artifact"

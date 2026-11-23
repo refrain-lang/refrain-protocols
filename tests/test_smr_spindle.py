@@ -198,9 +198,11 @@ def test_the_two_vetoes_are_artifact_inhibits_and_the_two_guards_are_not():
         assert inh["action_release_ms"] == 200.0, name
         # Each watches its OWN derive through its OWN rate control: a swap
         # would resolve and pass a shape-only check while vetoing on the
-        # wrong band.
-        metric = next(a["value"] for a in inh["metric"]["args"] if a["name"] == "input")
-        assert metric["target"] == f"derive/{derive}", name
+        # wrong band. The derive is the identity's positional argument — see
+        # test_high_beta_is_an_inhibit_that_mutes for why it is `linear` and
+        # not `passthrough`.
+        assert inh["metric"]["callee"] == "linear", name
+        assert inh["metric"]["args"][0]["value"]["target"] == f"derive/{derive}", name
         assert inh["threshold"]["callee"] == "percentile", name
         pct = next(a["value"] for a in inh["threshold"]["args"] if a["name"] == "target_pct")
         assert pct["target"] == f"control/{rate}", name
@@ -216,11 +218,22 @@ def test_high_beta_is_an_inhibit_that_mutes():
     assert ir["inhibits"]["emg"]["action_kind"] == "mute"
     # It watches the high-beta derive, with its own percentile threshold fed
     # by the hbeta_inhibit_rate control (not the emg inhibit's strictness).
-    # (the metric must be a primitive call, so the derive sits inside
-    # passthrough(input: ...), the documented form for an inhibit on a derive)
-    assert hb["metric"]["callee"] == "passthrough"
-    arg = next(a["value"] for a in hb["metric"]["args"] if a["name"] == "input")
+    #
+    # The metric must be a primitive call, so an existing derive is carried
+    # through `linear(x, midpoint: 0 uV, slope: 1)` — the affine identity.
+    # NOT `passthrough`, which reads as the obvious choice and is wrong twice
+    # over: its implementation is an identity MONTAGE requiring a
+    # single-channel source, and refrain-core never implemented it as a
+    # compute primitive, so the protocol built on Python and raised
+    # `RuntimeError: ... PoC: unsupported compute primitive "passthrough"` on
+    # the Rust backend — which is the one a recorder session runs. Pinned by
+    # callee here and by both backends in test_both_backends.py.
+    assert hb["metric"]["callee"] == "linear"
+    arg = hb["metric"]["args"][0]["value"]
     assert arg["target"] == "derive/high_beta_envelope"
+    slope = next(a["value"] for a in hb["metric"]["args"] if a["name"] == "slope")
+    midpoint = next(a["value"] for a in hb["metric"]["args"] if a["name"] == "midpoint")
+    assert (slope["value"], midpoint["value"]) == (1.0, 0.0), "not the identity"
     assert hb["threshold"]["callee"] == "percentile"
     target_pct = next(a["value"] for a in hb["threshold"]["args"] if a["name"] == "target_pct")
     assert target_pct["target"] == "control/hbeta_inhibit_rate"
