@@ -1314,9 +1314,7 @@
           "hbeta_inhibit_rate",
           "artifact_guard",
           "artifact_strictness",
-          "smr_threshold_uv",
-          "theta_threshold_uv",
-          "low_threshold_uv"
+          "smr_threshold_uv"
         ]
       }
     },
