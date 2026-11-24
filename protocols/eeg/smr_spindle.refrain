@@ -76,15 +76,29 @@
 //     one keeps chasing a 2-minute rolling percentile.
 //     MUTED TIME IS NOW MEASURED, and there is more of it than this file used
 //     to admit, because theta and the low band mute as well as pausing the
-//     hold. On the engine replay the four inhibits mute roughly a third of
-//     block time between them (medians: theta 19.0%, low band 14.3%,
-//     high-beta 4.8%, EMG 3.4%, overlapping). The same run reports 66.3% of
-//     its window muted and only 6.8% of it as reward the trainee could HEAR,
-//     but do not read those two as session figures: the replay window is four
-//     minutes long and the session's two-minute `warmup` phase mutes 49.1% of
-//     it by design, where in a real session warmup is two minutes of thirty.
-//     Separating block-only audible time from phase-muted time needs a
-//     phase-aware measurement this tool does not do yet.
+//     hold. On the engine replay (n=13) this protocol leaves the output
+//     SILENT 65.8% of the scored window and delivers only 6.8% of it as
+//     reward the trainee could HEAR.
+//     THAT 65.8% IS ALL INHIBITS AND NO WARMUP. An earlier revision of this
+//     note said the four-minute replay window was half `warmup` muting "by
+//     design" and that the figure should therefore be discounted. It should
+//     not: the harness starts with `skip_warmup=True`, which bypasses a
+//     leading output-muted phase, so no warmup mute is ever applied. The
+//     measurement proves it rather than asserting it -- the same run reports
+//     34.3% silent for a variant whose only change is two guards becoming
+//     flags, and 34.3% is below the 49.1% of chunks that merely SIT IN the
+//     warmup phase. Had that phase actually muted, nothing could be silent
+//     less than 49.1% of the time. So the `phase/output_muted` tap reports a
+//     DECLARATION the replay does not honour, and the silence figures are
+//     inhibit-caused silence, which is the quantity that matters here.
+//     THE PER-INHIBIT ROWS ARE ACTIVITY, NOT MUTING. `theta 19.0%`,
+//     `low band 14.3%`, `high-beta 4.8%`, `EMG 3.4%` come from the
+//     `inhibit/<name>` tap, which reports when a guard is ABOVE THRESHOLD.
+//     For a `mute` action the muting is strictly larger, because the gate
+//     drags a 200 ms release behind every crossing; for a `flag` action it is
+//     zero. They are useful for how often each guard fires and useless for
+//     attributing the silence, and the harness now labels them `active <name>`
+//     for exactly that reason.
 //     MUTED TIME IS THE FIGURE TO WATCH, in both modes including the default
 //     adaptive one, because the tone is the one thing this protocol delivers
 //     earlier than smr.refrain and a mute is what takes it away. Two parts to
