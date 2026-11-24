@@ -75,7 +75,11 @@ GT_TOLERANCE_MS = 200.0
 GT_PCT = 80.0
 LOOKAHEAD_MS = 500.0
 REFRACTORY_MS = 1000.0
-CORPUS = "/Users/jcroall/tmp/file_io_corpus"
+# Override with ONSET_CORPUS. The default is one developer's local path and
+# is useless to anyone else; it stays only so the tool runs with no argument
+# on the machine the measurements in the design doc were taken on.
+CORPUS = os.environ.get("ONSET_CORPUS", "/Users/jcroall/tmp/file_io_corpus")
+MIN_BAR_UV = 0.5
 SP_DIR = os.environ.get("ONSET_WORKDIR", tempfile.mkdtemp(prefix="onset-"))
 os.makedirs(f"{SP_DIR}/variants", exist_ok=True)
 TEMPLATE = pathlib.Path(PROTOCOL).read_text()
@@ -184,6 +188,7 @@ def main() -> int:
     recordings = list(load_recordings(CORPUS, fs, MINUTES))
 
     grad_rows, crit_rows, spindle_counts, peaks, bars = [], [], [], [], []
+    excluded: list[tuple[str, str]] = []
     for case, rec in recordings:
         n = len(next(iter(rec.values())))
         X = np.column_stack([rec.get(c.upper(), np.zeros(n)) for c in chans])
@@ -204,6 +209,16 @@ def main() -> int:
         if not sp0 or peak0 is None:
             continue
         bar = K * peak0
+        # A degenerate recording produces a bar of ~0, which makes the level
+        # condition always true and the trigger fire at whatever rate the
+        # refractory allows. The predecessor harness excluded these by crest
+        # factor and flat envelope and reported them separately; dropping that
+        # check let one recording through with a 0.00 uV bar. Medians are
+        # robust enough that it cannot distort a comparison, but it has no
+        # business in the absolute figures.
+        if bar < MIN_BAR_UV:
+            excluded.append((case, f"degenerate bar {bar:.3f} uV"))
+            continue
         # A voltage control cannot be bound at resolve time ("voltage controls
         # are session controls"), so the per-subject bar goes in as a literal.
         # In a real session this is what the control's `seed` block computes
@@ -259,6 +274,8 @@ def main() -> int:
         c["per_min"] = edges.sum() / (edges.size / fs / 60.0)
         crit_rows.append(c)
 
+    for case_name, why in excluded:
+        print(f"excluded {case_name}: {why}")
     if bars:
         print(f"per-subject bar: median {statistics.median(bars):.2f} uV, "
               f"range {min(bars):.2f}-{max(bars):.2f} uV (k={K:g} x each recording's median peak)")
