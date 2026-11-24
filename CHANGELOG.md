@@ -2,7 +2,80 @@
 
 ## Unreleased
 
+## 0.3.0 — the spindle-contingent SMR protocol
+
 ### Added
+- **`protocols/eeg/smr_spindle.refrain`** — SMR training contingent on a
+  *sustained spindle* rather than an instantaneous threshold crossing. One
+  12–16 Hz `band_envelope` at 320 ms declared latency carries the reward; the
+  criterion is a 500 ms `dwell` with a 120 ms dip `tolerance`. Theta and the
+  low-alpha shoulder are `kind = "artifact"` inhibits, so a contaminated
+  sample freezes the hold instead of resetting it; high-beta and muscle are
+  artifact mutes. An always-on continuous tone shapes toward the criterion and
+  a ding marks the dwell.
+- `tests/test_smr_spindle.py` — pins the band wiring, the reward shape, the
+  percentile-only high-beta guard and the resolve-time duration control. Each
+  docstring says which fact it establishes, so a later edit that breaks one
+  knows what it broke.
+- **`tests/test_both_backends.py`** — every protocol must build and step on
+  BOTH evaluator backends. It exists because one did not: `smr_spindle` gave
+  its inhibits `metric = passthrough(input: <derive>)`, which the Python
+  resolver accepts (it checks only that the metric is a call) and which
+  `refrain-core`'s compute dispatch panics on, because `passthrough` lives in
+  that crate only as a montage. A host resolves `backend="auto"` to Rust
+  whenever the wheel is importable, and the recorder ships the wheel — so a
+  real session runs Rust, and 46 of 47 protocols were fine while nothing in
+  CI could see the one that was not.
+- `tools/measure_spindle_front_end.py` and additions to
+  `tools/measure_envelopes.py`: per-inhibit activity, a decomposition of the
+  reward over its `reward/condition[n]` taps, and a `_med()` that prints `--`
+  rather than a confident `0.0%` when nothing measured a figure.
+
+### Changed
+- **The reward criterion pays out.** As first written the protocol rewarded
+  **1.2%** of a block against a 25–40% design target. Not a tuning problem:
+  every marginal was calibrated (SMR above its own threshold 60.7% of the
+  time, the two vetoes satisfied 81% and 85%), but a 500 ms criterion over
+  three correlated terms almost never completes, because one dipping sample
+  in any term zeroes the streak. Moving theta and the low band out of the
+  conjunction into artifact inhibits, plus the 120 ms tolerance, reaches
+  **27.8% reward time** at 10.7 reward onsets per minute on the
+  thirteen-recording replay (median, real engine).
+- The `refrain` floor is **`>= 0.25.1`**, and CI checks out the same tag. It
+  carries the dip `tolerance` on `dwell` / `dwell_rearm` / `hold_for` and the
+  `kind` label on inhibits that this protocol needs. The floor, the CI pin and
+  whatever a session actually has installed are three separate declarations;
+  they move together or the first two stop meaning anything — the CI pin was
+  left at v0.24.0 in the first draft of that bump, which would have validated
+  the whole corpus against a refrain below the declared floor.
+- Two inhibit-band thresholds and their baseline-mode microvolt controls are
+  **gone** rather than left as declarations nothing reads. An inhibit's
+  threshold must be a literal constructor call, so neither guard can take the
+  `threshold_style` switch; in "baseline" mode only the SMR reward threshold
+  becomes an operator-set value and all three guards keep chasing 2-minute
+  rolling percentiles.
+
+### Fixed
+- `smr_spindle` could not have started a session (see `test_both_backends.py`
+  above). The inhibit metric is now `linear(..., midpoint: 0 uV, slope: 1)`,
+  verified equivalent to the `passthrough` form to 8.3e-15 on
+  `output/audio_gain`.
+- The protocol header discounted its own silence figure wrongly. It told the
+  reader that half of the measured muting was the warmup phase "by design";
+  the harness runs `skip_warmup=True`, which bypasses a leading output-muted
+  phase, so **none** of it is warmup. The honest figure is 65.8% of the scored
+  window silent with 6.8% delivered as audible reward — worse than the note
+  implied.
+- `tools/measure_envelopes.py` printed per-inhibit rows as `mute <name>` while
+  reading the `inhibit/<name>` tap, which reports when a guard is **above
+  threshold**. For a `mute` action the real muting is strictly larger (the
+  gate drags a 200 ms release behind every crossing); for a `flag` action it
+  is zero. An A-B proved the label wrong — swapping two guards to flags moved
+  the aggregate muted share 66.3% → 34.2% while those rows did not move at
+  all. Renamed `active <name>`.
+
+### Also in this release
+#### Tooling
 - `tools/session_report/`: `python -m tools.session_report <session_folder>
   [--protocol PATH | --protocols-ref REF] [--compare PATH ...] [--json OUT]`
   reports how the protocol behaved in a saved coherence-recorder session. It
