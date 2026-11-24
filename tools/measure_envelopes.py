@@ -271,7 +271,16 @@ def measure(path: Path, amp, recordings: list, chunk_s: float = 0.05) -> list[di
                 row["silent_pct"] = 100.0 * float((~audible).mean())
                 row["heard_pct"] = 100.0 * float((held & audible).mean())
             for nm in inhibit_names:
-                row[f"mute_{nm}_pct"] = tap_share(f"inhibit/{nm}")
+                # `inhibit/<name>` reports when the inhibit is ACTIVE, which is
+                # NOT the same as muting: `action` decides what happens to the
+                # audio and `kind` decides how the sample is scored, and the two
+                # are independent. A `flag()` inhibit is active without silencing
+                # anything. Calling this "mute" was wrong and an A-B proved it --
+                # swapping two guards from `mute(release: 200 ms)` to `flag()`
+                # moved the aggregate `muted` share 66.3% -> 34.2% while these
+                # per-inhibit rows did not move at all. Read the aggregate for
+                # muting; read these for how often each guard fires.
+                row[f"active_{nm}_pct"] = tap_share(f"inhibit/{nm}")
             rows.append(row)
         for e in envs:
             src = streams[e["source"]]
@@ -331,9 +340,13 @@ def main(argv=None) -> int:
                       + "  ".join(f"{k[:-4]} {_med(rw, k)}" for k in tk)
                       + f"  all-at-once {_med(rw, 'all_terms_pct')}"
                       + f"  after 500ms hold {_med(rw, 'held_pct')}")
-            for nm in sorted({k[5:-4] for r in rw for k in r
-                              if k.startswith("mute_") and k.endswith("_pct")}):
-                print(f"{'':40s} {'  mute ' + nm:20s} median {_med(rw, f'mute_{nm}_pct')}")
+            # removeprefix/removesuffix rather than a hardcoded slice: this was
+            # `k[5:-4]`, sized for the old `mute_` prefix, and renaming the key
+            # to `active_` silently turned "theta" into "e_theta".
+            for nm in sorted({k.removeprefix("active_").removesuffix("_pct")
+                              for r in rw for k in r
+                              if k.startswith("active_") and k.endswith("_pct")}):
+                print(f"{'':40s} {'  active ' + nm:20s} median {_med(rw, f'active_{nm}_pct')}")
         got = [r for r in got if r["derive"] != "(reward)"]
         for e in sorted({(r["derive"], r["shape"], r["band"], r["latency_ms"]) for r in got}):
             sel = [r for r in got if r["derive"] == e[0]]
