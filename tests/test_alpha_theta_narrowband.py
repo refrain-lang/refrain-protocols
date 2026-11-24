@@ -1,3 +1,4 @@
+import importlib.util
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +8,23 @@ from refrain import parse
 from refrain.amp_profile import load_amp_profile
 from refrain.eval_ import Evaluator
 from refrain.resolver import resolve
+
+# The rust case needs a locally built `refrain_core` wheel. CI builds one with
+# maturin before running the suite, so skipping here costs no coverage where it
+# counts -- and tests/test_both_backends.py FAILS if the wheel is missing under
+# CI, so the skip cannot hide. Without this, `pytest tests/` fails five tests in
+# any environment without a Rust toolchain, and a gate with expected failures in
+# it is where an unexpected one hides.
+_BACKENDS = [
+    "python",
+    pytest.param(
+        "rust",
+        marks=pytest.mark.skipif(
+            importlib.util.find_spec("refrain_core") is None,
+            reason="refrain_core wheel not built (build with maturin, as CI does)",
+        ),
+    ),
+]
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -108,7 +126,7 @@ def test_narrowband_theta_progress_uses_a_frozen_settle_reference():
     assert ir.session.phases[0].output_muted is True
 
 
-@pytest.mark.parametrize("backend", ["python", "rust"])
+@pytest.mark.parametrize("backend", _BACKENDS)
 def test_authored_theta_rise_changes_early_texture_before_ratio_target(backend):
     """Authored synthetic components test code behavior, not clinical efficacy."""
     source = REFRAIN.read_text().replace(
@@ -141,7 +159,7 @@ def test_authored_theta_rise_changes_early_texture_before_ratio_target(backend):
     assert outputs[5] > outputs[2] + 0.5
 
 
-@pytest.mark.parametrize("backend", ["python", "rust"])
+@pytest.mark.parametrize("backend", _BACKENDS)
 def test_fast_guard_catches_a_burst_without_muting_a_gradual_rise(backend):
     """Authored fast activity separates a slow drift from a brief large surge."""
     source = REFRAIN.read_text().replace(

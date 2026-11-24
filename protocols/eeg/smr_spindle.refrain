@@ -74,6 +74,31 @@
 //     high-beta guard is percentile-only in BOTH modes. In "baseline" mode the
 //     other three bands sit at fixed operator-set microvolt values while this
 //     one keeps chasing a 2-minute rolling percentile.
+//     MUTED TIME IS NOW MEASURED, and there is more of it than this file used
+//     to admit, because theta and the low band mute as well as pausing the
+//     hold. On the engine replay (n=13) this protocol leaves the output
+//     SILENT 65.8% of the scored window and delivers only 6.8% of it as
+//     reward the trainee could HEAR.
+//     THAT 65.8% IS ALL INHIBITS AND NO WARMUP. An earlier revision of this
+//     note said the four-minute replay window was half `warmup` muting "by
+//     design" and that the figure should therefore be discounted. It should
+//     not: the harness starts with `skip_warmup=True`, which bypasses a
+//     leading output-muted phase, so no warmup mute is ever applied. The
+//     measurement proves it rather than asserting it -- the same run reports
+//     34.3% silent for a variant whose only change is two guards becoming
+//     flags, and 34.3% is below the 49.1% of chunks that merely SIT IN the
+//     warmup phase. Had that phase actually muted, nothing could be silent
+//     less than 49.1% of the time. So the `phase/output_muted` tap reports a
+//     DECLARATION the replay does not honour, and the silence figures are
+//     inhibit-caused silence, which is the quantity that matters here.
+//     THE PER-INHIBIT ROWS ARE ACTIVITY, NOT MUTING. `theta 19.0%`,
+//     `low band 14.3%`, `high-beta 4.8%`, `EMG 3.4%` come from the
+//     `inhibit/<name>` tap, which reports when a guard is ABOVE THRESHOLD.
+//     For a `mute` action the muting is strictly larger, because the gate
+//     drags a 200 ms release behind every crossing; for a `flag` action it is
+//     zero. They are useful for how often each guard fires and useless for
+//     attributing the silence, and the harness now labels them `active <name>`
+//     for exactly that reason.
 //     MUTED TIME IS THE FIGURE TO WATCH, in both modes including the default
 //     adaptive one, because the tone is the one thing this protocol delivers
 //     earlier than smr.refrain and a mute is what takes it away. Two parts to
@@ -116,24 +141,73 @@
 //     path, so the mute responds to contamination that lasts rather than to
 //     every flicker. A mute arriving a fifth of a second later costs little;
 //     a mute chattering costs the tone.
-//   - The two remaining vetoes (theta, low band) stay in the conjunction as
-//     loose `below` terms: 80th and 85th percentile defaults. The low band is
-//     looser because a trainee whose alpha peak sits at 12 Hz has that veto
-//     overlapping the reward band's edge; at a tight setting it would trip
-//     whenever the reward band is high and nothing would ever be rewarded.
-//     85 is meant to degrade the reward rather than deadlock it, and that is
-//     an intention, not a measured property. Loose MARGINALS are necessary
-//     and not sufficient: each percentile threshold self-normalises, so the
-//     rate at which any one condition passes cannot move no matter what the
-//     trainee's spectrum looks like. What collapses is the JOINT
-//     satisfaction of three correlated conditions held continuously for
-//     500 ms. Measured once, on a synthetic 12 Hz alpha peak at 20 uV: every
-//     marginal stayed within a few points of baseline while reward events
-//     fell about 13-fold (26 -> 2 per 150 s). Synthetic, one channel, one
-//     amplitude, so treat it as a direction and not a number - but the
-//     12 Hz-alpha trainee is a real case and a loose low-band default is not
-//     by itself a defence. The corpus replay gate reports reward time, which
-//     is what would settle it.
+//   - THETA AND THE LOW BAND ARE INHIBITS LABELLED `kind = "artifact"`, not
+//     terms inside the reward conjunction. In the conjunction a dip in either
+//     one resets the dwell, and a 500 ms criterion then almost never
+//     completed. Measured over the twelve-recording replay corpus: SMR alone
+//     is above its own threshold 61.0% of the time, theta or the alpha
+//     shoulder is high 30.3% of the time, and all three conditions held
+//     CONTINUOUSLY for 500 ms only 1.3% of it - against a design target of
+//     25-40%. As artifact inhibits those samples are scored as neither
+//     success nor failure: refrain's dwell checks observability BEFORE it
+//     looks at the condition, so the streak and the dip counter both freeze,
+//     and the reward reads "500 ms of observable SMR" with contamination
+//     pausing the clock rather than restarting it. That restructuring alone
+//     carries most of the gain - 5.9% at zero tolerance, before any dip is
+//     forgiven.
+//     TWO MEASUREMENT BASES, and they differ by about three points, so do not
+//     mix them. The sweep that PICKED these numbers ran a transcription of
+//     refrain v0.25.1's `DwellImpl.step` over the corpus envelopes, which is
+//     cheap enough to sweep twelve variants. The chosen variant was then
+//     replayed through the REAL evaluator, which is the figure to quote: 27.8%
+//     median reward time (n=13), 10.7 reward onsets per minute, against the
+//     transcription's 30.7%. The marginals agree closely - SMR above its
+//     threshold 60.7% on the engine against 61.0% transcribed - so the gap is
+//     in the hold, not in the signal path, and it runs in the conservative
+//     direction. Both figures sit inside the 25-40% target band; a tolerance
+//     BELOW 120 ms would not, once the three points are taken off.
+//     TWO COSTS, both real, neither measurable away.
+//     (1) Theta and the alpha shoulder STOP BEING HARD VETOES. A spindle
+//     during mild contamination can now eventually pay out, where before the
+//     reward was blocked outright. If either has to be an absolute veto, the
+//     shape to use instead is the three-term conjunction with a ~300 ms
+//     tolerance (33.9% reward time on the same corpus) - which forgives
+//     genuine sub-threshold SMR along with the contamination, and forgives
+//     most of a 500 ms criterion. That is a signal-definition choice, not a
+//     measurement one.
+//     (2) NEITHER GUARD CAN TAKE THE `threshold_style` SWITCH any more. An
+//     inhibit's threshold must be a literal constructor call (resolver.py
+//     `_resolve_inhibit`), and choosing between `absolute(...)` and
+//     `percentile(...)` is a choice at the top level, not inside an argument
+//     where it could be folded. So the two inhibit-band thresholds and their
+//     two baseline-mode microvolt controls are GONE rather than left as
+//     declarations nothing reads: in "baseline" mode only the SMR reward
+//     threshold becomes an operator-set microvolt value, and all three guards
+//     keep chasing 2-minute rolling percentiles - the asymmetry the high-beta
+//     guard already had, now shared by all three. What that loses is
+//     specific: a rolling percentile cannot see a SUSTAINED elevation by
+//     construction, because a trainee who is drowsy throughout still has to
+//     beat their own 80th percentile to trip the theta guard, and the
+//     absolute thresholds were the one configuration that could. Restoring
+//     them takes two inhibits per band, each pinned harmless in the other
+//     mode by folding the switch into an ARGUMENT the way `artifact_guard` is
+//     folded into the EMG guard's `target_pct`. Not done here: it doubles the
+//     guard count on a protocol that has never been trialled, and the default
+//     mode is adaptive.
+//   - THE DWELL FORGIVES A DIP OF UP TO 120 ms (`tolerance:`, refrain
+//     v0.25.0). Forgive, don't credit: a forgiven sample never advances the
+//     streak, so a completed hold is always 500 ms genuinely above threshold
+//     and the wall-clock span it took is longer - 712 ms median on the corpus.
+//     120 ms sits on a plateau, not a knife edge: transcribed, 110 ms rewards
+//     28.5% of the block, 120 ms 30.7%, 130 ms 32.4% and 140 ms 36.2%, so
+//     +-20 ms stays inside the 25-40% band even after the engine's three
+//     points come off the top. It is a LITERAL and not a control, for the same
+//     reason `spindle_duration` is resolve-time: `DwellImpl` bakes
+//     `tolerance_samples` in its constructor and has no `update_control`
+//     hook, so a live change would be silently discarded. It also ROUNDS to
+//     samples, and upstream deliberately does not floor it at one - at 256 Hz
+//     120 ms is 31 samples, while anything under about 2 ms rounds to zero and
+//     forgives nothing, which is what such a declaration asked for.
 //   - Spindle duration is the control `spindle_duration`, default 500 ms: the
 //     published minimum for a spindle (AASM, >= 0.5 s). smr.refrain's 250 ms
 //     is a reaction-time dwell, not a spindle criterion. Range 250-1500 ms.
@@ -233,7 +307,7 @@ protocol "smr_spindle" {
       "smr_latency", "spindle_duration",
       "theta_inhibit_rate", "low_inhibit_rate", "hbeta_inhibit_rate",
       "artifact_guard", "artifact_strictness",
-      "smr_threshold_uv", "theta_threshold_uv", "low_threshold_uv",
+      "smr_threshold_uv",
     ]
   }
 
@@ -296,26 +370,6 @@ protocol "smr_spindle" {
     live_tunable = true
   }
 
-  // Theta INHIBIT threshold — loose veto by default (80th pct): blocks
-  // reward only during genuine drowsiness, not as a constant co-target.
-  threshold "theta_t" {
-    signal       = "theta_envelope"
-    type         = threshold_style == "baseline"
-                     ? absolute(value: theta_threshold_uv)
-                     : percentile(target_pct: theta_inhibit_rate, window: 2 min)
-    live_tunable = true
-  }
-
-  // Low-band INHIBIT threshold - same loose veto as theta, on the 8-12 Hz
-  // shoulder that leaks into the SMR band.
-  threshold "low_t" {
-    signal       = "low_envelope"
-    type         = threshold_style == "baseline"
-                     ? absolute(value: low_threshold_uv)
-                     : percentile(target_pct: low_inhibit_rate, window: 2 min)
-    live_tunable = true
-  }
-
   // EMG artifact guard — muscle (jaw/neck) shows up 50-100 Hz. `artifact_guard`
   // toggles the guard on/off; refrain's inhibit resolver requires `threshold`
   // to be a literal constructor call (no top-level mode fold there, unlike
@@ -334,30 +388,81 @@ protocol "smr_spindle" {
 
   // High-beta guard - mutes the output rather than gating the reward (see
   // header). The threshold must be a literal constructor call; its own rate
-  // control keeps it independent of the theta and low-band vetoes. An inhibit's
-  // metric must be a primitive call, so the derive is wrapped in
-  // `passthrough(input: ...)`, refrain's documented form for an inhibit that
-  // reads one derive. The guard reads the declared-latency derive rather than
-  // a second bandpower stage with its own unchosen delay. That idiom costs
-  // the editor: it is the one shape here that catalog v1's matcher cannot
-  // read (see tests/test_corpus_roundtrip.py's KNOWN_GAPS entry).
+  // control keeps it independent of the theta and low-band vetoes.
+  //
+  // WHY `linear(..., midpoint: 0 uV, slope: 1)` AND NOT `passthrough`. An
+  // inhibit's metric must be a primitive call, so a guard that watches an
+  // existing derive needs some primitive to carry it through - reading the
+  // declared-latency envelope rather than adding a second bandpower stage with
+  // its own unchosen delay. This file used `passthrough(input: ...)` and called
+  // it refrain's documented form for that. BOTH HALVES OF THAT WERE WRONG.
+  // `PassthroughImpl`'s own docstring calls it a "first-class identity
+  // MONTAGE" that "requires exactly one source channel" - it is the sanctioned
+  // replacement for the `referential(reference: "device")` workaround, not a
+  // compute node. And `refrain-core` never implemented it as one: its compute
+  // dispatch ends `other => panic!("PoC: unsupported compute primitive")`, and
+  // `passthrough` appears in that crate only as a montage. The Python resolver
+  // accepts it because it checks only that the metric IS a call.
+  // So the protocol ran on the Python reference backend and FAILED TO START on
+  // the Rust one - and the recorder resolves its default `auto` to Rust
+  // whenever the wheel is importable, which it is, so this protocol could not
+  // have run a session. Measured: 46 of the 47 protocols in this library build
+  // and step on both backends; this was the one that did not.
+  // `linear(x, midpoint, slope)` is an affine map, so slope 1 about 0 is the
+  // identity, and Rust implements it. Verified bit-identical, not assumed. On
+  // one recording, same chunking: `reward.event.holds` and `muted` hash
+  // identical between the two metrics on Python AND between Python and Rust
+  // with this metric, while `output/audio_gain` differs by at most 8.3e-15 -
+  // last-bit rounding in the sigmoid, on the continuous tone value and not on
+  // the reward or the gate. Then over the whole twelve-recording corpus on the
+  // RUST backend: 27.8% reward time, 6.8% audible, 65.8% silent, 10.7 onsets
+  // per minute, theta muting 19.0% and the low band 14.3% - every figure
+  // identical to the Python replay of the `passthrough` version. So the
+  // numbers in this header are production-backend numbers, and the metric
+  // change moved none of them.
+  // The proper fix is upstream - either implement `passthrough` as a compute
+  // primitive in refrain-core, or give the language a way for an inhibit to
+  // name a derive directly. Revert this to whichever lands.
+  // The idiom still costs the editor: a wrapped derive is the one shape here
+  // that catalog v1's matcher cannot read (see tests/test_corpus_roundtrip.py's
+  // KNOWN_GAPS entry), and that is unchanged by which primitive wraps it.
   // 95 is the loosest the rate control allows, on purpose: this is the guard
   // that takes the SOUND away, and a percentile decides how often it fires
   // regardless of the signal. See the header.
   inhibit "hbeta" {
-    metric    = passthrough(input: "high_beta_envelope")
+    metric    = linear("high_beta_envelope", midpoint: 0 uV, slope: 1)
     threshold = percentile(target_pct: hbeta_inhibit_rate, window: 2 min)
     action    = mute(release: 200 ms)
   }
 
+  // Theta and low-band guards - the two that used to be `below` terms inside
+  // the reward conjunction. `kind = "artifact"` is what makes the move worth
+  // making: it tells the engine these samples are UNOBSERVABLE rather than
+  // failed, so the dwell freezes its streak and its dip counter instead of
+  // resetting them. Without the label a contaminated stretch longer than the
+  // tolerance would reset the streak through the dip path and the move would
+  // buy nothing. Percentile-only in both threshold styles - see the header's
+  // second cost. The `linear(..., slope: 1)` identity is how a guard reads an
+  // existing derive at all; the header says why it is not `passthrough`.
+  inhibit "theta" {
+    metric    = linear("theta_envelope", midpoint: 0 uV, slope: 1)
+    threshold = percentile(target_pct: theta_inhibit_rate, window: 2 min)
+    action    = mute(release: 200 ms)
+    kind      = "artifact"
+  }
+
+  inhibit "low" {
+    metric    = linear("low_envelope", midpoint: 0 uV, slope: 1)
+    threshold = percentile(target_pct: low_inhibit_rate, window: 2 min)
+    action    = mute(release: 200 ms)
+    kind      = "artifact"
+  }
+
   reward {
     event = dwell(
-      condition: all_of([
-        above("smr_envelope",       "smr_t"),
-        below("theta_envelope",     "theta_t"),
-        below("low_envelope",       "low_t"),
-      ]),
-      duration: spindle_duration
+      condition: above("smr_envelope", "smr_t"),
+      duration: spindle_duration,
+      tolerance: 120 ms
     )
     continuous = sigmoid("smr_envelope" / "smr_t",
                          midpoint: 1.0, steepness: 3)
@@ -453,7 +558,8 @@ protocol "smr_spindle" {
     // count once in __init__ and has no `update_control` hook, so a live
     // change would be silently discarded. DwellRearmImpl and HoldForImpl do
     // carry that hook; if this is ever wanted live, the upstream fix is to
-    // copy it onto DwellImpl. (Pinned to refrain v0.24.0; not done here.)
+    // copy it onto DwellImpl. (Still absent at refrain v0.25.1, which added
+    // `tolerance` to the same primitive without adding the hook; not done here.)
     // Kept in `advanced_controls` with the band edges and smr_latency, which
     // are resolve-time too: it is an advanced setting either way.
     spindle_duration = duration {
@@ -506,28 +612,6 @@ protocol "smr_spindle" {
         from       = "smr_envelope"
         window     = 60 s
         target_pct = smr_reward_pct
-      }
-    }
-    theta_threshold_uv = voltage {
-      default      = 8.0 uV
-      range        = (2.0 uV, 30.0 uV)
-      label        = "Theta threshold"
-      live_tunable = true
-      seed = percentile {
-        from       = "theta_envelope"
-        window     = 60 s
-        target_pct = theta_inhibit_rate
-      }
-    }
-    low_threshold_uv = voltage {
-      default      = 8.0 uV
-      range        = (2.0 uV, 30.0 uV)
-      label        = "Low-band threshold"
-      live_tunable = true
-      seed = percentile {
-        from       = "low_envelope"
-        window     = 60 s
-        target_pct = low_inhibit_rate
       }
     }
   }

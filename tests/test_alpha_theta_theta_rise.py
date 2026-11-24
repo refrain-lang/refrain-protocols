@@ -2,6 +2,7 @@
 
 These cases establish code behavior, not clinical efficacy or real EEG truth.
 """
+import importlib.util
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,23 @@ from refrain import parse
 from refrain.amp_profile import load_amp_profile
 from refrain.eval_ import Evaluator
 from refrain.resolver import resolve
+
+# The rust case needs a locally built `refrain_core` wheel. CI builds one with
+# maturin before running the suite, so skipping here costs no coverage where it
+# counts -- and tests/test_both_backends.py FAILS if the wheel is missing under
+# CI, so the skip cannot hide. Without this, `pytest tests/` fails five tests in
+# any environment without a Rust toolchain, and a gate with expected failures in
+# it is where an unexpected one hides.
+_BACKENDS = [
+    "python",
+    pytest.param(
+        "rust",
+        marks=pytest.mark.skipif(
+            importlib.util.find_spec("refrain_core") is None,
+            reason="refrain_core wheel not built (build with maturin, as CI does)",
+        ),
+    ),
+]
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,7 +66,7 @@ def _run_case(*, theta_after: float, alpha_after: float, backend: str) -> tuple[
     return before, after, ratio, crossover
 
 
-@pytest.mark.parametrize("backend", ["python", "rust"])
+@pytest.mark.parametrize("backend", _BACKENDS)
 def test_theta_rise_brightens_approach_before_crossover_without_alpha_help(backend):
     before, after, ratio, crossover = _run_case(theta_after=10.0, alpha_after=20.0, backend=backend)
     assert ratio < 1.0
@@ -56,7 +74,7 @@ def test_theta_rise_brightens_approach_before_crossover_without_alpha_help(backe
     assert crossover == 0
 
 
-@pytest.mark.parametrize("backend", ["python", "rust"])
+@pytest.mark.parametrize("backend", _BACKENDS)
 def test_alpha_drop_alone_does_not_brighten_theta_approach(backend):
     before, after, ratio, crossover = _run_case(theta_after=5.0, alpha_after=3.0, backend=backend)
     assert ratio > 1.0
@@ -64,7 +82,7 @@ def test_alpha_drop_alone_does_not_brighten_theta_approach(backend):
     assert crossover > 0
 
 
-@pytest.mark.parametrize("backend", ["python", "rust"])
+@pytest.mark.parametrize("backend", _BACKENDS)
 def test_modest_ten_percent_theta_rise_increases_emitted_approach(backend):
     before, after, ratio, crossover = _run_case(
         theta_after=5.5, alpha_after=20.0, backend=backend,
