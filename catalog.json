@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 47,
+  "count": 48,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -1274,6 +1274,50 @@
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
         "control_ref": "library/operant/smr_sham@1.0"
+      }
+    },
+    {
+      "file": "protocols/eeg/smr_spindle.refrain",
+      "name": "smr_spindle",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "exploratory",
+        "description": "SMR spindle (12-16 Hz) up-training on declared-latency envelopes - practitioner-selected site, bands, and thresholds",
+        "title": "SMR spindle training",
+        "summary": "Rewards 12-16 Hz sensorimotor spindles while inhibiting theta, the 8-12 Hz band and high-beta, at a chosen site, with adaptive or baseline-fixed thresholds.",
+        "family": "smr_spindle",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "modality": "eeg",
+        "goals": [
+          "focus_attention",
+          "sleep_quality"
+        ],
+        "author": "Peak Mind",
+        "citation": "Wyrwicka W. & Sterman M.B. (1968), conditioning of sensorimotor spindles; the band, criterion and inhibits here are not from that work",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "advanced_controls": [
+          "site",
+          "smr_lo_hz",
+          "smr_hi_hz",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "low_lo_hz",
+          "low_hi_hz",
+          "hbeta_lo_hz",
+          "hbeta_hi_hz",
+          "smr_latency",
+          "spindle_duration",
+          "theta_inhibit_rate",
+          "low_inhibit_rate",
+          "hbeta_inhibit_rate",
+          "artifact_guard",
+          "artifact_strictness",
+          "smr_threshold_uv",
+          "theta_threshold_uv",
+          "low_threshold_uv"
+        ]
       }
     },
     {

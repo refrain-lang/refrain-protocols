@@ -96,6 +96,46 @@ KNOWN_GAPS = {
     # runnable, but catalog v1 cannot render them back through the visual
     # editor. Keep saves fail-closed until the editor supports this graph.
     "alpha_theta_narrowband_theta_rise.refrain",
+    # Out of subset for THREE independent reasons, only the first of which is
+    # a clean verdict. Measured at refrain v0.24.0 by removing them one at a
+    # time (an earlier version of this comment claimed one reason and a
+    # closing condition that does not close it):
+    #
+    #  1. `duration` is not in the editor's RENDERABLE_CONTROL_KINDS, and TWO
+    #     controls are `duration`: `smr_latency` AND `spindle_duration`.
+    #     Reported cleanly as "control kind 'duration' not renderable". This
+    #     is the reason describe_protocol returns today, because it is reached
+    #     first.
+    #  2. `band_envelope(latency: <a control>)`. The derive matcher's `_to_ms`
+    #     (editor/describe.py:168, from `_match_derive`:300) wants a literal
+    #     number+unit and gets a NameRef, so a control-bound latency is out
+    #     whatever kind the control is: swap both controls to `number` (a
+    #     renderable kind, which is what fixing (1) upstream amounts to here)
+    #     and describe reports "AttributeError: 'NameRef' object has no
+    #     attribute 'value'" instead of in_subset. Reproduced with the hbeta
+    #     inhibit deleted, so it is independent of (3).
+    #  3. `metric = passthrough(input: "<a derive>")` on an inhibit.
+    #     `_match_reward_component` (editor/describe.py:321-323) assumes an
+    #     inhibit metric is a `bandpower(input:, band:, window:)` and reads
+    #     `band.elements[0]` unconditionally; `passthrough` has no `band`, so
+    #     it reports "AttributeError: 'NoneType' object has no attribute
+    #     'elements'". With both `duration` controls gone and the latency a
+    #     literal, swapping this one metric to `bandpower(...)` is what moves
+    #     the file in-subset - so this is the last blocker, not a co-symptom.
+    #
+    # (2) and (3) are matcher bugs on idioms refrain documents, surfaced as
+    # exception types rather than as _NotInSubset decisions; describe's
+    # `except (..., AttributeError, ...)` keeps them from crashing the caller.
+    # Both need upstream fixes, and adding `duration` to
+    # RENDERABLE_CONTROL_KINDS on its own would move this file from a clean
+    # verdict to an internal-error reason, not into subset. Keeping the
+    # `passthrough` metric is deliberate (the `bandpower` alternative adds a
+    # second filter stage with its own unchosen delay, which is what this file
+    # exists to remove), so (3) closes upstream or not at all.
+    #
+    # NOTE: `test_known_gaps_stay_flagged` asserts only `in_subset is False`,
+    # never the reason, which is how the old one-reason story survived here.
+    "smr_spindle.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
