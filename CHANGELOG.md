@@ -2,6 +2,52 @@
 
 ## Unreleased
 
+### Changed
+- **`smr_spindle`: theta and the low-alpha shoulder no longer mute.** They are
+  `flag()` inhibits still carrying `kind = "artifact"`, so a contaminated
+  sample still freezes the reward hold — the tone simply keeps playing through
+  it. Measured on 13 recordings, three arms one line apart, one invocation:
+
+  | theta/low action | onsets/min | held | heard | silent |
+  |---|---|---|---|---|
+  | `mute(release: 200 ms)` (before) | 10.7 | 27.8% | 6.8% | 65.8% |
+  | `mute(release: 0 ms)` | 17.1 | 30.3% | 11.5% | 49.8% |
+  | **`flag()`** (now) | **17.1** | **30.3%** | **18.2%** | **34.3%** |
+
+  Audible reward nearly triples and silence halves. The middle arm is why the
+  credit is split honestly: it still mutes, yet reproduces the flag arm's
+  reward side to the decimal — so the **entire** reward-side gain is the 200 ms
+  release hangover coming off the artifact mask, and none of it is the change
+  of action. A mute-action artifact inhibit feeds the mask its *gated* signal,
+  which carries the release; a flag feeds the raw condition, which does not.
+  16.0 of the 31.5 silence points are the hangover; 15.5 are the silencing.
+
+  That middle arm is **not** a candidate. A release exists to stop an audio
+  gate chattering across its threshold, and at 0 ms the tone can flick on and
+  off — which the measurement cannot see, since it reports how *much* of the
+  window is silent, not how often it changed. A `flag()` has no audio gate, so
+  there is nothing to chatter.
+
+  **The cost:** theta and the alpha shoulder stop taking the tone away, so a
+  trainee hears the shaping tone through mild contamination that used to
+  silence it. The reward is unaffected. If either guard must silence, the
+  measurement prices that choice at 31.5 points of audible time.
+- **The `refrain` floor is `>= 0.26.0`, and not optionally.** An artifact label
+  on a `flag()` makes this protocol emit IR wire version **0.7**, which a
+  v0.25.x engine refuses at load. The previous mute form emitted 0.6, and so
+  does the `release: 0 ms` arm — the wire version follows the feature used,
+  never the size of the diff. CI checks out the same tag.
+
+### Fixed
+- The v0.3.0 entry below described high-beta and muscle as "artifact mutes".
+  They are **plain** mutes — `kind` is unset on both — and the difference is
+  load-bearing: at the reward stage refrain applies only the observability
+  mask, so an unlabelled mute does not freeze the hold. Those two guards
+  silence the tone while the streak keeps counting, which means a reward can be
+  credited for SMR the trainee never heard. Corrected in place; noted here
+  because v0.3.0 is already tagged and anyone diffing against that tag will see
+  the text move.
+
 ## 0.3.0 — the spindle-contingent SMR protocol
 
 ### Added
@@ -11,7 +57,7 @@
   criterion is a 500 ms `dwell` with a 120 ms dip `tolerance`. Theta and the
   low-alpha shoulder are `kind = "artifact"` inhibits, so a contaminated
   sample freezes the hold instead of resetting it; high-beta and muscle are
-  artifact mutes. An always-on continuous tone shapes toward the criterion and
+  plain mutes, which silence the tone WITHOUT freezing the hold. An always-on continuous tone shapes toward the criterion and
   a ding marks the dwell.
 - `tests/test_smr_spindle.py` — pins the band wiring, the reward shape, the
   percentile-only high-beta guard and the resolve-time duration control. Each

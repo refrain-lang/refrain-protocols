@@ -33,7 +33,7 @@ classifiers = [
 # floor and the signal path in one change. Raising it with that change instead
 # would have been equally defensible.
 dependencies = [
-  "refrain >= 0.25.1",
+  "refrain >= 0.26.0",
 ]
 
 [project.optional-dependencies]

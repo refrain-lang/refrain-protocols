@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: refrain-lang/refrain
-          ref: v0.25.1
+          ref: v0.26.0
           path: refrain-source
           persist-credentials: false
       - name: Install refrain + dev deps
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: refrain-lang/refrain
-          ref: v0.25.1
+          ref: v0.26.0
           path: refrain-source
           persist-credentials: false
       - name: Install refrain

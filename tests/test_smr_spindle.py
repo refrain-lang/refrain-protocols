@@ -194,8 +194,22 @@ def test_the_two_vetoes_are_artifact_inhibits_and_the_two_guards_are_not():
         ("low", "low_envelope", "low_inhibit_rate"),
     ):
         inh = ir["inhibits"][name]
-        assert inh["action_kind"] == "mute", name
-        assert inh["action_release_ms"] == 200.0, name
+        # `flag()`, not `mute`, and the two facts are independent: `action`
+        # decides what happens to the audio, `kind` decides how the sample is
+        # scored. The hold still freezes (that is `kind`); the tone no longer
+        # goes away (that is `action`). Measured on 13 recordings, three arms
+        # one line apart: mute+200ms release 10.7 onsets/min and 65.8% silent,
+        # mute+0ms release 17.1 and 49.8%, flag() 17.1 and 34.3%. The middle
+        # arm still mutes yet matches the flag arm's reward side exactly, so
+        # the whole reward-side gain is the 200 ms release coming off the
+        # artifact mask and none of it is the change of action.
+        assert inh["action_kind"] == "flag", name
+        # A flag has NO release, and that is the point rather than an omission:
+        # a release exists to stop an audio gate chattering across a threshold,
+        # and a flag has no audio gate. Pinning None here is what stops someone
+        # "restoring" a release and silently putting the 200 ms hangover back
+        # on the hold.
+        assert inh["action_release_ms"] is None, name
         # Each watches its OWN derive through its OWN rate control: a swap
         # would resolve and pass a shape-only check while vetoing on the
         # wrong band. The derive is the identity's positional argument — see
