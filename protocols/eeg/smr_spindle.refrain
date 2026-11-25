@@ -74,23 +74,52 @@
 //     high-beta guard is percentile-only in BOTH modes. In "baseline" mode the
 //     other three bands sit at fixed operator-set microvolt values while this
 //     one keeps chasing a 2-minute rolling percentile.
-//     MUTED TIME IS NOW MEASURED, and there is more of it than this file used
-//     to admit, because theta and the low band mute as well as pausing the
-//     hold. On the engine replay (n=13) this protocol leaves the output
-//     SILENT 65.8% of the scored window and delivers only 6.8% of it as
-//     reward the trainee could HEAR.
-//     THAT 65.8% IS ALL INHIBITS AND NO WARMUP. An earlier revision of this
-//     note said the four-minute replay window was half `warmup` muting "by
-//     design" and that the figure should therefore be discounted. It should
-//     not: the harness starts with `skip_warmup=True`, which bypasses a
-//     leading output-muted phase, so no warmup mute is ever applied. The
-//     measurement proves it rather than asserting it -- the same run reports
-//     34.3% silent for a variant whose only change is two guards becoming
-//     flags, and 34.3% is below the 49.1% of chunks that merely SIT IN the
-//     warmup phase. Had that phase actually muted, nothing could be silent
-//     less than 49.1% of the time. So the `phase/output_muted` tap reports a
-//     DECLARATION the replay does not honour, and the silence figures are
-//     inhibit-caused silence, which is the quantity that matters here.
+//     THETA AND THE LOW BAND NO LONGER MUTE. They are `flag()` inhibits
+//     carrying `kind = "artifact"`: the sample is still scored as neither
+//     success nor failure, so the hold freezes exactly as before, but the
+//     tone keeps playing. `action` decides what happens to the audio and
+//     `kind` decides how the sample is scored, and refrain treats them as
+//     independent axes (SPEC 4.6) -- this file is what that independence is
+//     for.
+//     MEASURED, n=13, three arms differing by ONE line each, one invocation:
+//
+//       theta/low action        onsets/min  held   heard  silent
+//       mute(release: 200 ms)      10.7     27.8%   6.8%  65.8%
+//       mute(release: 0 ms)        17.1     30.3%  11.5%  49.8%
+//       flag()                     17.1     30.3%  18.2%  34.3%
+//
+//     Audible reward nearly triples and silence halves. The middle arm is why
+//     the credit is split honestly: it still mutes, yet reproduces the flag
+//     arm's reward side to the decimal, so the ENTIRE reward-side gain is the
+//     200 ms release hangover coming off the artifact mask and none of it is
+//     the change of action. A mute-action artifact inhibit feeds the mask its
+//     GATED signal, which carries the release; a flag feeds the raw condition,
+//     which does not. 16.0 of the 31.5 silence points are that hangover, 15.5
+//     are the silencing itself.
+//     THAT MIDDLE ARM IS NOT A CANDIDATE, deliberately. A release exists to
+//     stop an audio gate chattering across its threshold, and at 0 ms the tone
+//     can flick on and off -- which the measurement cannot see, because
+//     silent_pct reports how MUCH of the window is silent, not how often it
+//     changed. A `flag()` has no audio gate at all, so there is nothing to
+//     chatter, which is why refrain gives a flag no release and why this file
+//     takes the hangover win that way instead.
+//     NONE OF THAT SILENCE WAS EVER WARMUP. The harness runs
+//     `skip_warmup=True`, which bypasses a leading output-muted phase, so the
+//     `phase/output_muted` tap reports a declaration the replay does not
+//     honour. Proof rather than assertion: 34.3% silent is BELOW the 49.1% of
+//     chunks that merely sit in the warmup phase, and had that phase muted,
+//     nothing could be silent less than 49.1% of the time.
+//     WHAT THIS COSTS. Theta and the alpha shoulder stop taking the tone away,
+//     so a trainee hears the shaping tone through mild contamination that used
+//     to silence it. The reward is unaffected -- the hold still freezes -- but
+//     the tone is no longer evidence that the signal is clean. If either guard
+//     must silence, the shape to use is a mute, and the measurement above
+//     prices it: 31.5 points of audible time.
+//     REQUIRES refrain >= 0.26.0, and not optionally. An artifact label on a
+//     `flag()` makes this file emit IR wire version 0.7, which a v0.25.x
+//     engine REFUSES at load. The shipped mute form emits 0.6, and so does the
+//     `release: 0 ms` arm -- the version follows the feature used, never the
+//     size of the diff.
 //     THE PER-INHIBIT ROWS ARE ACTIVITY, NOT MUTING. `theta 19.0%`,
 //     `low band 14.3%`, `high-beta 4.8%`, `EMG 3.4%` come from the
 //     `inhibit/<name>` tap, which reports when a guard is ABOVE THRESHOLD.
@@ -447,14 +476,14 @@ protocol "smr_spindle" {
   inhibit "theta" {
     metric    = linear("theta_envelope", midpoint: 0 uV, slope: 1)
     threshold = percentile(target_pct: theta_inhibit_rate, window: 2 min)
-    action    = mute(release: 200 ms)
+    action    = flag()
     kind      = "artifact"
   }
 
   inhibit "low" {
     metric    = linear("low_envelope", midpoint: 0 uV, slope: 1)
     threshold = percentile(target_pct: low_inhibit_rate, window: 2 min)
-    action    = mute(release: 200 ms)
+    action    = flag()
     kind      = "artifact"
   }
 
