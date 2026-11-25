@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 — the guards stop silencing the tone
+
 ### Changed
 - **`smr_spindle`: theta and the low-alpha shoulder no longer mute.** They are
   `flag()` inhibits still carrying `kind = "artifact"`, so a contaminated
