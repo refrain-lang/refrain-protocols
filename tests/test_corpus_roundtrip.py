@@ -136,6 +136,17 @@ KNOWN_GAPS = {
     # NOTE: `test_known_gaps_stay_flagged` asserts only `in_subset is False`,
     # never the reason, which is how the old one-reason story survived here.
     "smr_spindle.refrain",
+    #
+    # `smr_consolidated` is `smr_spindle` with the duration criterion removed,
+    # so it INHERITS all three gaps above unchanged and closes exactly when
+    # they do. Specifically: still two `duration` controls (`smr_latency` and
+    # `reward_dwell`, where the spindle file has `spindle_duration`), still a
+    # control-bound `band_envelope(latency:)`, still a non-`bandpower` inhibit
+    # metric. Verified at refrain v0.26.0: `describe_protocol` returns the same
+    # reason, "control kind 'duration' not renderable", for both files. Not
+    # re-derived one reason at a time the way the list above was — the shapes
+    # are identical by construction, and reason (1) is reached first either way.
+    "smr_consolidated.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
