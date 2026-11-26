@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+### Added
+- **`smr_consolidated` — "SMR training - continuous feedback".** The guard
+  redesign without the spindle criterion: same band, same envelope, same four
+  guards, same thresholds, same session shape as `smr_spindle`, but the reward
+  does not wait to see whether a burst lasts. Measured on the real evaluator
+  over the replay corpus (n=13, 4 min each, Rust backend, default controls) —
+  same corpus and same guards across all three rows:
+
+  | protocol | reward time |
+  |---|---|
+  | `smr` (theta and high-beta AND-ed into the reward) | 13.1% |
+  | `smr_spindle` (500 ms criterion) | 30.3% |
+  | **`smr_consolidated`** | **59.8%** |
+
+  Against 60.7% for the reward condition true instantaneously, so the reading
+  is very nearly "time above threshold". Published SMR practice runs 50–80%
+  reward; this is the first protocol in the corpus inside that band. The
+  criterion it drops sits at the *median* SMR burst length (562 ms measured),
+  so it was rejecting about half of all bursts by construction.
+
+  Two deliberate absences. **No `tolerance`**, which is a safety requirement
+  rather than an omission: `_validate_hold_tolerance` refuses
+  `tolerance >= duration` but skips that check when `duration` binds a control,
+  which `reward_dwell` does, so any declared tolerance would let a practitioner
+  latch the reward permanently on. **No `audio_chime` binding**: with no
+  criterion the reward is held ~60% of the session, so a chime on
+  `reward.event` fires 93 times a minute at the default and 37/min even at a
+  250 ms de-bounce. The tone carries the contingency continuously instead;
+  `critical_fluctuation` already ships chime-less.
+
+  Does **not** retire `smr.refrain` — anyone already assigned it keeps running
+  what they were assigned, and retirement is a separate `meta.status` decision.
+
+  Never trialled. The corpus is a file-*format* conformance set, not a
+  physiological sample, and the audio output path has never been measured on
+  real hardware. Two gates do not cover it, both inherited from `smr_spindle`
+  and both pre-existing: the editor cannot render a `duration` control, so it
+  is on the round-trip test's `KNOWN_GAPS`; and the fuzzer skips it as a
+  "non-bandpass (coherence) reward signal" because it does not recognise
+  `band_envelope` as a bandpass.
+
 ## 0.4.0 — the guards stop silencing the tone
 
 ### Changed
