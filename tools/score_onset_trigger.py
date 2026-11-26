@@ -74,7 +74,11 @@ CRITERION_MS = 500.0
 GT_TOLERANCE_MS = 200.0
 GT_PCT = 80.0
 LOOKAHEAD_MS = 500.0
-REFRACTORY_MS = 1000.0
+# Every figure in the design doc and the ledger was taken at 1 s. Override
+# with ONSET_REFRACTORY_MS to ask what the trigger does unthrottled --
+# which is the question of whether a refractory is a prerequisite or a
+# refinement, since the host renderer does not enforce one today.
+REFRACTORY_MS = float(os.environ.get("ONSET_REFRACTORY_MS", "1000"))
 # Override with ONSET_CORPUS. The default is one developer's local path and
 # is useless to anyone else; it stays only so the tool runs with no argument
 # on the machine the measurements in the design doc were taken on.
