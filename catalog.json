@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 48,
+  "count": 49,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -1274,6 +1274,48 @@
         "author": "Peak Mind",
         "citation": "Sterman M.B. & Lubar J.F. (foundational corpus, 1970s-1990s)",
         "control_ref": "library/operant/smr_sham@1.0"
+      }
+    },
+    {
+      "file": "protocols/eeg/smr_consolidated.refrain",
+      "name": "smr_consolidated",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "exploratory",
+        "description": "SMR (12-16 Hz) up-training on one declared-latency envelope, rewarded continuously - practitioner-selected site, bands, and thresholds",
+        "title": "SMR training - continuous feedback",
+        "summary": "Rewards 12-16 Hz sensorimotor rhythm the moment it crosses threshold, with a tone that tracks amplitude the whole time. Muscle and high-beta silence the tone; theta and the 8-12 Hz band pause credit without taking it away.",
+        "family": "smr",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "modality": "eeg",
+        "goals": [
+          "focus_attention",
+          "sleep_quality"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B., operant conditioning of the sensorimotor rhythm; the band, the inhibit arrangement and the continuous tone here are not from that work",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "advanced_controls": [
+          "site",
+          "smr_lo_hz",
+          "smr_hi_hz",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "low_lo_hz",
+          "low_hi_hz",
+          "hbeta_lo_hz",
+          "hbeta_hi_hz",
+          "smr_latency",
+          "reward_dwell",
+          "theta_inhibit_rate",
+          "low_inhibit_rate",
+          "hbeta_inhibit_rate",
+          "artifact_guard",
+          "artifact_strictness",
+          "smr_threshold_uv"
+        ]
       }
     },
     {
