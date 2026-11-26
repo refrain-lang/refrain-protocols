@@ -175,7 +175,9 @@
 //     one resets the dwell, and a 500 ms criterion then almost never
 //     completed. Measured over the twelve-recording replay corpus: SMR alone
 //     is above its own threshold 61.0% of the time, theta or the alpha
-//     shoulder is high 30.3% of the time, and all three conditions held
+//     shoulder is high 30.3% of the time (an unlucky collision: 30.3% is also
+//     this protocol's reward time under the shipped `flag()` arm, and the two
+//     are unrelated quantities), and all three conditions held
 //     CONTINUOUSLY for 500 ms only 1.3% of it - against a design target of
 //     25-40%. As artifact inhibits those samples are scored as neither
 //     success nor failure: refrain's dwell checks observability BEFORE it
@@ -188,9 +190,15 @@
 //     mix them. The sweep that PICKED these numbers ran a transcription of
 //     refrain v0.25.1's `DwellImpl.step` over the corpus envelopes, which is
 //     cheap enough to sweep twelve variants. The chosen variant was then
-//     replayed through the REAL evaluator, which is the figure to quote: 27.8%
-//     median reward time (n=13), 10.7 reward onsets per minute, against the
-//     transcription's 30.7%. The marginals agree closely - SMR above its
+//     replayed through the REAL evaluator, which is the figure to quote FOR
+//     THAT ARM: 27.8% median reward time (n=13), 10.7 reward onsets per
+//     minute, against the transcription's 30.7%. THAT ARM IS
+//     `mute(release: 200 ms)` AND NO LONGER SHIPS - the guards became
+//     `flag()` afterwards, which lifts reward time to 30.3% and the onset
+//     rate to 17.1 per minute. The three-arm table at the top of this header
+//     is the current reading. The two-bases warning stands either way: it is
+//     about the gap between a transcription and the engine, not about which
+//     arm runs. The marginals agree closely - SMR above its
 //     threshold 60.7% on the engine against 61.0% transcribed - so the gap is
 //     in the hold, not in the signal path, and it runs in the conservative
 //     direction. Both figures sit inside the 25-40% target band; a tolerance
@@ -446,7 +454,13 @@ protocol "smr_spindle" {
   // the reward or the gate. Then over the whole twelve-recording corpus on the
   // RUST backend: 27.8% reward time, 6.8% audible, 65.8% silent, 10.7 onsets
   // per minute, theta muting 19.0% and the low band 14.3% - every figure
-  // identical to the Python replay of the `passthrough` version. So the
+  // identical to the Python replay of the `passthrough` version. Those are
+  // `mute(release: 200 ms)` figures, taken before the guards became `flag()`.
+  // The shipped arm reads 30.3% reward time, 18.2% audible, 34.3% silent and
+  // 17.1 onsets per minute, and theta and the low band mute NOTHING - a flag
+  // has no audio gate, so those two mute fractions are now zero and only the
+  // two real mutes contribute. What this paragraph is about is the
+  // Python/Rust parity claim, and that is unaffected by the later change. So the
   // numbers in this header are production-backend numbers, and the metric
   // change moved none of them.
   // The proper fix is upstream - either implement `passthrough` as a compute
