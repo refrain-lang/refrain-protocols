@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0 — SMR without the spindle criterion
+
 ### Added
 - **`smr_consolidated` — "SMR training - continuous feedback".** The guard
   redesign without the spindle criterion: same band, same envelope, same four
