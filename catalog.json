@@ -1,6 +1,6 @@
 {
   "schema": "protocol-meta/1",
-  "count": 49,
+  "count": 50,
   "protocols": [
     {
       "file": "protocols/eeg/alpha_coherence.refrain",
@@ -1252,6 +1252,50 @@
           "smr_threshold_uv",
           "theta_threshold_uv",
           "hbeta_threshold_uv"
+        ]
+      }
+    },
+    {
+      "file": "protocols/eeg/smr_burst.refrain",
+      "name": "smr_burst",
+      "draft": true,
+      "meta": {
+        "version": "1.0.0",
+        "evidence": "exploratory",
+        "description": "SMR (12-16 Hz) up-training on one 160 ms weighted envelope: a continuous tone, plus a chime on bursts that clear a median-relative bar and dominate the 8-12 Hz shoulder",
+        "title": "SMR training - burst-marked feedback",
+        "summary": "A tone tracks 12-16 Hz amplitude the whole time; a chime marks a burst whose amplitude is well above the trainee's own median and at least as strong as the 8-12 Hz band beside it. Muscle and high-beta silence both; theta and the 8-12 Hz band pause credit without taking the tone away.",
+        "family": "smr",
+        "threshold_style": "selectable",
+        "status": "draft",
+        "modality": "eeg",
+        "goals": [
+          "focus_attention",
+          "sleep_quality"
+        ],
+        "author": "Peak Mind",
+        "citation": "Sterman M.B., operant conditioning of the sensorimotor rhythm; burst bar as a multiple of the median envelope after Ossadtchi et al. 2017 (doi:10.1038/s41598-017-04012-0) and Belinskaia et al. 2020 (doi:10.1088/1741-2552/abc8d7), both on alpha. The band, the inhibit arrangement, the shoulder test and the chime are not from any of that work",
+        "control_ref": "library/operant/smr_sham@1.0",
+        "advanced_controls": [
+          "site",
+          "smr_lo_hz",
+          "smr_hi_hz",
+          "theta_lo_hz",
+          "theta_hi_hz",
+          "low_lo_hz",
+          "low_hi_hz",
+          "hbeta_lo_hz",
+          "hbeta_hi_hz",
+          "smr_latency",
+          "reward_dwell",
+          "burst_ratio",
+          "burst_dominance",
+          "theta_inhibit_rate",
+          "low_inhibit_rate",
+          "hbeta_inhibit_rate",
+          "artifact_guard",
+          "artifact_strictness",
+          "smr_threshold_uv"
         ]
       }
     },

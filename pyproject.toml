@@ -32,8 +32,14 @@ classifiers = [
 # place so it is already true when the hold fix lands, rather than moving the
 # floor and the signal path in one change. Raising it with that change instead
 # would have been equally defensible.
+#
+# v0.27.0 is load-bearing, unlike the floor above was when it moved:
+# `smr_burst` declares `band_envelope(kind: "weighted")`, which an older
+# resolver refuses as an unknown argument. No IR-JSON change comes with it (the
+# kind only selects the taps Python bakes), so a v0.26 CORE runs the resolved
+# protocol unchanged; it is the resolver that has to be 0.27.
 dependencies = [
-  "refrain >= 0.26.0",
+  "refrain >= 0.27.0",
 ]
 
 [project.optional-dependencies]

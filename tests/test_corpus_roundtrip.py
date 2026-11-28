@@ -147,6 +147,14 @@ KNOWN_GAPS = {
     # re-derived one reason at a time the way the list above was — the shapes
     # are identical by construction, and reason (1) is reached first either way.
     "smr_consolidated.refrain",
+    #
+    # `smr_burst` is `smr_consolidated` plus a chime, so it inherits the same
+    # gaps and adds shapes the matcher has not been asked about: a `number`
+    # control folded into a `formula` derive, and an output-bound
+    # `dwell_rearm`. Verified at refrain v0.27.0: `describe_protocol` returns
+    # "control kind 'duration' not renderable", the same first reason as the
+    # two files above. What it would say once that one closes is not known.
+    "smr_burst.refrain",
 }
 # Closed by refrain-lang/refrain#39: composite_smr_theta_cz (weighted composite) and
 # hrv_resonance (passthrough / lf_envelope / auto_range / bare-ref reward) are now
