@@ -65,9 +65,13 @@ from measure_envelopes import (  # noqa: E402
 )
 from session_report.replay import step_through  # noqa: E402
 
-PROTOCOL = sys.argv[1]
-BACKEND = sys.argv[2] if len(sys.argv) > 2 else "python"
-MINUTES = float(sys.argv[3]) if len(sys.argv) > 3 else 4.0
+# Read from argv only when run as a script, so the module can be IMPORTED:
+# tools/burst_reference.py reuses `ground_truth`, and the importing script's
+# own arguments are not this one's.
+_ARGV = sys.argv if __name__ == "__main__" else []
+PROTOCOL = _ARGV[1] if len(_ARGV) > 1 else None
+BACKEND = _ARGV[2] if len(_ARGV) > 2 else "python"
+MINUTES = float(_ARGV[3]) if len(_ARGV) > 3 else 4.0
 
 BAND = (12.0, 16.0)
 CRITERION_MS = 500.0
@@ -84,9 +88,8 @@ REFRACTORY_MS = float(os.environ.get("ONSET_REFRACTORY_MS", "1000"))
 # on the machine the measurements in the design doc were taken on.
 CORPUS = os.environ.get("ONSET_CORPUS", "/Users/jcroall/tmp/file_io_corpus")
 MIN_BAR_UV = 0.5
-SP_DIR = os.environ.get("ONSET_WORKDIR", tempfile.mkdtemp(prefix="onset-"))
-os.makedirs(f"{SP_DIR}/variants", exist_ok=True)
-TEMPLATE = pathlib.Path(PROTOCOL).read_text()
+SP_DIR = os.environ.get("ONSET_WORKDIR", "")
+TEMPLATE = ""
 
 
 def runs(mask):
@@ -179,6 +182,13 @@ def fmt(v, suffix=""):
 
 
 def main() -> int:
+    global SP_DIR, TEMPLATE
+    if PROTOCOL is None:
+        print(__doc__)
+        return 2
+    SP_DIR = SP_DIR or tempfile.mkdtemp(prefix="onset-")
+    os.makedirs(f"{SP_DIR}/variants", exist_ok=True)
+    TEMPLATE = pathlib.Path(PROTOCOL).read_text()
     amp_path = os.path.join(os.path.dirname(refrain.__file__), "amp_profiles", "brainbit_flex.json")
     amp = load_amp_profile(amp_path)
     # The template still carries its placeholder, so this first resolve -- which

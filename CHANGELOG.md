@@ -2,6 +2,45 @@
 
 ## Unreleased
 
+### Added
+- **`smr_burst` — "SMR training - burst-marked feedback".** `smr_consolidated`
+  plus a chime, on refrain v0.27.0's `band_envelope(kind: "weighted")` at
+  160 ms. The chime commits when the envelope is above 2.5× the trainee's own
+  rolling median **and** at least as large as the 8–12 Hz envelope beside it,
+  re-armed after 300 ms false. Measured on the engine over 12 resting
+  recordings (OpenNeuro ds003478), each replayed as recorded and as a
+  phase-randomised surrogate, against rhythmic episodes that are not the
+  protocol's own rule (`ridge3`, 209 events, ±300 ms):
+
+  | | chimes/min | real/noise | recall | precision | in-burst | lag |
+  |---|---|---|---|---|---|---|
+  | **`smr_burst`** | 6.8 | 1.75 (12/12) | 56.5% | 24.9% | 77.1% | 220 ms |
+  | 93rd-percentile crossing | 21.9 | 0.90 (2/12) | 71.8% | 11.6% | 44.0% | 324 ms |
+  | `smr_spindle`'s 500 ms chime | 10.5 | 1.09 (7/12) | 25.4% | 6.6% | 58.5% | 156 ms |
+
+  Reward time is 60.4%, against `smr_consolidated`'s 59.3% on the same
+  recordings — the tone is the same contingency. Three of four chimes still
+  do not land on a reference burst, the reference is not expert scoring, and
+  nobody has trained on it. Status `draft`. Retires nothing.
+- **`tools/burst_reference.py`, `tools/score_burst_trigger.py`** — references
+  for a burst that do not share the protocol's rule, each run on the recording
+  and on its surrogate, and a scorer that replays a protocol against both.
+  The first table they produced is the reason they exist: the ground truth in
+  `score_onset_trigger.py` finds 13.98 "spindles" a minute in EEG and 14.48 in
+  spectrum-matched noise. `tools/variants/README.md` has every table.
+
+### Changed
+- **Engine pin v0.26.0 → v0.27.0** (CI and `pyproject.toml`). Load-bearing:
+  `smr_burst` declares `kind: "weighted"`. No existing protocol's IR moves.
+- **`test_declared_latency`'s bandwidth floor is kind-aware.** One
+  bandwidth-period for the default design, half for `"weighted"` — where the
+  resolver itself refuses it, and where v0.27.0 measured it matching the
+  default design's accuracy at twice the latency.
+- **`tools/score_onset_trigger.py` is importable.** It read `sys.argv` and
+  made a temp directory at import; both now happen in `main()`. No figure it
+  prints changes. Its `backend` argument is still only printed — the engine
+  picks Rust whenever the wheel is importable, whatever that argument says.
+
 ## 0.5.0 — SMR without the spindle criterion
 
 ### Added

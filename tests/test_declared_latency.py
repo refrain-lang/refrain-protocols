@@ -149,11 +149,20 @@ def _floor_violation(call: dict) -> str | None:
     latency_ms = _num(args["latency"])
     if args["latency"].get("unit") == "s":
         latency_ms *= 1000.0
-    floor_ms = 1000.0 / (hi - lo)
+    # The floor is one bandwidth-period for the default (tapered) design. The
+    # `kind: "weighted"` design refrain v0.27.0 added keeps the taps after the
+    # delay tap, and measured on 12 resting recordings it matches the tapered
+    # design's accuracy at about HALF the declared latency (12-16 Hz: weighted
+    # at 160 ms r = 0.942 median / 0.912 worst, tapered at 320 ms 0.914 /
+    # 0.897). Its floor is half a bandwidth-period, which is also where the
+    # resolver itself refuses it.
+    kind = args.get("kind", {}).get("value", "tapered")
+    periods = 0.5 if kind == "weighted" else 1.0
+    floor_ms = periods * 1000.0 / (hi - lo)
     if latency_ms >= floor_ms:
         return None
     return (
-        f"declares {latency_ms:g} ms on {lo:g}-{hi:g} Hz, below its {floor_ms:.0f} ms "
+        f"declares {latency_ms:g} ms on {lo:g}-{hi:g} Hz ({kind}), below its {floor_ms:.0f} ms "
         "bandwidth-time floor; it would be less accurate than the chain it replaced"
     )
 
@@ -227,6 +236,17 @@ def _call(lo: float, hi: float, latency: float, unit: str = "ms") -> dict:
 def test_floor_rejects_a_latency_below_the_bandwidth_floor():
     assert _floor_violation(_call(12, 15, 100)) is not None
     assert _floor_violation(_call(12, 15, 0.1, unit="s")) is not None
+
+
+def test_weighted_floor_is_half_a_bandwidth_period():
+    def weighted(lo, hi, ms):
+        call = _call(lo, hi, ms)
+        call["args"].append({"name": "kind", "value": {"node": "string", "value": "weighted"}})
+        return call
+
+    assert _floor_violation(_call(12, 16, 160)) is not None       # tapered: floor 250 ms
+    assert _floor_violation(weighted(12, 16, 160)) is None        # weighted: floor 125 ms
+    assert _floor_violation(weighted(12, 16, 120)) is not None
 
 
 def test_floor_accepts_a_latency_at_or_above_it():
